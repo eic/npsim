@@ -12,7 +12,7 @@ set(EicDet_LIB_NAMES
 # Add executable source directory name that appear in ./src
 set(EicDet_EXE_NAMES
   #EicDet
-  runtest
+  #runtest
   )
 
 # The version number.
