@@ -6,6 +6,7 @@ project(EicDet CXX)
 set(EicDet_LIB_NAMES
   simple_example
   JLEIC
+  clas12
   #DERP
   )
 
