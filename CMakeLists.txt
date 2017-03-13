@@ -6,9 +6,8 @@ project(EicDet CXX)
 set(EicDet_LIB_NAMES
   simple_example
   JLEIC
-  clas12
+  #clas12
   SoLID
-  #DERP
   )
 
 # Add executable source directory name that appear in ./src
