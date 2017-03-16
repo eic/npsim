@@ -247,7 +247,7 @@ install(FILES ${SHARE_SCRIPTS} DESTINATION "${CMAKE_INSTALL_PREFIX}/share/${PROJ
 
 # install examples
 set(NPDet_EXAMPLES 
-  examples/example1.cxx 
+  #examples/example1.cxx 
   )
 install(FILES ${NPDet_EXAMPLES} DESTINATION "${CMAKE_INSTALL_PREFIX}/share/${PROJECT_NAME}/examples" )
 
