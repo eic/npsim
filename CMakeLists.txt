@@ -1,9 +1,9 @@
 #----------------------------------------------------------------------------
 cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
-project(EicDet CXX)
+project(NPDet CXX)
 
 # Add library source directory name that appear in ./src
-set(EicDet_LIB_NAMES
+set(NPDet_LIB_NAMES
   simple_example
   JLEIC
   #clas12
@@ -11,16 +11,16 @@ set(EicDet_LIB_NAMES
   )
 
 # Add executable source directory name that appear in ./src
-set(EicDet_EXE_NAMES
-  #EicDet
+set(NPDet_EXE_NAMES
+  #NPDet
   #runtest
   )
 
 # The version number.
-set(EicDet_MAJOR_VERSION 0)
-set(EicDet_MINOR_VERSION 1)
-set(EicDet_PATCH_VERSION 0)
-SET(EicDet_VERSION "${EicDet_MAJOR_VERSION}.${EicDet_MINOR_VERSION}.${EicDet_PATCH_VERSION}")
+set(NPDet_MAJOR_VERSION 0)
+set(NPDet_MINOR_VERSION 1)
+set(NPDet_PATCH_VERSION 0)
+SET(NPDet_VERSION "${NPDet_MAJOR_VERSION}.${NPDet_MINOR_VERSION}.${NPDet_PATCH_VERSION}")
 
 # ---------------------------------------------------------------------------
 # load additional OS dependent settings
@@ -54,41 +54,41 @@ set(CMAKE_MODULE_PATH
    )
 
 if(NOT CMAKE_INSTALL_PREFIX)
-   SET(EicDet_PREFIX "/usr/local")
+   SET(NPDet_PREFIX "/usr/local")
 else() 
-   SET(EicDet_PREFIX ${CMAKE_INSTALL_PREFIX})
+   SET(NPDet_PREFIX ${CMAKE_INSTALL_PREFIX})
 endif()
 
 # ---------------------------------------------------------------------------
 #
-set(EicDet_CXX_FLAGS  " " CACHE PATH "CXX compile flags")
-set(EicDet_CXX_LDFLAGS "-L${CMAKE_INSTALL_PREFIX}/lib ${CMAKE_SHARED_LINKER_FLAGS}" CACHE PATH "Linking flags")
-set(EicDet_CXX_INC_DIR "-I${CMAKE_INSTALL_PREFIX}/include/EicDet "          CACHE PATH "include dir")
-set(EicDet_CXX_LIBS    "" CACHE PATH "libraries")
-set(EicDet_FC_FLAGS   "" CACHE PATH "fortran compile flags")
-set(EicDet_DATA_DIR /noarch/data CACHE PATH "data directory")
+set(NPDet_CXX_FLAGS  " " CACHE PATH "CXX compile flags")
+set(NPDet_CXX_LDFLAGS "-L${CMAKE_INSTALL_PREFIX}/lib ${CMAKE_SHARED_LINKER_FLAGS}" CACHE PATH "Linking flags")
+set(NPDet_CXX_INC_DIR "-I${CMAKE_INSTALL_PREFIX}/include/NPDet "          CACHE PATH "include dir")
+set(NPDet_CXX_LIBS    "" CACHE PATH "libraries")
+set(NPDet_FC_FLAGS   "" CACHE PATH "fortran compile flags")
+set(NPDet_DATA_DIR /noarch/data CACHE PATH "data directory")
 
-#set (EicDet_COMPILER_FLAGS "-Wall")
-set(EicDet_COMPILER_FLAGS   "-Wno-unused-variable -Wno-unused-parameter")
-set(CMAKE_CXX_FLAGS         "-std=c++14 ${CMAKE_CXX_FLAGS} ${EicDet_COMPILER_FLAGS} ")
-set(EicDet_PDF_GRID_DIR     "${PROJECT_SOURCE_DIR}/grid")
-set(EicDet_GRID_DATA_DIR    "${EicDet_GRID_DATA_DIR} ${EicDet_PDF_GRID_DIR}")
+#set (NPDet_COMPILER_FLAGS "-Wall")
+set(NPDet_COMPILER_FLAGS   "-Wno-unused-variable -Wno-unused-parameter")
+set(CMAKE_CXX_FLAGS         "-std=c++14 ${CMAKE_CXX_FLAGS} ${NPDet_COMPILER_FLAGS} ")
+set(NPDet_PDF_GRID_DIR     "${PROJECT_SOURCE_DIR}/grid")
+set(NPDet_GRID_DATA_DIR    "${NPDet_GRID_DATA_DIR} ${NPDet_PDF_GRID_DIR}")
 set(CMAKE_USE_ROOT6        ON)
 
 # ---------------------------------------------------------------------------
 # Must be out of source build
-macro(EicDet_CHECK_OUT_OF_SOURCE_BUILD)
+macro(NPDet_CHECK_OUT_OF_SOURCE_BUILD)
   get_filename_component(bindir_parent ${CMAKE_BINARY_DIR} PATH)
   if(CMAKE_SOURCE_DIR STREQUAL CMAKE_BINARY_DIR)
     file(REMOVE_RECURSE ${CMAKE_SOURCE_DIR}/Testing)
     file(REMOVE ${CMAKE_SOURCE_DIR}/DartConfiguration.tcl)
-    message(FATAL_ERROR "EicDet should be built as an out of source build, to keep the source directory clean. Please create a extra build directory and run the command 'cmake <path_to_source_dir>' in this newly created directory.  You have also to delete the directory CMakeFiles and the file CMakeCache.txt in the source directory. Otherwise cmake will complain even if you run it from an out-of-source directory.")
+    message(FATAL_ERROR "NPDet should be built as an out of source build, to keep the source directory clean. Please create a extra build directory and run the command 'cmake <path_to_source_dir>' in this newly created directory.  You have also to delete the directory CMakeFiles and the file CMakeCache.txt in the source directory. Otherwise cmake will complain even if you run it from an out-of-source directory.")
   elseif(IS_SYMLINK ${CMAKE_BINARY_DIR} AND CMAKE_SOURCE_DIR STREQUAL bindir_parent)
-    message(FATAL_ERROR "EicDet cannot be built from a sub-directory of the source tree that is a symlink. This is a current limitation of CMake. Please create a real build directory and run the command 'cmake <path_to_source_dir>' in this newly created directory.")
+    message(FATAL_ERROR "NPDet cannot be built from a sub-directory of the source tree that is a symlink. This is a current limitation of CMake. Please create a real build directory and run the command 'cmake <path_to_source_dir>' in this newly created directory.")
   endif()
 endmacro()
 # NOTE: Doesn't work with older cmake versions:
-EicDet_CHECK_OUT_OF_SOURCE_BUILD()
+NPDet_CHECK_OUT_OF_SOURCE_BUILD()
 
 # Check the compiler and set the compile and link flags
 #set(CMAKE_BUILD_TYPE Debug)
@@ -160,71 +160,71 @@ set(LINK_LIBRARIES
 
 #----------------------------------------------------------------------------
 # not sure this is the best way to do this....
-set(EicDet_FC_FLAGS "${EicDet_FC_FLAGS} ${CMAKE_Fortran_FLAGS}")
-#set(CMAKE_Fortran_FLAGS " -D\"EicDet_PDF_GRID_DIR='${EicDet_PDF_GRID_DIR}'\" -g -O2 -Wall -fPIC -Iinclude -ffixed-line-length-none -x f77-cpp-input ")
-set(CMAKE_Fortran_FLAGS " -D\"EicDet_PDF_GRID_DIR='${EicDet_PDF_GRID_DIR}'\" -g -O2 -Wall  -ffixed-line-length-none -x f77-cpp-input ")
+set(NPDet_FC_FLAGS "${NPDet_FC_FLAGS} ${CMAKE_Fortran_FLAGS}")
+#set(CMAKE_Fortran_FLAGS " -D\"NPDet_PDF_GRID_DIR='${NPDet_PDF_GRID_DIR}'\" -g -O2 -Wall -fPIC -Iinclude -ffixed-line-length-none -x f77-cpp-input ")
+set(CMAKE_Fortran_FLAGS " -D\"NPDet_PDF_GRID_DIR='${NPDet_PDF_GRID_DIR}'\" -g -O2 -Wall  -ffixed-line-length-none -x f77-cpp-input ")
 set(CMAKE_Fortran_FLAGS_RELEASE "${CMAKE_Fortran_FLAGS}")
-set(CMAKE_Fortran_FLAGS " -D\"EicDet_PDF_GRID_DIR='${EicDet_PDF_GRID_DIR}'\" -g -O2 -Wall  -ffixed-line-length-none -x f77-cpp-input ")
-set(EicDet_CXX_LDFLAGS   "${EicDet_CXX_LDFLAGS} ${CMAKE_SHARED_LINKER_FLAGS}")
+set(CMAKE_Fortran_FLAGS " -D\"NPDet_PDF_GRID_DIR='${NPDet_PDF_GRID_DIR}'\" -g -O2 -Wall  -ffixed-line-length-none -x f77-cpp-input ")
+set(NPDet_CXX_LDFLAGS   "${NPDet_CXX_LDFLAGS} ${CMAKE_SHARED_LINKER_FLAGS}")
 
 # -------------------------------------------------------
 # Make string of libs for commandline config tool
-set(EicDet_SHARED_LIB_NAMES)
-foreach(aSharedLib ${EicDet_LIB_NAMES})
-   set(EicDet_CXX_LIBS          "${EicDet_CXX_LIBS} -l${aSharedLib} ")
-   set(EicDet_SHARED_LIB_NAMES   ${EicDet_SHARED_LIB_NAMES} ${aSharedLib})
+set(NPDet_SHARED_LIB_NAMES)
+foreach(aSharedLib ${NPDet_LIB_NAMES})
+   set(NPDet_CXX_LIBS          "${NPDet_CXX_LIBS} -l${aSharedLib} ")
+   set(NPDet_SHARED_LIB_NAMES   ${NPDet_SHARED_LIB_NAMES} ${aSharedLib})
 endforeach(aSharedLib)
 
-set(EicDet_SHARED_LIBS)
-set(EicDet_LIBRARIES)
-set(EicDet_ROOT_DICTS)
-set(EicDet_PCM_FILES)
+set(NPDet_SHARED_LIBS)
+set(NPDet_LIBRARIES)
+set(NPDet_ROOT_DICTS)
+set(NPDet_PCM_FILES)
 
 #---------------------------------------
-foreach(aSharedLib ${EicDet_LIB_NAMES})
-   set(EicDet_LIBRARIES ${EicDet_LIBRARIES} ${aSharedLib})
-   #set(EicDet_SHARED_LIBS ${EicDet_SHARED_LIBS} "${CMAKE_BINARY_DIR}/lib/EicDet${aSharedLib}.so")
-   set(EicDet_ROOT_DICTS ${EicDet_ROOT_DICTS} "EicDet${aSharedLib}Dict.h")
-   set(EicDet_ROOT_DICT_SRCS ${EicDet_ROOT_DICT_SRCS} "EicDet${aSharedLib}Dict.cxx")
-   set(EicDet_PCM_FILES ${EicDet_PCM_FILES} "EicDet${aSharedLib}Dict_rdict.pcm")
+foreach(aSharedLib ${NPDet_LIB_NAMES})
+   set(NPDet_LIBRARIES ${NPDet_LIBRARIES} ${aSharedLib})
+   #set(NPDet_SHARED_LIBS ${NPDet_SHARED_LIBS} "${CMAKE_BINARY_DIR}/lib/NPDet${aSharedLib}.so")
+   set(NPDet_ROOT_DICTS ${NPDet_ROOT_DICTS} "NPDet${aSharedLib}Dict.h")
+   set(NPDet_ROOT_DICT_SRCS ${NPDet_ROOT_DICT_SRCS} "NPDet${aSharedLib}Dict.cxx")
+   set(NPDet_PCM_FILES ${NPDet_PCM_FILES} "NPDet${aSharedLib}Dict_rdict.pcm")
    include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/${aSharedLib}/include)
 endforeach(aSharedLib)
 
 # -------------------------------------------------------
 # configure a header file to pass some of the CMake settings to the source code
 configure_file (
-   "${PROJECT_SOURCE_DIR}/src/EicDetConfig.h.in"
-   "${PROJECT_BINARY_DIR}/EicDetConfig.h"
+   "${PROJECT_SOURCE_DIR}/src/NPDetConfig.h.in"
+   "${PROJECT_BINARY_DIR}/NPDetConfig.h"
    )
 
 #----------------------------------------------------------------------------
 # Add the config tool directory
-#add_executable(EicDet-config EicDet-config.cxx )
+#add_executable(NPDet-config NPDet-config.cxx )
 add_subdirectory(src/config)
 
 #-----------------------------------------
 # add the library sub directories
-foreach(aSharedLib ${EicDet_LIB_NAMES})
+foreach(aSharedLib ${NPDet_LIB_NAMES})
    #include(${aSharedLib})
    add_subdirectory("src/${aSharedLib}")
 endforeach(aSharedLib)
 
 # add the executable sub directories
-foreach(anExeName ${EicDet_EXE_NAMES})
+foreach(anExeName ${NPDet_EXE_NAMES})
   #include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/${anExeName}/include)
   add_subdirectory("src/${anExeName}")
 endforeach(anExeName)
 
 FILE(GLOB GENERATED_HEADERS 
   "${CMAKE_CURRENT_SOURCE_DIR}/*.h" 
-  "${PROJECT_BINARY_DIR}/EicDetConfig.h")
+  "${PROJECT_BINARY_DIR}/NPDetConfig.h")
 FILE(GLOB PCM_FILES "${PROJECT_BINARY_DIR}/*.pcm")
 
 # -----------------------------------------------------------
 # Set the library version in the main CMakeLists.txt
-SET(EicDet_LIBRARY_PROPERTIES ${EicDet_LIBRARY_PROPERTIES}
-  VERSION "${EicDet_VERSION}"
-  SOVERSION "${EicDet_MAJOR_VERSION}"
+SET(NPDet_LIBRARY_PROPERTIES ${NPDet_LIBRARY_PROPERTIES}
+  VERSION "${NPDet_VERSION}"
+  SOVERSION "${NPDet_MAJOR_VERSION}"
   SUFFIX ".so"
   )
 
@@ -246,27 +246,27 @@ endforeach()
 install(FILES ${SHARE_SCRIPTS} DESTINATION "${CMAKE_INSTALL_PREFIX}/share/${PROJECT_NAME}" )
 
 # install examples
-set(EicDet_EXAMPLES 
+set(NPDet_EXAMPLES 
   examples/example1.cxx 
   )
-install(FILES ${EicDet_EXAMPLES} DESTINATION "${CMAKE_INSTALL_PREFIX}/share/${PROJECT_NAME}/examples" )
+install(FILES ${NPDet_EXAMPLES} DESTINATION "${CMAKE_INSTALL_PREFIX}/share/${PROJECT_NAME}/examples" )
 
 # ----------------------------------------------------------------------------
 # The library's cmake files
 # Add all targets to the build-tree export set
-#export(TARGETS EicDet FILE "${PROJECT_BINARY_DIR}/${PROJECT_NAME}Targets.cmake")
-# TODO: replace "EicDet" with smaller libraries
+#export(TARGETS NPDet FILE "${PROJECT_BINARY_DIR}/${PROJECT_NAME}Targets.cmake")
+# TODO: replace "NPDet" with smaller libraries
 
 # Export the package for use from the build-tree
 # (this registers the build-tree with a global CMake-registry)
 export(PACKAGE ${PROJECT_NAME})
 
 set(CONF_LIBRARIES 
-   ${EicDet_SHARED_LIB_NAMES}  # TODO: Break big library into smaller ones
+   ${NPDet_SHARED_LIB_NAMES}  # TODO: Break big library into smaller ones
    )
 
 set(CONF_EXECUTABLES 
-   EicDet-config
+   NPDet-config
    )
 
 set(CONF_INCLUDE_DIRS 
@@ -298,9 +298,9 @@ install(EXPORT ${PROJECT_NAME}Targets DESTINATION
 
 #------------------------------------
 # Debug
-MESSAGE("          EicDet_CXX_LIBS: ${EicDet_CXX_LIBS}")
-MESSAGE("       EicDet_CXX_LDFLAGS: ${EicDet_CXX_LDFLAGS}")
-MESSAGE("       EicDet_CXX_INC_DIR: ${EicDet_CXX_INC_DIR}")
+MESSAGE("          NPDet_CXX_LIBS: ${NPDet_CXX_LIBS}")
+MESSAGE("       NPDet_CXX_LDFLAGS: ${NPDet_CXX_LDFLAGS}")
+MESSAGE("       NPDet_CXX_INC_DIR: ${NPDet_CXX_INC_DIR}")
 MESSAGE("             CXX_COMPILER: ${CMAKE_CXX_COMPILER}")
 MESSAGE("              FC_COMPILER: ${CMAKE_FC_COMPILER}")
 MESSAGE("      CMAKE_Fortran_FLAGS: ${CMAKE_Fortran_FLAGS}")
@@ -308,13 +308,13 @@ MESSAGE("                CXX_FLAGS: ${CMAKE_CXX_FLAGS}")
 MESSAGE("         CMAKE_LINK_FLAGS: ${CMAKE_LINK_FLAGS}")
 MESSAGE("CMAKE_SHARED_LINKER_FLAGS: ${CMAKE_SHARED_LINKER_FLAGS}")
 
-message("EicDet_MAJOR_VERSION   ${EicDet_MAJOR_VERSION}")
-message("EicDet_MINOR_VERSION   ${EicDet_MINOR_VERSION}")
-message("EicDet_PATCH_VERSION   ${EicDet_PATCH_VERSION}")
-message("EicDet_DATA_DIR      ${EicDet_DATA_DIR}")
-message("EicDet_CXX_FLAGS    ${EicDet_CXX_FLAGS}")
-message("EicDet_CXX_LDFLAGS   ${EicDet_CXX_LDFLAGS}")
-message("EicDet_CXX_LIBS      ${EicDet_CXX_LIBS}")
-message("EicDet_CXX_INC_DIR   ${EicDet_CXX_INC_DIR}")
-message("EicDet_PREFIX        ${CMAKE_INSTALL_PREFIX}")
+message("NPDet_MAJOR_VERSION   ${NPDet_MAJOR_VERSION}")
+message("NPDet_MINOR_VERSION   ${NPDet_MINOR_VERSION}")
+message("NPDet_PATCH_VERSION   ${NPDet_PATCH_VERSION}")
+message("NPDet_DATA_DIR      ${NPDet_DATA_DIR}")
+message("NPDet_CXX_FLAGS    ${NPDet_CXX_FLAGS}")
+message("NPDet_CXX_LDFLAGS   ${NPDet_CXX_LDFLAGS}")
+message("NPDet_CXX_LIBS      ${NPDet_CXX_LIBS}")
+message("NPDet_CXX_INC_DIR   ${NPDet_CXX_INC_DIR}")
+message("NPDet_PREFIX        ${CMAKE_INSTALL_PREFIX}")
 

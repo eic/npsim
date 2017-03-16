@@ -1,7 +1,7 @@
 #include <iostream>
 #include "getopt.h"
 #include <math.h>
-#include "EicDetConfig.h"
+#include "NPDetConfig.h"
 
 #define no_argument 0
 #define required_argument 1 
@@ -90,34 +90,34 @@ int main(int argc, char * argv[]) {
 }
 
 void print_version(){
-   std::cout << "EicDet Version " << EicDet_MAJOR_VERSION << "." << EicDet_MINOR_VERSION << "." << EicDet_PATCH_VERSION << " ";
+   std::cout << "NPDet Version " << NPDet_MAJOR_VERSION << "." << NPDet_MINOR_VERSION << "." << NPDet_PATCH_VERSION << " ";
 }
 
 void print_usage(){
-   std::cout << "EicDet-config --libs --cflags --ldflags --inc --grid" << " ";
+   std::cout << "NPDet-config --libs --cflags --ldflags --inc --grid" << " ";
 }
 
 void print_libs(){
-   std::cout << EicDet_CXX_LIBS << " ";
+   std::cout << NPDet_CXX_LIBS << " ";
 }
 
 void print_inc(){
-   std::cout << EicDet_CXX_INC_DIR << " ";
+   std::cout << NPDet_CXX_INC_DIR << " ";
 }
 
 void print_cflags(){
-   std::cout << EicDet_CXX_CFLAGS << " ";
+   std::cout << NPDet_CXX_CFLAGS << " ";
 }
 
 void print_ldflags(){
-   std::cout << EicDet_CXX_LDFLAGS << " ";
+   std::cout << NPDet_CXX_LDFLAGS << " ";
 }
 
 void print_grid(){
-   std::cout << EicDet_DATA_DIR << " ";
+   std::cout << NPDet_DATA_DIR << " ";
 }
 
 void print_prefix(){
-   std::cout << EicDet_PREFIX << " ";
+   std::cout << NPDet_PREFIX << " ";
 }
 
