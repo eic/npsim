@@ -8,6 +8,7 @@ set(NPDet_LIB_NAMES
   JLEIC
   #clas12
   SoLID
+  eRHIC
   )
 
 # Add executable source directory name that appear in ./src
