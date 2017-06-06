@@ -5,6 +5,7 @@ project(NPDet CXX)
 # Add library source directory name that appear in ./src
 set(NPDet_LIB_NAMES
   simple_example
+  GenericDetectors
   JLEIC
   #clas12
   SoLID
