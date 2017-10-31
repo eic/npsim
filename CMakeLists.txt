@@ -111,15 +111,8 @@ find_package(ROOT REQUIRED COMPONENTS MathCore RIO Hist MathMore Graf Graf3d
 include(${ROOT_USE_FILE})
 include(cmake/root.cmake)
 
-#FIND_PACKAGE( ILCUTIL REQUIRED COMPONENTS ILCSOFT_CMAKE_MODULES )
-
-# load default settings from ILCSOFT_CMAKE_MODULES
-#INCLUDE( ilcsoft_default_settings )
-
-
 FIND_PACKAGE( LCIO ) #REQUIRED COMPONENTS DDRec 
 include_directories(${LCIO_INCLUDE_DIRS})
-
 
 set(CMAKE_MODULE_PATH  ${CMAKE_MODULE_PATH}  ${DD4hep_ROOT}/cmake )
 set(CMAKE_MODULE_PATH  ${CMAKE_MODULE_PATH}  ${DD4hep_ROOT}/lib/DD4hep )
@@ -130,8 +123,6 @@ LINK_LIBRARIES( ${DD4hep_LIBRARIES} )
 ADD_DEFINITIONS( ${DD4hep_DEFINITIONS} )
 
 
-find_package( ROOT REQUIRED )
-set( ROOT_COMPONENT_LIBRARIES Geom)
 
 
 # ----------
