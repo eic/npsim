@@ -6,10 +6,10 @@ project(NPDet CXX)
 set(NPDet_LIB_NAMES
   simple_example
   GenericDetectors
-  JLEIC
+  ConceptDetectors/JLEIC
   #clas12
-  SoLID
-  eRHIC
+  ConceptDetectors/SoLID
+  ConceptDetectors/eRHIC
   )
 
 # Add executable source directory name that appear in ./src
@@ -111,10 +111,10 @@ find_package(ROOT REQUIRED COMPONENTS MathCore RIO Hist MathMore Graf Graf3d
 include(${ROOT_USE_FILE})
 include(cmake/root.cmake)
 
-FIND_PACKAGE( ILCUTIL REQUIRED COMPONENTS ILCSOFT_CMAKE_MODULES )
+#FIND_PACKAGE( ILCUTIL REQUIRED COMPONENTS ILCSOFT_CMAKE_MODULES )
 
 # load default settings from ILCSOFT_CMAKE_MODULES
-INCLUDE( ilcsoft_default_settings )
+#INCLUDE( ilcsoft_default_settings )
 
 
 FIND_PACKAGE( LCIO ) #REQUIRED COMPONENTS DDRec 
