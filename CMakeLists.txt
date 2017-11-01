@@ -31,7 +31,7 @@ if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 endif()
 
 if(NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE Release CACHE STRING "..." FORCE)
+    set(CMAKE_BUILD_TYPE RelWithDebInfo CACHE STRING "..." FORCE)
 endif()
 
 # ---------------------------------------------------------------------------
