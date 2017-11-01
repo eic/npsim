@@ -29,43 +29,50 @@ add_executable(${exename} ${exename}.cxx)
 install(
     TARGETS ${exename}
     EXPORT ${PROJECT_NAME}Targets
-    RUNTIME DESTINATION "${INSTALL_BIN_DIR}"
+    RUNTIME DESTINATION bin
     COMPONENT bin
     )
 
 # -------------------------------------------------------
 # configure and install cmake config scripts
 set(CONF_LIBRARIES 
-   ${NPDet_SHARED_LIB_NAMES}  # TODO: Break big library into smaller ones
-   )
+    ${NPDet_SHARED_LIB_NAMES}  # TODO: Break big library into smaller ones
+    )
 
 set(CONF_EXECUTABLES 
-   NPDet-config
-   )
+    NPDet-config
+    )
 
 set(CONF_INCLUDE_DIRS 
-   ${CMAKE_INSTALL_PREFIX}/include
-   ${CMAKE_INSTALL_PREFIX}/include/${PROJECT_NAME}
-   )
+    ${CMAKE_INSTALL_PREFIX}/include
+    ${CMAKE_INSTALL_PREFIX}/include/${PROJECT_NAME}
+    )
 
 set(CONF_LIBRARY_DIRS 
-   ${CMAKE_INSTALL_PREFIX}/lib
-   )
+    ${CMAKE_INSTALL_PREFIX}/lib
+    )
 
 configure_file(${PROJECT_NAME}Config.cmake.in 
-  "${PROJECT_BINARY_DIR}/${PROJECT_NAME}Config.cmake" @ONLY)
+    "${PROJECT_BINARY_DIR}/${PROJECT_NAME}Config.cmake" @ONLY
+    )
 configure_file(${PROJECT_NAME}ConfigVersion.cmake.in 
-  "${PROJECT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake" @ONLY)
+    "${PROJECT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake" @ONLY
+    )
 configure_file(${PROJECT_NAME}UseFile.cmake.in 
-  "${PROJECT_BINARY_DIR}/${PROJECT_NAME}UseFile.cmake" @ONLY)
+    "${PROJECT_BINARY_DIR}/${PROJECT_NAME}UseFile.cmake" @ONLY
+    )
 
 # Install the FooBarConfig.cmake and FooBarConfigVersion.cmake
 install(FILES
-  "${PROJECT_BINARY_DIR}/${PROJECT_NAME}Config.cmake"
-  "${PROJECT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake"
-  "${PROJECT_BINARY_DIR}/${PROJECT_NAME}UseFile.cmake"
-  DESTINATION "${INSTALL_CMAKE_DIR}" COMPONENT dev)
+    "${PROJECT_BINARY_DIR}/${PROJECT_NAME}Config.cmake"
+    "${PROJECT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake"
+    "${PROJECT_BINARY_DIR}/${PROJECT_NAME}UseFile.cmake"
+    DESTINATION lib/${PROJECT_NAME}
+    COMPONENT dev
+    )
 
 # Install the export set for use with the install-tree
-install(EXPORT ${PROJECT_NAME}Targets DESTINATION
-  "${INSTALL_CMAKE_DIR}" COMPONENT dev)
+install(EXPORT ${PROJECT_NAME}Targets
+    DESTINATION lib/${PROJECT_NAME}
+    COMPONENT dev
+    )
