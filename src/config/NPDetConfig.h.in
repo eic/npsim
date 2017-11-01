@@ -1,0 +1,12 @@
+// the configured options and settings for Tutorial
+#define NPDet_MAJOR_VERSION @NPDet_MAJOR_VERSION@
+#define NPDet_MINOR_VERSION @NPDet_MINOR_VERSION@
+#define NPDet_PATCH_VERSION @NPDet_PATCH_VERSION@
+
+#define NPDet_DATA_DIR      "@NPDet_DATA_DIR@"
+#define NPDet_CXX_CFLAGS    "@NPDet_CXX_CFLAGS@"
+#define NPDet_CXX_LDFLAGS   "@NPDet_CXX_LDFLAGS@"
+#define NPDet_CXX_LIBS      "@NPDet_CXX_LIBS@"
+#define NPDet_CXX_INC_DIR   "@NPDet_CXX_INC_DIR@"
+#define NPDet_PREFIX        "@CMAKE_INSTALL_PREFIX@"
+
