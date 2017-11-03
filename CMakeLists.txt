@@ -12,9 +12,10 @@ set(NPDet_EXE_NAMES
 
 # Add concept detector names
 set(NPDet_CONCEPT_NAMES
-    JLEIC
-    SoLID
     eRHIC
+    JLEIC
+    SiEIC
+    SoLID
     )
 
 # The version number.
