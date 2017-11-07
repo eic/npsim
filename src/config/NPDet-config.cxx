@@ -90,7 +90,10 @@ int main(int argc, char * argv[]) {
 }
 
 void print_version(){
-   std::cout << "NPDet Version " << NPDet_MAJOR_VERSION << "." << NPDet_MINOR_VERSION << "." << NPDet_PATCH_VERSION << " ";
+   std::cout << "NPDet Version " 
+   << NPDet_VERSION_MAJOR << "." 
+   << NPDet_VERSION_MINOR << "." 
+   << NPDet_VERSION_PATCH << " ";
 }
 
 void print_usage(){

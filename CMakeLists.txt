@@ -1,5 +1,9 @@
-cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
-project(NPDet CXX)
+cmake_minimum_required(VERSION 3.2 FATAL_ERROR)
+project(NPDet VERSION 0.1.0 LANGUAGES CXX)
+
+enable_testing()
+
+add_test(test_dumb "ls" "-lrht")
 
 # Add library source directory name that appear in ./src
 set(NPDet_LIB_NAMES
@@ -17,12 +21,6 @@ set(NPDet_CONCEPT_NAMES
     SiEIC
     SoLID
     )
-
-# The version number.
-set(NPDet_MAJOR_VERSION 0)
-set(NPDet_MINOR_VERSION 1)
-set(NPDet_PATCH_VERSION 0)
-set(NPDet_VERSION "${NPDet_MAJOR_VERSION}.${NPDet_MINOR_VERSION}.${NPDet_PATCH_VERSION}")
 
 # ---------------------------------------------------------------------------
 # set default install prefix and build type

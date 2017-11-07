@@ -1,3 +1,4 @@
+@PACKAGE_INIT@
 # - Config file for the @PROJECT_NAME@ package
 # It defines the following variables
 #  @PROJECT_NAME@_INCLUDE_DIRS - include directories for @PROJECT_NAME@
