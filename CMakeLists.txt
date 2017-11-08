@@ -69,3 +69,30 @@ install(FILES ${NPDet_EXAMPLES}
 # Add the config tool/script directory
 add_subdirectory(src/config)
 
+
+install(EXPORT NPDetTargets
+  FILE NPDetTargets.cmake
+  NAMESPACE NPDet::
+  DESTINATION lib/NPDet )
+
+include(CMakePackageConfigHelpers)
+
+CONFIGURE_PACKAGE_CONFIG_FILE(
+  cmake/NPDetConfig.cmake.in  
+  ${CMAKE_CURRENT_BINARY_DIR}/NPDetConfig.cmake
+  INSTALL_DESTINATION lib/NPDet )
+#[PATH_VARS <var1> <var2> ... <varN>]
+#[NO_SET_AND_CHECK_MACRO]
+#[NO_CHECK_REQUIRED_COMPONENTS_MACRO])
+
+write_basic_package_version_file("NPDetConfigVersion.cmake"
+  VERSION ${NPDet_VERSION}
+  COMPATIBILITY SameMajorVersion
+)
+install(FILES
+  ${CMAKE_CURRENT_BINARY_DIR}/NPDetConfig.cmake
+  ${CMAKE_CURRENT_BINARY_DIR}/NPDetConfigVersion.cmake
+  DESTINATION lib/NPDet
+)
+
+
