@@ -1,10 +1,6 @@
 cmake_minimum_required(VERSION 3.2 FATAL_ERROR)
 project(NPDet VERSION 0.1.0 LANGUAGES CXX)
 
-enable_testing()
-
-add_test(test_dumb "ls" "-lrht")
-
 # Add library source directory name that appear in ./src
 set(NPDet_LIB_NAMES
     GenericDetectors
@@ -69,30 +65,29 @@ install(FILES ${NPDet_EXAMPLES}
 # Add the config tool/script directory
 add_subdirectory(src/config)
 
-
+#----------------------------------------------------------------------------
+# Install and export targets
 install(EXPORT NPDetTargets
-  FILE NPDetTargets.cmake
-  NAMESPACE NPDet::
-  DESTINATION lib/NPDet )
+    FILE NPDetTargets.cmake
+    NAMESPACE NPDet::
+    DESTINATION lib/NPDet
+    )
 
 include(CMakePackageConfigHelpers)
 
 CONFIGURE_PACKAGE_CONFIG_FILE(
-  cmake/NPDetConfig.cmake.in  
-  ${CMAKE_CURRENT_BINARY_DIR}/NPDetConfig.cmake
-  INSTALL_DESTINATION lib/NPDet )
-#[PATH_VARS <var1> <var2> ... <varN>]
-#[NO_SET_AND_CHECK_MACRO]
-#[NO_CHECK_REQUIRED_COMPONENTS_MACRO])
+    cmake/NPDetConfig.cmake.in  
+    ${CMAKE_CURRENT_BINARY_DIR}/NPDetConfig.cmake
+    INSTALL_DESTINATION lib/NPDet
+    )
 
 write_basic_package_version_file("NPDetConfigVersion.cmake"
-  VERSION ${NPDet_VERSION}
-  COMPATIBILITY SameMajorVersion
-)
+    VERSION ${NPDet_VERSION}
+    COMPATIBILITY SameMajorVersion
+    )
+
 install(FILES
-  ${CMAKE_CURRENT_BINARY_DIR}/NPDetConfig.cmake
-  ${CMAKE_CURRENT_BINARY_DIR}/NPDetConfigVersion.cmake
-  DESTINATION lib/NPDet
-)
-
-
+    ${CMAKE_CURRENT_BINARY_DIR}/NPDetConfig.cmake
+    ${CMAKE_CURRENT_BINARY_DIR}/NPDetConfigVersion.cmake
+    DESTINATION lib/NPDet
+    )
