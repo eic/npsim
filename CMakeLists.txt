@@ -1,5 +1,5 @@
-cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
-project(NPDet CXX)
+cmake_minimum_required(VERSION 3.2 FATAL_ERROR)
+project(NPDet VERSION 0.1.0 LANGUAGES CXX)
 
 # Add library source directory name that appear in ./src
 set(NPDet_LIB_NAMES
@@ -17,12 +17,6 @@ set(NPDet_CONCEPT_NAMES
     SiEIC
     SoLID
     )
-
-# The version number.
-set(NPDet_MAJOR_VERSION 0)
-set(NPDet_MINOR_VERSION 1)
-set(NPDet_PATCH_VERSION 0)
-set(NPDet_VERSION "${NPDet_MAJOR_VERSION}.${NPDet_MINOR_VERSION}.${NPDet_PATCH_VERSION}")
 
 # ---------------------------------------------------------------------------
 # set default install prefix and build type
@@ -71,3 +65,29 @@ install(FILES ${NPDet_EXAMPLES}
 # Add the config tool/script directory
 add_subdirectory(src/config)
 
+#----------------------------------------------------------------------------
+# Install and export targets
+install(EXPORT NPDetTargets
+    FILE NPDetTargets.cmake
+    NAMESPACE NPDet::
+    DESTINATION lib/NPDet
+    )
+
+include(CMakePackageConfigHelpers)
+
+CONFIGURE_PACKAGE_CONFIG_FILE(
+    cmake/NPDetConfig.cmake.in  
+    ${CMAKE_CURRENT_BINARY_DIR}/NPDetConfig.cmake
+    INSTALL_DESTINATION lib/NPDet
+    )
+
+write_basic_package_version_file("NPDetConfigVersion.cmake"
+    VERSION ${NPDet_VERSION}
+    COMPATIBILITY SameMajorVersion
+    )
+
+install(FILES
+    ${CMAKE_CURRENT_BINARY_DIR}/NPDetConfig.cmake
+    ${CMAKE_CURRENT_BINARY_DIR}/NPDetConfigVersion.cmake
+    DESTINATION lib/NPDet
+    )
