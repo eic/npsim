@@ -75,10 +75,12 @@ install(EXPORT NPDetTargets
 
 include(CMakePackageConfigHelpers)
 
+set(TARGETS_INSTALL_PATH lib/NPDet/NPDetTargets.cmake)
 CONFIGURE_PACKAGE_CONFIG_FILE(
     cmake/NPDetConfig.cmake.in  
     ${CMAKE_CURRENT_BINARY_DIR}/NPDetConfig.cmake
     INSTALL_DESTINATION lib/NPDet
+    PATH_VARS TARGETS_INSTALL_PATH
     )
 
 write_basic_package_version_file("NPDetConfigVersion.cmake"
