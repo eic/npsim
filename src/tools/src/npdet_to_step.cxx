@@ -161,9 +161,8 @@ int main (int argc, char *argv[]) {
   detector.fromCompact(s.infile);
 
   TGeoToStep * mygeom= new TGeoToStep( &(detector.manager()) );
-  //mygeom->CreateGeometry();
-  detector.manager().Export("geometry.gdml");
-
+  mygeom->CreateGeometry();
+  //detector.manager().Export("geometry.gdml");
   std::cout << "saved as geometry.stp\n";
   return 0;
 } 
