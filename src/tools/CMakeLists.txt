@@ -7,24 +7,26 @@ include(GNUInstallDirs)
 
 find_package( DD4hep REQUIRED COMPONENTS DDCore DDG4 )
 
-find_package(ROOT REQUIRED COMPONENTS Geom GenVector MathCore )
+find_package(ROOT REQUIRED COMPONENTS Geom GenVector MathCore)
 include(${ROOT_USE_FILE})
 
-add_executable(npdet_fields src/npdet_fields.cxx)
+set(exe_name npdet_to_step)
 
-target_include_directories(npdet_fields PUBLIC
+add_executable(${exe_name} src/${exe_name}.cxx)
+
+target_include_directories(${exe_name} PUBLIC
     PRIVATE include
     )
 
-target_compile_features(npdet_fields
+target_compile_features(${exe_name}
     PUBLIC cxx_auto_type
     PUBLIC cxx_trailing_return_types
     PRIVATE cxx_variadic_templates
     )
 
-target_link_libraries(npdet_fields PUBLIC DDCore DDG4 ROOT::Core ROOT::Hist ROOT::GenVector ROOT::Gpad)
+  target_link_libraries(${exe_name} PUBLIC DDCore DDG4 ROOT::Core ROOT::Hist ROOT::GenVector ROOT::Gpad ROOT::GeoCad)
 
-install(TARGETS npdet_fields
+install(TARGETS ${exe_name}
     EXPORT NPDetTargets
     RUNTIME DESTINATION bin
     )
