@@ -64,6 +64,7 @@ install(FILES ${NPDet_EXAMPLES}
 #----------------------------------------------------------------------------
 # Add the config tool/script directory
 add_subdirectory(src/config)
+add_subdirectory(src/tools)
 
 #----------------------------------------------------------------------------
 # Install and export targets
