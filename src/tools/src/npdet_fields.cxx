@@ -37,7 +37,7 @@
 
 #include "Math/DisplacementVector3D.h"
 
-TGraph* build_1D_field_graph(dd4hep::Detector& detector, ROOT::Math::XYZVector start, ROOT::Math::XYZVector dir, double step);
+TGraph* build_1D_field_graph(dd4hep::Detector& detector, ROOT::Math::XYZVector start, ROOT::Math::XYZVector dir, double step, std::function<double(ROOT::Math::XYZVector)> B_comp);
 
 /** Cell size example.
  *
@@ -124,6 +124,12 @@ struct settings {
   double x0 = 0.0;
   double y0 = 0.0;
   double z0 = 0.0;
+  double x1 = 0.0;
+  double y1 = 0.0;
+  double z1 = 0.0;
+  double x2 = 0.0;
+  double y2 = 0.0;
+  double z2 = 0.0;
 };
 
 settings cmdline_settings(int argc, char* argv[]) {
@@ -141,6 +147,14 @@ settings cmdline_settings(int argc, char* argv[]) {
       number("x",s.x0 ).if_missing([]{ std::cout << "x missing!\n"; } ),
       number("y",s.y0 ).if_missing([]{ std::cout << "y missing!\n"; } ),
       number("z",s.z0 ).if_missing([]{ std::cout << "z missing!\n"; } )),
+    option("--end") & (
+      number("x1",s.x1 ).if_missing([]{ std::cout << "x1 missing!\n"; } ),
+      number("y1",s.y1 ).if_missing([]{ std::cout << "y1 missing!\n"; } ),
+      number("z1",s.z1 ).if_missing([]{ std::cout << "z1 missing!\n"; } )),
+    option("--direction") & (
+      number("x2",s.x2 ).if_missing([]{ std::cout << "x2 missing!\n"; } ),
+      number("y2",s.y2 ).if_missing([]{ std::cout << "y2 missing!\n"; } ),
+      number("z2",s.z2 ).if_missing([]{ std::cout << "z2 missing!\n"; } )),
     //required("--vs","--Vs")    & values("axes",s.axes ), % "axes"
     option("-l","--level") & integers("level",s.search_level) % "search level"
     );
@@ -180,11 +194,15 @@ settings cmdline_settings(int argc, char* argv[]) {
                                                              "    The best thing since sliced bread.");
     return s;
   }
+  using namespace dd4hep;
 
-  s.start_position.SetXYZ(s.x0,s.y0,s.z0);
+  s.direction.SetXYZ(s.x2*cm,s.y2*cm,s.z2*cm);
+  s.direction = s.direction.Unit();
+  s.start_position.SetXYZ(s.x0*cm,s.y0*cm,s.z0*cm);
   s.success = true;
   return s;
 }
+//______________________________________________________________________________
 
 
 int main (int argc, char *argv[]) {
@@ -193,11 +211,6 @@ int main (int argc, char *argv[]) {
   if( !s.success ) {
     return 1;
   }
-
-  std::cout << "input file : " << s.infile << "\n";
-  std::cout << "     start : " << s.start_position << "\n";
-  std::cout << " direction : " << s.direction << "\n";
-  std::cout << "      step : " << s.step_size << "\n";
 
   // ------------------------
   // TODO: CLI Checks 
@@ -220,16 +233,52 @@ int main (int argc, char *argv[]) {
   TMultiGraph* mg = new TMultiGraph();
   for(const auto& comp : s.field_comps){
     std::cout << comp << "\n";
-    auto gr = build_1D_field_graph(detector, s.start_position, s.start_position+100.0*s.step_size*s.direction, s.step_size);
+
+    auto gr = build_1D_field_graph(detector, 
+                                   s.start_position, 
+                                   s.start_position+100.0*s.step_size*s.direction, 
+                                   s.step_size,
+                                   [](ROOT::Math::XYZVector B){return B.z();});
+    gr->SetLineColor(2);
+    gr->SetLineWidth(2);
+    gr->SetFillColor(0);
+    gr->SetTitle("B_{z}");
     mg->Add(gr,"l");
-  //for(const auto& axis : s.axes){
-  //  std::cout << axis << "\n";
-  //}
+
+    gr = build_1D_field_graph(detector, 
+                                   s.start_position, 
+                                   s.start_position+100.0*s.step_size*s.direction, 
+                                   s.step_size,
+                                   [&](ROOT::Math::XYZVector B){return B.Dot(s.direction);});
+    gr->SetLineColor(1);
+    gr->SetLineWidth(2);
+    gr->SetFillColor(0);
+    gr->SetTitle("B_{parallel}");
+    mg->Add(gr,"l");
+
+    gr = build_1D_field_graph(detector, 
+                                   s.start_position, 
+                                   s.start_position+100.0*s.step_size*s.direction, 
+                                   s.step_size,
+                                   [&](ROOT::Math::XYZVector B){return (B - B.Unit()*(B.Dot(s.direction))).r();});
+    gr->SetLineColor(4);
+    gr->SetLineWidth(2);
+    gr->SetFillColor(0);
+    gr->SetTitle("B_{perp}");
+    mg->Add(gr,"l");
+
   }
 
   auto c = new TCanvas();
   mg->Draw("a");
   //mag_field( detector );
+  c->BuildLegend();
+
+  std::cout << "input file : " << s.infile << "\n";
+  std::cout << "     start : " << s.start_position << "\n";
+  std::cout << " direction : " << s.direction << "\n";
+  std::cout << "      step : " << s.step_size << "\n";
+
 
   theApp.Run();
   return 0;
@@ -239,7 +288,8 @@ int main (int argc, char *argv[]) {
 TGraph* build_1D_field_graph(dd4hep::Detector&     detector,
                              ROOT::Math::XYZVector start,
                              ROOT::Math::XYZVector end,
-                             double                step)
+                             double                step,
+                             std::function<double(ROOT::Math::XYZVector)> B_comp)
 {
   using namespace dd4hep;
   
@@ -252,7 +302,7 @@ TGraph* build_1D_field_graph(dd4hep::Detector&     detector,
   for(int i = 0; i< N_steps; i++) {
     ROOT::Math::XYZVector pos = start + double(i)*step*dir;
     ROOT::Math::XYZVector field = detector.field().magneticField(pos);
-    gr->SetPoint(i,pos.r(),field.z()/tesla);
+    gr->SetPoint(i,pos.r(),B_comp(field)/tesla);
   }
 
   return gr;
