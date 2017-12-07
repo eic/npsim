@@ -54,7 +54,7 @@ struct settings {
   bool   rec    = false; 
   bool   utf16  = false;
   bool   search = false;
-  int    search_level = 0;
+  int    geo_level = 0;
   std::vector<std::string> field_comps;
   std::string fmt    = "json";
   std::vector<std::string> axes;
@@ -71,45 +71,8 @@ struct settings {
 
 settings cmdline_settings(int argc, char* argv[]) {
   settings s;
-
-  auto helpMode = "help mode:" % (
-    command("help")
-    );
- 
-  auto drawMode = "draw mode:" % (
-    command("draw"),
-    values("component").set(s.field_comps), 
-    option("--step") & number("step",s.step_size),
-    option("--start") & (
-      number("x",s.x0 ).if_missing([]{ std::cout << "x missing!\n"; } ),
-      number("y",s.y0 ).if_missing([]{ std::cout << "y missing!\n"; } ),
-      number("z",s.z0 ).if_missing([]{ std::cout << "z missing!\n"; } )),
-    option("--end") & (
-      number("x1",s.x1 ).if_missing([]{ std::cout << "x1 missing!\n"; } ),
-      number("y1",s.y1 ).if_missing([]{ std::cout << "y1 missing!\n"; } ),
-      number("z1",s.z1 ).if_missing([]{ std::cout << "z1 missing!\n"; } )),
-    option("--direction") & (
-      number("x2",s.x2 ).if_missing([]{ std::cout << "x2 missing!\n"; } ),
-      number("y2",s.y2 ).if_missing([]{ std::cout << "y2 missing!\n"; } ),
-      number("z2",s.z2 ).if_missing([]{ std::cout << "z2 missing!\n"; } )),
-    //required("--vs","--Vs")    & values("axes",s.axes ), % "axes"
-    option("-l","--level") & integers("level",s.search_level) % "search level"
-    );
-
-  auto printMode = "print mode:" % (
-    command("print") | command("dump"),
-    option("--all")         % "copy all",
-    option("--replace")     % "replace existing files",
-    option("-f", "--force") % "don't ask for confirmation"
-    );
-
-  auto firstOpt = "user interface options:" % (
-    joinable(
-      option("-v", "--verbose")     % "show detailed output",
-      option("-i", "--interactive") % "use interactive mode"
-      )
-    );
-  auto lastOpt = "mode-independent options:" % (
+  auto lastOpt = " options:" % (
+    option("-l","--level") & integer("level",s.geo_level),
     value("file",s.infile).if_missing([]{ std::cout << "You need to provide an input xml filename as the last argument!\n"; } )
     % "input xml file",
     //option("-r", "--recursive") % "descend into subdirectories",
@@ -117,14 +80,9 @@ settings cmdline_settings(int argc, char* argv[]) {
     );
 
   auto cli = (
-    //firstOpt,
-    //drawMode | printMode | command("list"),
     lastOpt
     );
-  //auto cli = (
-  //  command("help")
-  //  command("search")
-  //  );
+  
   if(!parse(argc, argv, cli)) {
     s.success = false;
     std::cout << make_man_page(cli, argv[0]).prepend_section("DESCRIPTION",
@@ -161,7 +119,7 @@ int main (int argc, char *argv[]) {
   detector.fromCompact(s.infile);
 
   TGeoToStep * mygeom= new TGeoToStep( &(detector.manager()) );
-  mygeom->CreateGeometry();
+  mygeom->CreateGeometry(s.geo_level);
   //detector.manager().Export("geometry.gdml");
   std::cout << "saved as geometry.stp\n";
   return 0;
