@@ -51,3 +51,18 @@ if(TARGET ROOT::GeoCad)
     RUNTIME DESTINATION bin )
 endif(TARGET ROOT::GeoCad)
 
+
+set(exe_name npdet_to_teve)
+add_executable(${exe_name} src/${exe_name}.cxx)
+target_include_directories(${exe_name} PUBLIC
+  PRIVATE include )
+target_compile_features(${exe_name}
+  PUBLIC cxx_auto_type
+  PUBLIC cxx_trailing_return_types
+  PRIVATE cxx_variadic_templates 
+  #PRIVATE cxx_std_17
+  )
+target_link_libraries(${exe_name} PUBLIC DDCore DDG4 ROOT::Core ROOT::Hist ROOT::GenVector ROOT::Eve ROOT::Gpad stdc++fs ROOT::Imt)
+install(TARGETS ${exe_name}
+  EXPORT NPDetTargets
+  RUNTIME DESTINATION bin )
