@@ -28,6 +28,7 @@ namespace fs = std::experimental::filesystem;
 //  gSystem->Load("libDDG4IO");
 //  gInterpreter->AddIncludePath("/opt/software/local/include");
 #include "DD4hep/Detector.h"
+#include "DD4hep/Printout.h"
 #include "DDG4/Geant4Data.h"
 #include "DDRec/CellIDPositionConverter.h"
 #include "DDRec/SurfaceManager.h"
@@ -72,6 +73,9 @@ struct settings {
   int  geo_level      = -1;
   bool list_all       = false;
   mode selected       = mode::part;
+  int  color          = 1;
+  bool color_set      = false; 
+  std::map<std::string,int> part_name_colors;
   std::map<std::string,int> part_name_levels;
 };
 //______________________________________________________________________________
@@ -127,31 +131,49 @@ void print_man_page(T cli, const char* argv0 ){
 settings cmdline_settings(int argc, char* argv[])
 {
   settings s;
-  auto listMode = "list mode:" % ( 
-    command("list").set(s.selected,mode::list) |
-    command("info").set(s.selected,mode::list)   % "list detectors and print info about geometry ",
-    option("-l","--level").set(s.level_set) & value("level",s.p_level) % "Maximum level navigated to for part",
-      value("name")([&](const std::string& p)
-                    {
-                      s.p_name = p;
-                      if(!s.level_set) { s.p_level = -1; }
-                      s.part_name_levels[p] = s.p_level;
-                      s.level_set = false;
-                    })                                                     % "Part/Node name (must be child of top node)"
+  auto listMode = "list mode:" % repeatable( 
+    command("list").set(s.selected,mode::list) % "list detectors and print info about geometry ",
+    repeatable(
+      option("-l","--level").set(s.level_set)
+      & value("level",s.p_level)
+      & value("name")([&](const std::string& p)
+                      {
+                        s.p_name = p;
+                        if(!s.level_set) { s.p_level = -1; }
+                        s.part_name_levels[p] = s.p_level;
+                        s.level_set = false;
+                      })                                                     % "Part/Node name (must be child of top node)"
+    )
     );
 
   auto partMode = "part mode:" % repeatable(
     command("part").set(s.selected,mode::part) % "Select only the first level nodes by name", 
+    (
     repeatable(
       option("-l","--level").set(s.level_set) & value("level",s.p_level) % "Maximum level navigated to for part",
+      value("name")([&](const std::string& p)
+                    {
+                      s.color++;
+                      s.p_name = p;
+                      if(!s.level_set) { s.p_level = -1; }
+                      s.part_name_levels[p] = s.p_level;
+                      s.part_name_colors[p] = s.color;
+                      s.level_set = false;
+                    })                                                     % "Part/Node name (must be child of top node)"
+      ) |  
+    repeatable(
+      option("-l","--level").set(s.level_set) & value("level",s.p_level) % "Maximum level navigated to for part",
+      required("-c","--color") & value("color",s.color),
       value("name")([&](const std::string& p)
                     {
                       s.p_name = p;
                       if(!s.level_set) { s.p_level = -1; }
                       s.part_name_levels[p] = s.p_level;
                       s.level_set = false;
+                      s.part_name_colors[p] = s.color;
                     })                                                     % "Part/Node name (must be child of top node)"
       )
+    )
     );
 
   auto lastOpt = " options:" % (
@@ -210,9 +232,9 @@ int main (int argc, char *argv[]) {
   if( !has_suffix(s.outfile,".root") ) {
     s.outfile += ".root";
   }
-  for(const auto& [part_name, part_level]  : s.part_name_levels ) {
-    std::cout << " SOME Part : " << part_name  << ", level = " << part_level <<"\n";
-  }
+  //for(const auto& [part_name, part_level]  : s.part_name_levels ) {
+  //  std::cout << " SOME Part : " << part_name  << ", level = " << part_level <<"\n";
+  //}
 
   // ---------------------------------------------
   // Run modes 
@@ -236,6 +258,8 @@ void run_list_mode(const settings& s)
 {
   // -------------------------
   // Get the DD4hep instance
+  dd4hep::setPrintLevel(dd4hep::WARNING);
+  gErrorIgnoreLevel = kWarning;// kPrint, kInfo, kWarning,
   dd4hep::Detector& detector = dd4hep::Detector::getInstance();
   detector.fromCompact(s.infile);
 
@@ -245,35 +269,38 @@ void run_list_mode(const settings& s)
     bool dir = gGeoManager->cd(p.c_str());
     if (!dir) {
       std::cerr << p << " not found!\n";
-      return;
+      continue;
     }
     TGeoNode *node = gGeoManager->GetCurrentNode();
     int level = gGeoManager->GetLevel();
     if( level > l ){
-      std::cout << p << " found at level " << level << " but above selected level of " << l << ")\n";
-      return;
+      std::cout << "\n" << p << " found at level " << level << " but above selected level of " << l << ")\n";
+      continue;
     }
     std::cout << "\n";
     std::cout << "Subnodes for \"" << p << "\" (level = "  << level << ")\n";
+    if(node->GetNdaughters() == 0) {
+      continue;
+    }
     TObjArrayIter node_array_iter(node->GetVolume()->GetNodes());
     TGeoNode* a_node = nullptr;
     while( (a_node = dynamic_cast<TGeoNode*>(node_array_iter.Next())) ) {
       std::cout << p << "/" << a_node->GetName() << "\n";
     }
 
-    TGeoNode* currentNode = nullptr;
+    //TGeoNode* currentNode = nullptr;
     //auto res = new TEveGeoNode(node);
-    TGeoIterator nextNode( node->GetVolume() );
-    nextNode.SetType(1);
-    while( (currentNode = nextNode()) ) {
-      auto nlevel = nextNode.GetLevel();
-      if( nlevel > l ) {
-       break;
-      }
-      //auto daughter = new TEveGeoNode( currentNode );
-      //res->AddElement(daughter);
-      currentNode->ls();
-    }
+    //TGeoIterator nextNode( node->GetVolume() );
+    //nextNode.SetType(1);
+    //while( (currentNode = nextNode()) ) {
+    //  auto nlevel = nextNode.GetLevel();
+    //  if( nlevel > l-level ) {
+    //   break;
+    //  }
+    //  //auto daughter = new TEveGeoNode( currentNode );
+    //  //res->AddElement(daughter);
+    //  currentNode->ls();
+    //}
   }
 }
 //______________________________________________________________________________
@@ -283,9 +310,11 @@ void run_part_mode(const settings& s)
   int         root_argc = 0;
   char *root_argv[1] = {"npdet_to_teve"};
   //argv[0] = "npdet_fields";
+  gErrorIgnoreLevel = kWarning;// kPrint, kInfo, kWarning,
   TApplication app("tapp", &root_argc, root_argv);
 
   // Get the DD4hep instance
+  dd4hep::setPrintLevel(dd4hep::WARNING);
   dd4hep::Detector& detector = dd4hep::Detector::getInstance();
   detector.fromCompact(s.infile);
 
@@ -319,12 +348,10 @@ void run_part_mode(const settings& s)
     TEveGeoNode* res = new TEveGeoNode(node);
     std::map<int,TEveGeoNode*>  eve_nodes;
     eve_nodes[0] = res;
-    
-    TGeoIterator nextNode( node->GetVolume() );
 
+    TGeoIterator nextNode( node->GetVolume() );
     int path_index = 0;
     TGeoNode* currentNode = nullptr;
-    std::string current_path = ipath+std::string("/")+std::string(node->GetVolume()->GetNode(0)->GetName());
 
     while( (currentNode = nextNode()) ) {
       nextNode.SetType(0);
@@ -333,21 +360,17 @@ void run_part_mode(const settings& s)
       if( nlevel > l ) {
         continue;
       }
-      //gGeoManager->cd(current_path.c_str());
-      //if( path_index < nlevel ) {
-      //  path_index = gGeoManager->PushPath();
-      //}
-      //if( path_index > nlevel ) {
-      //  while( path_index > nlevel ) {
-      //    path_index = gGeoManager->PopPath();
-      //  }
-      //}
       //if( path_index == nlevel) {
+        auto pcolor = s.part_name_colors.find(p);
+        if(pcolor != s.part_name_colors.end() ){
+          currentNode->GetVolume()->SetLineColor(pcolor->second);
+          currentNode->GetVolume()->SetFillColor(pcolor->second);
+        }
         TEveGeoNode* daughter = new TEveGeoNode( currentNode );
         eve_nodes[nlevel] = daughter;
         eve_nodes[nlevel-1]->AddElement(daughter);
       //}
-      std::cout << nlevel << "\n";
+      //std::cout << nlevel << "\n";
       //std::cout << gGeoManager->PushPath() << "\n";
 
       //res->AddElement(daughter);
