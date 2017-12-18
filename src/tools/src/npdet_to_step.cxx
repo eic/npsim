@@ -32,6 +32,7 @@ namespace fs = std::experimental::filesystem;
 #include "DDRec/SurfaceManager.h"
 #include "DDRec/Surface.h"
 #include "DD4hep/DD4hepUnits.h"
+#include "DD4hep/Printout.h"
 
 #include "TApplication.h"
 #include "TMultiGraph.h"
@@ -48,31 +49,33 @@ namespace fs = std::experimental::filesystem;
 
 #include "clipp.h"
 using namespace clipp;
-//______________________________________________________________________________
 
 enum class mode { none, help, list, part };
 
 struct settings {
-  bool help           = false;
-  bool success        = false;
-  std::string infile  = "";
-  std::string outfile = "detector_geometry";
-  std::string p_name  = "";
-  int  p_level        = -1;
-  std::map<std::string,int> part_name_levels;
-  bool level_set      = false; 
-  int  geo_level        = -1;
-  bool list_all = false;
-
-  mode selected = mode::part;
-
+  using string   = std::string;
+  using part_map = std::map<string,int>;
+  //bool            help              = false;
+  bool            success           = false;
+  string          infile            = "";
+  string          outfile           = "detector_geometry";
+  string          part_name         = "";
+  int             part_level        = -1;
+  mode            selected          = mode::list;
+  bool            level_set         = false;
+  int             global_level      = 1;
+  bool            list_all          = false;
+  part_map        part_name_levels ;
 };
+//______________________________________________________________________________
+
+void run_list_mode(const settings& s);
+void run_part_mode(const settings& s);
 //______________________________________________________________________________
 
 template<typename T>
 void print_usage(T cli, const char* argv0 ){
-  //used default formatting
-  std::cout << "Usage:\n" << usage_lines(cli, argv0)
+  std::cout << "Usage:\n"     << usage_lines(cli, argv0)
             << "\nOptions:\n" << documentation(cli) << '\n';
 }
 //______________________________________________________________________________
@@ -116,21 +119,34 @@ settings cmdline_settings(int argc, char* argv[])
 {
   settings s;
 
-  auto listMode = "list mode:" % ( 
-    command("list").set(s.selected,mode::list) |
-    command("info").set(s.selected,mode::list)   % "list detectors and print info about geometry ",
-    option("-v","--verbose")
+  //auto listMode = "list mode:" % ( 
+  //  command("list").set(s.selected,mode::list)  % "list detectors and print info about geometry ",
+  //  option("-v","--verbose")
+  //  );
+  auto listMode = "list mode:" % repeatable( 
+    command("list").set(s.selected,mode::list) % "list detectors and print info about geometry ",
+    repeatable(
+      option("-l","--level").set(s.level_set)
+      & value("level",s.part_level)
+      & value("name")([&](const std::string& p)
+                      {
+                        s.part_name = p;
+                        if(!s.level_set) { s.part_level = -1; }
+                        s.part_name_levels[p] = s.part_level;
+                        s.level_set = false;
+                      })                                                     % "Part/Node name (must be child of top node)"
+    )
     );
 
   auto partMode = "part mode:" % repeatable(
     command("part").set(s.selected,mode::part) % "Select only the first level nodes by name", 
     repeatable(
-      option("-l","--level").set(s.level_set) & value("level",s.p_level) % "Maximum level navigated to for part",
+      option("-l","--level").set(s.level_set) & value("level",s.part_level) % "Maximum level navigated to for part",
       value("name")([&](const std::string& p)
                     {
-                      s.p_name = p;
-                      if(!s.level_set) { s.p_level = -1; }
-                      s.part_name_levels[p] = s.p_level;
+                      s.part_name = p;
+                      if(!s.level_set) { s.part_level = -1; }
+                      s.part_name_levels[p] = s.part_level;
                       s.level_set = false;
                     })                                                     % "Part/Node name (must be child of top node)"
       )
@@ -138,19 +154,63 @@ settings cmdline_settings(int argc, char* argv[])
 
   auto lastOpt = " options:" % (
     option("-h", "--help").set(s.selected, mode::help)      % "show help",
-    option("-g","--global_level") & integer("level",s.geo_level),
+    option("-g","--global_level") & integer("level",s.global_level),
     option("-o","--output") & value("out",s.outfile),
     value("file",s.infile).if_missing([]{ std::cout << "You need to provide an input xml filename as the last argument!\n"; } )
     % "input xml file"
     );
 
+  auto helpMode = command("help").set(s.selected, mode::help);
+
+
+  std::string wrong;
   auto cli = (
-    command("help").set(s.selected, mode::help) | (partMode | listMode  , lastOpt)
+    helpMode | (partMode | listMode  , lastOpt)
     );
 
   assert( cli.flags_are_prefix_free() );
-
   auto res = parse(argc, argv, cli);
+
+  //auto doc_label = [](const parameter& p) {
+  //  if(!p.flags().empty()) return p.flags().front();
+  //  if(!p.label().empty()) return p.label();
+  //  return doc_string{"<?>"};
+  //};
+
+  //auto& os = std::cout;
+  //std::cout << "args -> parameter mapping:\n";
+  //for(const auto& m : res) {
+  //  os << "#" << m.index() << " " << m.arg() << " -> ";
+  //  auto p = m.param();
+  //  if(p) {
+  //    os << doc_label(*p) << " \t";
+  //    if(m.repeat() > 0) {
+  //      os << (m.bad_repeat() ? "[bad repeat " : "[repeat ")
+  //      <<  m.repeat() << "]";
+  //    }
+  //    if(m.blocked())  os << " [blocked]";
+  //    if(m.conflict()) os << " [conflict]";
+  //    os << '\n';
+  //  }
+  //  else {
+  //    os << " [unmapped]\n";
+  //  }
+  //}
+
+  //std::cout << "missing parameters:\n";
+  //for(const auto& m : res.missing()) {
+  //  auto p = m.param();
+  //  if(p) {
+  //    os << doc_label(*p) << " \t";
+  //    os << " [missing after " << m.after_index() << "]\n";
+  //  }
+  //}
+
+  //std::cout << "wrong " << wrong << std::endl;
+  //if(res.unmapped_args_count()) { std::cout << "a\n"; }
+  //if(res.any_bad_repeat()) { std::cout << "b\n"; }
+  //if(res.any_blocked())    { std::cout << "c\n"; }
+  //if(res.any_conflict())   { std::cout << "d\n"; }
 
   if( res.any_error() ) {
     s.success = false;
@@ -180,7 +240,7 @@ int main (int argc, char *argv[]) {
     return 0;
   }
 
-  // ------------------------
+  // --------------------------------------
   // CLI Checks 
   if( !fs::exists(fs::path(s.infile))  ) {
     std::cerr << "file, " << s.infile << ", does not exist\n";
@@ -193,9 +253,54 @@ int main (int argc, char *argv[]) {
   if( !has_suffix(s.outfile,".stp") ) {
     s.outfile += ".stp";
   }
-  for(const auto& [part_name, part_level]  : s.part_name_levels ) {
-    std::cout << " SOME Part : " << part_name  << ", level = " << part_level <<"\n";
+
+  // Make things quite
+  gErrorIgnoreLevel = kWarning;// kPrint, kInfo, kWarning,
+  dd4hep::setPrintLevel(dd4hep::WARNING);
+
+  // ---------------------------------------------
+  // Run modes 
+  //
+  switch(s.selected) {
+    case mode::list:
+      run_list_mode(s);
+      break;
+    case mode::part:
+      run_part_mode(s);
+      break;
+    default:
+      break;
   }
+
+  return 0;
+}
+//______________________________________________________________________________
+
+
+void print_daughter_nodes(TGeoNode* node, int print_depth) {
+  TGeoIterator nextNode( node->GetVolume() );
+  int path_index = 0;
+  TGeoNode* currentNode = nullptr;
+
+  nextNode.SetType(0);
+  while( (currentNode = nextNode()) ) {
+    // Not iterator level starts at 1 
+    auto nlevel = nextNode.GetLevel();
+    if( nlevel > print_depth ) {
+      continue;
+    }
+    for(int i=0;i<nlevel; i++){
+      std::cout << "  \t";
+    }
+    std::cout << "/" <<currentNode->GetName() << " \t(vol: " << currentNode->GetVolume()->GetName() << ")" << "\n";
+  }
+}
+//______________________________________________________________________________
+
+void run_list_mode(const settings& s)
+{
+  dd4hep::setPrintLevel(dd4hep::WARNING);
+  gErrorIgnoreLevel = kWarning;// kPrint, kInfo, kWarning,
 
   // -------------------------
   // Get the DD4hep instance
@@ -203,11 +308,40 @@ int main (int argc, char *argv[]) {
   dd4hep::Detector& detector = dd4hep::Detector::getInstance();
   detector.fromCompact(s.infile);
 
-  detector.manager().GetTopVolume()->GetNodes()->Print();
-  //detector.manager().GetTopVolume()->GetNode(0)->Dump();
-  if(s.selected ==  mode::list) {
-    return 0;
+  if(s.part_name_levels.size() == 0 ){
+    std::cout << gGeoManager->GetPath() << "\n";
+    print_daughter_nodes(gGeoManager->GetTopNode(), 1);
   }
+  for(const auto& [p,l] : s.part_name_levels){
+    bool dir = gGeoManager->cd(p.c_str());
+    if (!dir) {
+      std::cerr << p << " not found!\n";
+      continue;
+    }
+    std::cout << p << std::endl;
+    TGeoNode *node = gGeoManager->GetCurrentNode();
+    print_daughter_nodes(node, l);
+  }
+
+  //detector.manager().GetTopVolume()->GetNodes()->Print();
+  //detector.manager().GetTopVolume()->GetNode(0)->Dump();
+} 
+//______________________________________________________________________________
+
+void run_part_mode(const settings& s)
+{
+
+  dd4hep::setPrintLevel(dd4hep::WARNING);
+  gErrorIgnoreLevel = kWarning;// kPrint, kInfo, kWarning,
+
+  // -------------------------
+  // Get the DD4hep instance
+  // Load the compact XML file
+  dd4hep::Detector& detector = dd4hep::Detector::getInstance();
+  detector.fromCompact(s.infile);
+
+  //detector.manager().GetTopVolume()->GetNodes()->Print();
+  //detector.manager().GetTopVolume()->GetNode(0)->Dump();
   
   TGeoToStep * mygeom= new TGeoToStep( &(detector.manager()) );
   if( s.part_name_levels.size() > 1 ) {
@@ -218,11 +352,8 @@ int main (int argc, char *argv[]) {
       mygeom->CreatePartialGeometry( n.c_str(), l, s.outfile.c_str() );
     }
   } else {
-    mygeom->CreateGeometry(s.outfile.c_str(), s.geo_level);
+    mygeom->CreateGeometry(s.outfile.c_str(), s.global_level);
   }
   //detector.manager().Export("geometry.gdml");
-  return 0;
-} 
-//______________________________________________________________________________
-
+}
 
