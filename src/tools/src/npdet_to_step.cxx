@@ -108,10 +108,11 @@ void print_man_page(T cli, const char* argv0 ){
   //.alternatives_min_split_size(3)            //min. # of parameters for separate usage line
   //.merge_alternative_flags_with_common_prefix(false)  //-ab(cdxy|xy) instead of -abcdxy|-abxy
   //.merge_joinable_flags_with_common_prefix(true);    //-abc instead of -a -b -c
-
+  
   auto mp = make_man_page(cli, argv0, fmt);
   mp.prepend_section("DESCRIPTION", "Geometry tool for converting compact files to STEP (cad) files.");
   mp.append_section("EXAMPLES", " $ npdet_to_step list compact.xml");
+  std::cout << mp << "\n";
 }
 //______________________________________________________________________________
 
@@ -162,8 +163,6 @@ settings cmdline_settings(int argc, char* argv[])
 
   auto helpMode = command("help").set(s.selected, mode::help);
 
-
-  std::string wrong;
   auto cli = (
     helpMode | (partMode | listMode  , lastOpt)
     );
@@ -176,6 +175,7 @@ settings cmdline_settings(int argc, char* argv[])
   //  if(!p.label().empty()) return p.label();
   //  return doc_string{"<?>"};
   //};
+  //std::string wrong;
 
   //auto& os = std::cout;
   //std::cout << "args -> parameter mapping:\n";
@@ -212,6 +212,11 @@ settings cmdline_settings(int argc, char* argv[])
   //if(res.any_blocked())    { std::cout << "c\n"; }
   //if(res.any_conflict())   { std::cout << "d\n"; }
 
+  if(s.selected ==  mode::help) {
+    print_man_page<decltype(cli)>(cli,argv[0]);
+    return s;
+  }
+
   if( res.any_error() ) {
     s.success = false;
     std::cout << make_man_page(cli, argv[0]).prepend_section("error: ",
@@ -221,9 +226,6 @@ settings cmdline_settings(int argc, char* argv[])
 
   s.success = true;
 
-  if(s.selected ==  mode::help) {
-    print_man_page<decltype(cli)>(cli,argv[0]);
-  };
   return s;
 }
 //______________________________________________________________________________

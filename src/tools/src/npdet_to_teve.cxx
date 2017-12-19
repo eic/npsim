@@ -126,6 +126,7 @@ void print_man_page(T cli, const char* argv0 ){
   auto mp = make_man_page(cli, argv0, fmt);
   mp.prepend_section("DESCRIPTION", "Geometry tool for converting compact files to STEP (cad) files.");
   mp.append_section("EXAMPLES", " $ npdet_to_teve list compact.xml");
+  std::cout << mp << "\n";
 }
 //______________________________________________________________________________
 
