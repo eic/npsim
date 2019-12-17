@@ -13,13 +13,18 @@ include(${ROOT_USE_FILE})
 
 set(exe_name npdet_fields)
 add_executable(${exe_name} src/${exe_name}.cxx)
+target_link_libraries(${exe_name}
+  PUBLIC DD4hep::DDCore
+  )
+
 target_include_directories(${exe_name} PUBLIC
   PRIVATE include )
 target_compile_features(${exe_name}
   PUBLIC cxx_auto_type
   PUBLIC cxx_trailing_return_types
   PRIVATE cxx_variadic_templates )
-target_link_libraries(${exe_name} PUBLIC DDCore DDG4 ROOT::Core ROOT::Hist ROOT::GenVector ROOT::Gpad)
+target_link_libraries(${exe_name} 
+  PUBLIC DD4hep::DDCore DD4hep::DDG4 ROOT::Core ROOT::Hist ROOT::GenVector ROOT::Gpad)
 
 install(TARGETS ${exe_name}
   EXPORT NPDetTargets
@@ -45,7 +50,8 @@ if(TARGET ROOT::GeoCad)
     PRIVATE cxx_variadic_templates 
     #PRIVATE cxx_std_17
     )
-  target_link_libraries(${exe_name} PUBLIC DDCore DDG4 ROOT::Core ROOT::Hist ROOT::GenVector ROOT::Gpad ROOT::GeoCad stdc++fs)
+  target_link_libraries(${exe_name} 
+    PUBLIC DD4hep::DDCore DD4hep::DDG4 ROOT::Core ROOT::Hist ROOT::GenVector ROOT::Gpad ROOT::GeoCad stdc++fs)
   install(TARGETS ${exe_name}
     EXPORT NPDetTargets
     RUNTIME DESTINATION bin )
@@ -54,6 +60,11 @@ endif(TARGET ROOT::GeoCad)
 
 set(exe_name npdet_to_teve)
 add_executable(${exe_name} src/${exe_name}.cxx)
+#target_link_libraries(${exe_name}
+#  PUBLIC DD4hep::DDG4
+#  PUBLIC DD4hep::DDCore
+#  )
+
 target_include_directories(${exe_name} PUBLIC
   PRIVATE include )
 target_compile_features(${exe_name}
@@ -62,7 +73,8 @@ target_compile_features(${exe_name}
   PRIVATE cxx_variadic_templates 
   #PRIVATE cxx_std_17
   )
-target_link_libraries(${exe_name} PUBLIC DDCore DDG4 ROOT::Core ROOT::Hist ROOT::GenVector ROOT::Eve ROOT::Gpad stdc++fs ROOT::Imt)
+target_link_libraries(${exe_name} 
+  PUBLIC DD4hep::DDCore DD4hep::DDG4 ROOT::Core ROOT::Hist ROOT::GenVector ROOT::Eve ROOT::Gpad stdc++fs ROOT::Imt)
 install(TARGETS ${exe_name}
   EXPORT NPDetTargets
   RUNTIME DESTINATION bin )
