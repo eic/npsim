@@ -239,9 +239,9 @@ void run_http_server(const settings& s) {
   serv->SetCors();
 
   detector.manager().GetTopNode()->SetVisibility(kFALSE);
-  gGeoManager->SetVisLevel(5);
+  gGeoManager->SetVisLevel(6);
 
-  serv->Register("/",detector.manager().GetTopNode()->GetVolume());
+  serv->Register("/",detector.manager().GetTopNode());
   serv->Register("/geoManager",gGeoManager);
 
   // Loop until an interrupt (ctrl-c) is issued
