@@ -77,10 +77,6 @@ target_compile_features(${exe_name}
   )
 target_link_libraries(${exe_name} 
   PUBLIC DD4hep::DDCore DD4hep::DDG4 ROOT::Core ROOT::Hist ROOT::GenVector ROOT::Eve ROOT::Gpad stdc++fs ROOT::Imt)
-install(TARGETS ${exe_name}
-  EXPORT NPDetTargets
-  RUNTIME DESTINATION bin )
-
 
 set(exe_name dd_web_display)
 add_executable(${exe_name} src/${exe_name}.cxx)
