@@ -32,6 +32,7 @@ endif()
 # ---------------------------------------------------------------------------
 # load additional OS dependent settings
 include(cmake/os.cmake)
+include(cmake/root.cmake)
 
 #----------------------------------------------------------------------------
 # Find Libraries
