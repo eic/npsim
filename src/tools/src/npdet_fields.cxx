@@ -87,33 +87,33 @@ settings cmdline_settings(int argc, char* argv[]) {
         option("--direction") &
             (number("x2", s.x2).if_missing([] { std::cout << "x2 missing!\n"; }),
              number("y2", s.y2).if_missing([] { std::cout << "y2 missing!\n"; }),
-             number("z2", s.z2).if_missing([] { std::cout << "z2 missing!\n"; }))),
+             number("z2", s.z2).if_missing([] { std::cout << "z2 missing!\n"; })))
        // required("--vs","--Vs")    & values("axes",s.axes ), % "axes"
-       option("-l", "--level") & integers("level", s.search_level) % "search level");
+       //option("-l", "--level") & integers("level", s.search_level) % "search level"
+       );
 
-  auto printMode = "print mode:" % (
-    command("print") | command("dump"),
-    option("--all")         % "copy all",
-    option("--replace")     % "replace existing files",
-    option("-f", "--force") % "don't ask for confirmation"
+  auto printMode = "integral mode (not implemented):" % (
+    command("integrate") 
+    //option("--all")         % "copy all"
+    //option("--replace")     % "replace existing files",
+    //option("-f", "--force") % "don't ask for confirmation"
     );
 
   auto firstOpt = "user interface options:" % (
-    joinable(
-      option("-v", "--verbose").set(s.verbose)     % "show detailed output",
-      option("-i", "--interactive") % "use interactive mode"
-      )
-    );
-  auto lastOpt = "mode-independent options:" % (
-    value("file",s.infile).if_missing([]{ std::cout << "You need to provide an input xml filename as the last argument!\n"; } )
-    % "input xml file",
-    //option("-r", "--recursive") % "descend into subdirectories",
+    //joinable(
+    option("-v", "--verbose").set(s.verbose)     % "show detailed output",
     option("-h", "--help")      % "show help"
+    //option("-i", "--interactive") % "use interactive mode (not implemented)"
+     // )
     );
+  auto lastOpt = value("file", s.infile).if_missing([] {
+    std::cout << "You need to provide an input xml filename as the last argument!\n";
+  }) % "compact description should probly have a \"fields\" sect4ion with more than one magnetic "
+       "field defined.";
 
   auto cli = (
     firstOpt,
-    (drawMode | printMode | command("list")),
+    drawMode,// (| printMode | command("list")),
     lastOpt
     );
   //auto cli = (
@@ -122,8 +122,9 @@ settings cmdline_settings(int argc, char* argv[]) {
   //  );
   if(!parse(argc, argv, cli)) {
     s.success = false;
-    std::cout << make_man_page(cli, argv[0]).prepend_section("DESCRIPTION",
-                                                             "    The best thing since sliced bread.");
+    std::cout << make_man_page(cli, argv[0])
+    .prepend_section("DESCRIPTION", " Tool for quickly looking at magnetic fields.")
+    .append_section("EXAMPLES","   npdet_fields --start 0 0 -600 solid_sidis.xml\n");
     return s;
   }
 
