@@ -263,7 +263,7 @@ int main (int argc, char *argv[]) {
     gr->SetLineWidth(2);
     gr->SetFillColor(0);
     gr->SetTitle("B_{perp}");
-    mg->Add(gr,"l");
+    //mg->Add(gr,"l");
 
   }
 
