@@ -112,13 +112,14 @@ void EICInteractionVertexSmear::smear(Interaction* inter) const {
       }
     }
 
-    print("+++ Smearing primary vertex for interaction type %d (%d Vertices, %d particles) "
-          "by (%+.2e mm, %+.2e mm, %+.2e mm, %+.2e ns)",
-          m_mask, int(inter->vertices.size()), int(inter->particles.size()), dx, dy, dz, dt);
     // smearInteraction(this,inter,dx,dy,dz,dt);
     return;
+  } else {
+    //print("+++ Smearing primary vertex for interaction type %d (%d Vertices, %d particles) "
+    //      "by (%+.2e mm, %+.2e mm, %+.2e mm, %+.2e ns)",
+    //      m_mask, int(inter->vertices.size()), int(inter->particles.size()), dx, dy, dz, dt);
+    print("+++ No interaction of type %d present.", m_mask);
   }
-  print("+++ No interaction of type %d present.", m_mask);
 }
 
 /// Callback to generate primary particles
