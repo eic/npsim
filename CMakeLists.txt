@@ -4,6 +4,7 @@ project(NPDet VERSION 0.1.0 LANGUAGES CXX)
 # Add library source directory name that appear in ./src
 set(NPDet_LIB_NAMES
     GenericDetectors
+    plugins
     )
 
 # Add executable source directory name that appear in ./src
