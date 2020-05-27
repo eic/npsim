@@ -23,13 +23,15 @@
 #include "Math/BoostX.h"
 #include "Math/PxPyPzM4D.h"
 
+namespace npdet::sim {
+
 using namespace dd4hep::sim;
 
 /// Standard constructor
 EICInteractionVertexSmear::EICInteractionVertexSmear(Geant4Context* ctxt, const std::string& nam)
   : Geant4GeneratorAction(ctxt, nam)
 {
-  InstanceCount::increment(this);
+  dd4hep::InstanceCount::increment(this);
   declareProperty("Offset", m_offset);
   declareProperty("Sigma_ion",  m_sigma_Ion);
   declareProperty("Sigma_e",  m_sigma_Electron);
@@ -38,7 +40,7 @@ EICInteractionVertexSmear::EICInteractionVertexSmear(Geant4Context* ctxt, const 
 }
 
 /// Default destructor
-EICInteractionVertexSmear::~EICInteractionVertexSmear() { InstanceCount::decrement(this); }
+EICInteractionVertexSmear::~EICInteractionVertexSmear() { dd4hep::InstanceCount::decrement(this); }
 
 /// Action to smear one single interaction according to the properties
 void EICInteractionVertexSmear::smear(Interaction* inter) const {
@@ -136,6 +138,10 @@ void EICInteractionVertexSmear::operator()(G4Event*) {
   for(_I::iterator i=interactions.begin(); i != interactions.end(); ++i)
     smear(*i);
 }
+}
 
+namespace dd4hep::sim {
+using EICInteractionVertexSmear = npdet::sim::EICInteractionVertexSmear;
+}
 DECLARE_GEANT4ACTION(EICInteractionVertexSmear)
 
