@@ -1,28 +1,40 @@
 #ifndef DD4HEP_DDG4_EICInteractionVertexBoost_H
 #define DD4HEP_DDG4_EICInteractionVertexBoost_H
 
+/** \addtogroup GeneratorAction Generator Actions
+ * \brief  Here are some generator actions.
+ *
+ *  Generator A B C
+ *
+ * @{
+   \addtogroup VertexBoosting Vertex Boost
+ * \brief Boost the primary vertex (and all outgoing particles) of a single interaction.
+ *
+ * Generates the crossing angle.
+ *
+ * Here is an example of usage in python:
+ *
+ */
+
 // Framework include files
 #include "DDG4/Geant4GeneratorAction.h"
 
-/// Namespace for the AIDA detector description toolkit
-namespace dd4hep {
+namespace npdet {
 
-  /// Namespace for the Geant4 based simulation part of the AIDA detector description toolkit
   namespace sim {
 
+    using namespace dd4hep::sim;
     /// Action class to boost the primary vertex (and all outgoing particles) of a single interaction
     /**
      * The vertex boost is steered by the Lorentz transformation angle.
      * The interaction to be modified is identified by the interaction's unique mask.
      *
-     *  \author  M.Frank
-     *  \version 1.0
-     *  \ingroup DD4HEP_SIMULATION VertexBoost
+     *  \ingroup GeneratorAction VertexBoosting EIC
      */
     class EICInteractionVertexBoost: public Geant4GeneratorAction {
     public:
       /// Interaction definition
-      typedef Geant4PrimaryInteraction Interaction;
+      using Interaction = Geant4PrimaryInteraction ;
 
     protected:
       /// Property: The constant Lorentz transformation angle
@@ -49,4 +61,5 @@ namespace dd4hep {
   }    // End namespace sim
 }      // End namespace dd4hep
 
+//@}
 #endif /* DD4HEP_DDG4_EICInteractionVertexBoost_H  */

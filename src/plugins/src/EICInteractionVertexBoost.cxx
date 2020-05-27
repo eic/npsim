@@ -13,13 +13,16 @@
 #include "Math/BoostX.h"
 #include "Math/PxPyPzM4D.h"
 
+
+namespace npdet::sim {
+
 using namespace dd4hep::sim;
 
 /// Standard constructor
 EICInteractionVertexBoost::EICInteractionVertexBoost(Geant4Context* ctxt, const std::string& nam)
   : Geant4GeneratorAction(ctxt, nam)
 {
-  InstanceCount::increment(this);
+  dd4hep::InstanceCount::increment(this);
   //declareProperty("Angle", m_angle = 0);
   declareProperty("IonCrossingAngle", m_ionCrossingAngle = 0.0166667);
   declareProperty("ElectronCrossingAngle", m_eCrossingAngle = 0.00833333);
@@ -29,7 +32,7 @@ EICInteractionVertexBoost::EICInteractionVertexBoost(Geant4Context* ctxt, const 
 
 /// Default destructor
 EICInteractionVertexBoost::~EICInteractionVertexBoost() {
-  InstanceCount::decrement(this);
+  dd4hep::InstanceCount::decrement(this);
 }
 
 /// Action to boost one single interaction according to the properties
@@ -131,5 +134,10 @@ void EICInteractionVertexBoost::operator()(G4Event*) {
     boost(*i);
 }
 
-DECLARE_GEANT4ACTION(EICInteractionVertexBoost)
+} // namespace npdet::sim
 
+namespace dd4hep::sim {
+using EICInteractionVertexBoost = npdet::sim::EICInteractionVertexBoost;
+}
+
+DECLARE_GEANT4ACTION(EICInteractionVertexBoost)

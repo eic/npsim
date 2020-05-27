@@ -1,17 +1,7 @@
-//==========================================================================
-//  AIDA Detector description implementation 
-//--------------------------------------------------------------------------
-// Copyright (C) Organisation europeenne pour la Recherche nucleaire (CERN)
-// All rights reserved.
-//
-// For the licensing terms see $DD4hepINSTALL/LICENSE.
-// For the list of contributors see $DD4hepINSTALL/doc/CREDITS.
-//
-// Author     : M.Frank
-//
-//==========================================================================
+#ifndef DD4HEP_DDG4_EICInteractionVertexSmear_H
+#define DD4HEP_DDG4_EICInteractionVertexSmear_H
 
-/** \addtogroup Geant4GeneratorAction
+/** \addtogroup GeneratorAction
  * @{
    \addtogroup VertexSmearing Vertex Smearing
  * \brief Smear the primary vertex (and all outgoing particles) of a single interaction.
@@ -20,23 +10,16 @@
  *
  */
 
-#ifndef DD4HEP_DDG4_EICInteractionVertexSmear_H
-#define DD4HEP_DDG4_EICInteractionVertexSmear_H
-
 // Framework include files
 #include "DDG4/Geant4GeneratorAction.h"
 
 // ROOT include files
 #include "Math/Vector4D.h"
 
-/// Namespace for the AIDA detector description toolkit
-namespace dd4hep {
-
-  /// Namespace for the Geant4 based simulation part of the AIDA detector description toolkit
+namespace npdet {
   namespace sim {
 
-    /// Forward declarations
-    class Geant4PrimaryInteraction;
+    using namespace dd4hep::sim;
 
     /** Smear the beam to account for the IP beam divergence.
      *
@@ -45,11 +28,13 @@ namespace dd4hep {
      * the corresponding errors. The interaction to be modified is identified by the
      * interaction's unique mask.
      *
+     *  \ingroup GeneratorAction VertexSmearing EIC
+     *
      */
     class EICInteractionVertexSmear: public Geant4GeneratorAction {
     public:
       /// Interaction definition
-      typedef Geant4PrimaryInteraction Interaction;
+      using Interaction = Geant4PrimaryInteraction;
 
     protected:
       /// Property: The constant smearing offset
