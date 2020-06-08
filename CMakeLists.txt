@@ -14,8 +14,8 @@ set(NPDet_EXE_NAMES
 # Add concept detector names
 set(NPDet_CONCEPT_NAMES
     erhic
-    jleic
-    sieic
+    #jleic
+    #sieic
     solid
     )
 
