@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.2 FATAL_ERROR)
-project(NPDet VERSION 0.2.0 LANGUAGES CXX)
+project(NPDet VERSION 0.2.0
+  LANGUAGES CXX)
 
 # Add library source directory name that appear in ./src
 set(NPDet_LIB_NAMES
