@@ -6,6 +6,7 @@ project(NPDet VERSION 0.2.0
 set(NPDet_LIB_NAMES
     GenericDetectors
     plugins
+    dd4pod
     )
 
 # Add executable source directory name that appear in ./src
