@@ -17,7 +17,6 @@ dd4hep_add_plugin(NPDetPlugins
     )
 
 target_link_libraries(NPDetPlugins
-  PUBLIC NPDetDD4pod
   PUBLIC DDG4_PIDsdet
   PUBLIC DD4hep::DDCore
   )
