@@ -2,14 +2,13 @@ cmake_minimum_required(VERSION 3.3 FATAL_ERROR)
 
 include(GNUInstallDirs)
 
-find_package(podio)
-if(podio_FOUND)
+find_package(podio REQUIRED)
+#if(NOT podio_FOUND)
 find_package( DD4hep REQUIRED COMPONENTS DDCore DDG4 )
 find_package(ROOT REQUIRED COMPONENTS Geom GenVector MathCore)
 include(${ROOT_USE_FILE})
 
 PODIO_GENERATE_DATAMODEL(dd4pod dd4hep.yaml headers sources OUTPUT_FOLDER ${CMAKE_CURRENT_BINARY_DIR})
-
 
 add_library(DD4pod SHARED
   ${sources}
@@ -19,7 +18,7 @@ add_library(DD4pod SHARED
 
 target_link_libraries(DD4pod
   PUBLIC podio::podio
-  PUBLIC DDG4_PIDsdet
+  PUBLIC podio::podioRootIO
   PUBLIC DD4hep::DDCore
   )
 target_include_directories(DD4pod
@@ -40,12 +39,40 @@ PODIO_GENERATE_DICTIONARY(DD4pod ${headers}
 set_target_properties(DD4pod-dictgen PROPERTIES EXCLUDE_FROM_ALL TRUE)
 target_sources(DD4pod PRIVATE DD4pod.cxx)
 
+dd4hep_add_plugin(DD4podIO
+    SOURCES 
+    plugins/Geant4Output2Podio.cxx
+    NOINSTALL
+    )
+target_link_libraries(DD4podIO
+  PUBLIC DD4pod
+  PUBLIC podio::podio
+  PUBLIC podio::podioRootIO
+  PUBLIC DD4hep::DDCore
+  )
+target_include_directories(DD4pod
+  PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/plugins>
+  )
+target_compile_features(NPDetPlugins
+    PUBLIC cxx_auto_type
+    PUBLIC cxx_trailing_return_types
+    PRIVATE cxx_variadic_templates
+    PRIVATE cxx_std_17
+    )
+
+
 install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/dd4pod
   DESTINATION include
   FILES_MATCHING PATTERN *.h
   )
+install(FILES
+  "${CMAKE_CURRENT_BINARY_DIR}/DD4podDict.rootmap"
+  "${CMAKE_CURRENT_BINARY_DIR}/libDD4pod_rdict.pcm"
+  DESTINATION lib)
 
-install(TARGETS DD4pod
+
+
+install(TARGETS DD4pod DD4podIO
   EXPORT NPDetTargets
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib
@@ -53,6 +80,5 @@ install(TARGETS DD4pod
   INCLUDES DESTINATION include
   )
 
-
-endif()
+#endif()
 
