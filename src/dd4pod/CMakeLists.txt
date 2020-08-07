@@ -2,13 +2,17 @@ cmake_minimum_required(VERSION 3.3 FATAL_ERROR)
 
 include(GNUInstallDirs)
 
-find_package(podio REQUIRED)
+find_package(podio REQUIRED HINTS $ENV{PODIO})
 #if(NOT podio_FOUND)
 find_package( DD4hep REQUIRED COMPONENTS DDCore DDG4 )
 find_package(ROOT REQUIRED COMPONENTS Geom GenVector MathCore)
 include(${ROOT_USE_FILE})
 
+if(BUILD_DATA_MODEL) 
 PODIO_GENERATE_DATAMODEL(dd4pod dd4hep.yaml headers sources OUTPUT_FOLDER ${CMAKE_CURRENT_BINARY_DIR})
+else()
+  file(GLOB SRC_FILES ${CURRENT_CMAKE_SOURCE_DIR}/*.cpp)
+endif()
 
 add_library(DD4pod SHARED
   ${sources}
