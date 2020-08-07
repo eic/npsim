@@ -2,12 +2,6 @@ cmake_minimum_required(VERSION 3.2 FATAL_ERROR)
 project(NPDet VERSION 0.2.0
   LANGUAGES CXX)
 
-set(CMAKE_MODULE_PATH
-  ${CMAKE_MODULE_PATH}
-  $ENV{PODIO}/libc/make
-  ${PROJECT_SOURCE_DIR}/cmake
-  ${PROJECT_SOURCE_DIR}/cmake/modules)
-
 
 # Add library source directory name that appear in ./src
 set(NPDet_LIB_NAMES

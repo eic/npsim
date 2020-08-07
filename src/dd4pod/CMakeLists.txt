@@ -49,6 +49,8 @@ target_link_libraries(DD4podIO
   PUBLIC podio::podio
   PUBLIC podio::podioRootIO
   PUBLIC DD4hep::DDCore
+  PUBLIC DD4hep::DDG4
+  PUBLIC ROOT::Core ROOT::Tree
   )
 target_include_directories(DD4pod
   PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/plugins>
