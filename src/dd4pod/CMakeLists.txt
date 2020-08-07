@@ -2,16 +2,21 @@ cmake_minimum_required(VERSION 3.3 FATAL_ERROR)
 
 include(GNUInstallDirs)
 
-find_package(podio REQUIRED HINTS $ENV{PODIO})
+find_package(podio REQUIRED )
 #if(NOT podio_FOUND)
 find_package( DD4hep REQUIRED COMPONENTS DDCore DDG4 )
 find_package(ROOT REQUIRED COMPONENTS Geom GenVector MathCore)
 include(${ROOT_USE_FILE})
 
 if(BUILD_DATA_MODEL) 
+  set(dd4pod_include_dir ${CMAKE_CURRENT_BINARY_DIR})
+  set(dd4pod_source_dir ${CMAKE_CURRENT_BINARY_DIR}/src)
 PODIO_GENERATE_DATAMODEL(dd4pod dd4hep.yaml headers sources OUTPUT_FOLDER ${CMAKE_CURRENT_BINARY_DIR})
 else()
-  file(GLOB SRC_FILES ${CURRENT_CMAKE_SOURCE_DIR}/*.cpp)
+  set(dd4pod_include_dir ${CMAKE_CURRENT_SOURCE_DIR}/include)
+  set(dd4pod_source_dir ${CMAKE_CURRENT_SOURCE_DIR}/src)
+  file(GLOB sources ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cc)
+  file(GLOB headers ${CMAKE_CURRENT_SOURCE_DIR}/include/dd4pod/*.h)
 endif()
 
 add_library(DD4pod SHARED
@@ -26,7 +31,7 @@ target_link_libraries(DD4pod
   PUBLIC DD4hep::DDCore
   )
 target_include_directories(DD4pod
-  PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
+  PUBLIC $<BUILD_INTERFACE:${dd4pod_include_dir}>
   $<INSTALL_INTERFACE:include>)
 
 target_compile_features(DD4pod
@@ -36,12 +41,13 @@ target_compile_features(DD4pod
   PRIVATE cxx_std_17)
 
 
+message("headers: ${headers}")
 PODIO_GENERATE_DICTIONARY(DD4pod ${headers} 
-  SELECTION ${CMAKE_CURRENT_BINARY_DIR}/src/selection.xml
+  SELECTION ${dd4pod_source_dir}/selection.xml
   OPTIONS --library ${CMAKE_SHARED_LIBRARY_PREFIX}DD4pod${CMAKE_SHARED_LIBRARY_SUFFIX}
   )
 set_target_properties(DD4pod-dictgen PROPERTIES EXCLUDE_FROM_ALL TRUE)
-target_sources(DD4pod PRIVATE DD4pod.cxx)
+target_sources(DD4pod PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/DD4pod.cxx)
 
 dd4hep_add_plugin(DD4podIO
     SOURCES 

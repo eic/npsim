@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.2 FATAL_ERROR)
 project(NPDet VERSION 0.2.0
   LANGUAGES CXX)
 
+option(BUILD_DATA_MODEL "build the dd4pod datamodel" OFF)
 
 # Add library source directory name that appear in ./src
 set(NPDet_LIB_NAMES
