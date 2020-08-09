@@ -35,6 +35,7 @@ BraceWrapping:
   SplitEmptyNamespace: true
 ConstructorInitializerAllOnOneLineOrOnePerLine: true
 Cpp11BracedListStyle: true
+ColumnLimit: 120
 Standard: Cpp11
 #SpaceBeforeParens: ControlStatements
 SpaceAfterControlStatementKeyword: true
