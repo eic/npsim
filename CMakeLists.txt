@@ -2,10 +2,13 @@ cmake_minimum_required(VERSION 3.2 FATAL_ERROR)
 project(NPDet VERSION 0.2.0
   LANGUAGES CXX)
 
+option(BUILD_DATA_MODEL "build the dd4pod datamodel" ON)
+
 # Add library source directory name that appear in ./src
 set(NPDet_LIB_NAMES
     GenericDetectors
     plugins
+    dd4pod
     )
 
 # Add executable source directory name that appear in ./src
@@ -37,8 +40,13 @@ endif()
 include(cmake/os.cmake)
 include(cmake/root.cmake)
 
+set(PODIO "$ENV{PODIO}/lib/podio/cmake")
+set(CMAKE_MODULE_PATH CMAKE_MODULE_PATH PODIO)
+
 #----------------------------------------------------------------------------
 # Find Libraries
+find_package(podio 0.11.0 REQUIRED )
+include_directories(${podio_INCLUDE_DIR})
 find_package( DD4hep REQUIRED COMPONENTS DDCore DDG4 )
 
 #-----------------------------------------

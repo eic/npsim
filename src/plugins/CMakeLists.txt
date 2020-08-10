@@ -17,8 +17,8 @@ dd4hep_add_plugin(NPDetPlugins
     )
 
 target_link_libraries(NPDetPlugins
-  PUBLIC DDG4_PIDsdet
   PUBLIC DD4hep::DDCore
+  PUBLIC DD4hep::DDG4
   )
 target_include_directories(NPDetPlugins
   PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
