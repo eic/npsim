@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.2 FATAL_ERROR)
-project(NPDet VERSION 0.2.0
+project(NPDet VERSION 0.3.0
   LANGUAGES CXX)
 
 option(BUILD_DATA_MODEL "build the dd4pod datamodel" ON)
