@@ -31,6 +31,7 @@ target_link_libraries(DD4pod
   PUBLIC podio::podio
   PUBLIC podio::podioRootIO
   PUBLIC DD4hep::DDCore
+  PUBLIC DD4hep::DDG4
   )
 target_include_directories(DD4pod
   PUBLIC  ${podio_INCLUDE_DIR}
@@ -59,11 +60,12 @@ dd4hep_add_plugin(DD4podIO
     )
 target_link_libraries(DD4podIO
   PUBLIC DD4pod
-  PUBLIC podio::podio
-  PUBLIC podio::podioRootIO
-  PUBLIC DD4hep::DDCore
-  PUBLIC DD4hep::DDG4
-  PUBLIC ROOT::Core ROOT::Tree ROOT::RIO
+  PUBLIC DDG4_PIDsdet
+  #PUBLIC podio::podio
+  #PUBLIC podio::podioRootIO
+  #PUBLIC DD4hep::DDCore
+  #PUBLIC DD4hep::DDG4
+  #PUBLIC ROOT::Core ROOT::Tree ROOT::RIO
   )
 target_include_directories(DD4pod
   PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/plugins>
