@@ -94,10 +94,13 @@ configure_file(
     )
 install(FILES
   "${CMAKE_CURRENT_BINARY_DIR}/npsim"
-  DESTINATION bin
+  PERMISSIONS OWNER_EXECUTE GROUP_EXECUTE WORLD_EXECUTE OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ 
+  DESTINATION bin)
+
 install(FILES
   python/npsim/DDG4.py
   DESTINATION share/npdet/python
+  )
 
 
 
