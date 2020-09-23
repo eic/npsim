@@ -88,6 +88,19 @@ install(FILES
   DESTINATION lib)
 
 
+configure_file(
+    python/npsim.in
+    ${CMAKE_CURRENT_BINARY_DIR}/npsim
+    )
+install(FILES
+  "${CMAKE_CURRENT_BINARY_DIR}/npsim"
+  DESTINATION bin
+install(FILES
+  python/npsim/DDG4.py
+  DESTINATION share/npdet/python
+
+
+
 
 install(TARGETS DD4pod DD4podIO
   EXPORT NPDetTargets

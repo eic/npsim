@@ -1,0 +1,7 @@
+#!/bin/bash
+
+export PYTHONPATH=@INSTALL_PREFIX@/share/npdet/python:$PYTHONPATH
+
+ddsim "$@"
+
+
