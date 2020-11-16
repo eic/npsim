@@ -1,28 +1,19 @@
 cmake_minimum_required(VERSION 3.8 FATAL_ERROR)
 project(NPDet 
-  VERSION 0.3.2
+  VERSION 0.4.0
   LANGUAGES CXX)
 
 option(BUILD_DATA_MODEL "build the dd4pod datamodel" ON)
 
 # Add library source directory name that appear in ./src
 set(NPDet_LIB_NAMES
-    GenericDetectors
+    detectors
     plugins
     dd4pod
     )
 
 # Add executable source directory name that appear in ./src
 set(NPDet_EXE_NAMES
-    )
-
-# Add concept detector names
-set(NPDet_CONCEPT_NAMES
-    erhic
-    #jleic
-    #sieic
-    solid
-    topside
     )
 
 # ---------------------------------------------------------------------------
@@ -72,11 +63,6 @@ foreach(anExeName ${NPDet_EXE_NAMES})
     add_subdirectory("src/${anExeName}")
 endforeach(anExeName)
 
-# add the concept detector sub directories
-foreach(aConceptName ${NPDet_CONCEPT_NAMES})
-    add_subdirectory("src/ConceptDetectors/${aConceptName}")
-endforeach(aConceptName)
-
 #----------------------------------------------------------------------------
 # install examples
 set(NPDet_EXAMPLES 
@@ -89,8 +75,6 @@ install(FILES ${NPDet_EXAMPLES}
 # Add the config tool/script directory
 add_subdirectory(src/config)
 add_subdirectory(src/tools)
-
-
 
 #----------------------------------------------------------------------------
 # Install and export targets
