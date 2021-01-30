@@ -17,8 +17,8 @@
 #include <tuple>
 #include <algorithm>
 #include <iterator>
-#include <experimental/filesystem>
-namespace fs = std::experimental::filesystem;
+#include <filesystem>
+namespace fs = std::filesystem;
 
 // DD4hep
 // -----

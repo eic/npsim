@@ -1,20 +1,11 @@
 cmake_minimum_required(VERSION 3.8 FATAL_ERROR)
 project(NPDet 
-  VERSION 0.4.0
+  VERSION 0.5.0
   LANGUAGES CXX)
 
 option(BUILD_DATA_MODEL "build the dd4pod datamodel" ON)
 
-# Add library source directory name that appear in ./src
-set(NPDet_LIB_NAMES
-    detectors
-    plugins
-    dd4pod
-    )
-
-# Add executable source directory name that appear in ./src
-set(NPDet_EXE_NAMES
-    )
+set(USE_GEOCAD OFF CACHE BOOL "build the geocad library. Requires opencascade")
 
 # ---------------------------------------------------------------------------
 # set default install prefix and build type
@@ -35,11 +26,25 @@ include(cmake/root.cmake)
 set(PODIO "$ENV{PODIO}/lib/podio/cmake")
 set(CMAKE_MODULE_PATH CMAKE_MODULE_PATH PODIO)
 
+
 #----------------------------------------------------------------------------
 # Find Libraries
+#----------------------------------------------------------------------------
+# PODIO
 find_package(podio 0.11.0 REQUIRED )
 include_directories(${podio_INCLUDE_DIR})
+
+# DD4hep
 find_package( DD4hep REQUIRED COMPONENTS DDCore DDG4 )
+
+# Opencascade
+find_package(OpenCASCADE)
+if(OpenCASCADE_FOUND)
+  set(USE_GEOCAD ON)
+endif()
+
+# libfmt
+find_package(fmt REQUIRED)
 
 #-----------------------------------------
 # catch2 unit testing
@@ -54,27 +59,20 @@ FetchContent_MakeAvailable(Catch2)
 
 #-----------------------------------------
 # add the library sub directories
-foreach(aSharedLib ${NPDet_LIB_NAMES})
-    add_subdirectory("src/${aSharedLib}")
-endforeach(aSharedLib)
-
-# add the executable sub directories
-foreach(anExeName ${NPDet_EXE_NAMES})
-    add_subdirectory("src/${anExeName}")
-endforeach(anExeName)
+add_subdirectory(src/detectors)
+add_subdirectory(src/plugins)
+add_subdirectory(src/dd4pod)
+add_subdirectory(src/geocad)
+add_subdirectory(src/config)
+add_subdirectory(src/tools)
 
 #----------------------------------------------------------------------------
 # install examples
-set(NPDet_EXAMPLES 
-    )
-install(FILES ${NPDet_EXAMPLES}
-    DESTINATION "${CMAKE_INSTALL_PREFIX}/share/${PROJECT_NAME}/examples"
-    )
-
-#----------------------------------------------------------------------------
-# Add the config tool/script directory
-add_subdirectory(src/config)
-add_subdirectory(src/tools)
+#set(NPDet_EXAMPLES 
+#    )
+#install(FILES ${NPDet_EXAMPLES}
+#    DESTINATION "${CMAKE_INSTALL_PREFIX}/share/${PROJECT_NAME}/examples"
+#    )
 
 #----------------------------------------------------------------------------
 # Install and export targets

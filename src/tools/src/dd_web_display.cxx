@@ -24,7 +24,8 @@
 #include <chrono>
 #include <csignal>
 #include <cstring>
-#include <experimental/filesystem>
+#include <filesystem>
+namespace fs = std::filesystem;
 #include <functional>
 #include <iostream>
 #include <iterator>
@@ -47,7 +48,6 @@
 #include "spdlog/spdlog.h"
 #include "spdlog/sinks/basic_file_sink.h"
 
-namespace fs = std::experimental::filesystem;
 
 volatile sig_atomic_t sig_caught = 0;
 

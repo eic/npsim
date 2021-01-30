@@ -7,7 +7,7 @@ include(GNUInstallDirs)
 
 find_package(fmt REQUIRED)
 find_package(spdlog REQUIRED)
-find_package( DD4hep REQUIRED COMPONENTS DDCore DDG4 )
+find_package(DD4hep REQUIRED COMPONENTS DDCore DDG4 )
 
 find_package(ROOT REQUIRED COMPONENTS Geom GenVector MathCore)
 include(${ROOT_USE_FILE})
@@ -22,6 +22,7 @@ target_link_libraries(${exe_name}
 target_include_directories(${exe_name} PUBLIC
   PRIVATE include )
 target_compile_features(${exe_name}
+  PUBLIC cxx_std_17
   PUBLIC cxx_auto_type
   PUBLIC cxx_trailing_return_types
   PRIVATE cxx_variadic_templates )
@@ -36,28 +37,24 @@ message("COMPILE_LANGUAGE : ${COMPILE_LANGUAGE}"  )
 
 
 # npdet_to_step needs ROOT's GeoCad library
-if(TARGET ROOT::GeoCad)
-
-  # get <experimental/filesystem> (will be there in c++17)
-  add_library(stdc++fs UNKNOWN IMPORTED)
-  set_property(TARGET stdc++fs PROPERTY IMPORTED_LOCATION "/usr/lib/gcc/x86_64-linux-gnu/7/libstdc++fs.a")
+if(USE_GEOCAD)
 
   set(exe_name npdet_to_step)
   add_executable(${exe_name} src/${exe_name}.cxx)
-  target_include_directories(${exe_name} PUBLIC
+  target_include_directories(${exe_name} 
     PRIVATE include )
   target_compile_features(${exe_name}
     PUBLIC cxx_auto_type
     PUBLIC cxx_trailing_return_types
     PRIVATE cxx_variadic_templates 
-    #PRIVATE cxx_std_17
+    PRIVATE cxx_std_17
     )
   target_link_libraries(${exe_name} 
-    PUBLIC DD4hep::DDCore DD4hep::DDG4 ROOT::Core ROOT::Hist ROOT::GenVector ROOT::Gpad ROOT::GeoCad stdc++fs)
+    PUBLIC DD4hep::DDCore DD4hep::DDG4 ROOT::Core ROOT::Hist ROOT::GenVector ROOT::Gpad GeoCad)
   install(TARGETS ${exe_name}
     EXPORT NPDetTargets
     RUNTIME DESTINATION bin )
-endif(TARGET ROOT::GeoCad)
+endif()
 
 
 set(exe_name npdet_to_teve)
@@ -70,13 +67,14 @@ add_executable(${exe_name} src/${exe_name}.cxx)
 target_include_directories(${exe_name} PUBLIC
   PRIVATE include )
 target_compile_features(${exe_name}
+  PUBLIC cxx_std_17
   PUBLIC cxx_auto_type
   PUBLIC cxx_trailing_return_types
   PRIVATE cxx_variadic_templates 
   #PRIVATE cxx_std_17
   )
 target_link_libraries(${exe_name} 
-  PUBLIC DD4hep::DDCore DD4hep::DDG4 ROOT::Core ROOT::Hist ROOT::GenVector ROOT::Eve ROOT::Gpad stdc++fs ROOT::Imt)
+  PUBLIC DD4hep::DDCore DD4hep::DDG4 ROOT::Core ROOT::Hist ROOT::GenVector ROOT::Eve ROOT::Gpad ROOT::Imt)
 
 set(exe_name dd_web_display)
 add_executable(${exe_name} src/${exe_name}.cxx)
@@ -91,10 +89,10 @@ target_compile_features(${exe_name}
   PUBLIC cxx_auto_type
   PUBLIC cxx_trailing_return_types
   PRIVATE cxx_variadic_templates 
-  #PRIVATE cxx_std_17
+  PUBLIC cxx_std_17
   )
 target_link_libraries(${exe_name} 
-  PUBLIC DD4hep::DDCore DD4hep::DDG4 ROOT::Core ROOT::Hist ROOT::GenVector ROOT::Eve ROOT::Gpad ROOT::Imt ROOT::RHTTP ROOT::Net stdc++fs fmt::fmt spdlog::spdlog)
+  PUBLIC DD4hep::DDCore DD4hep::DDG4 ROOT::Core ROOT::Hist ROOT::GenVector ROOT::Eve ROOT::Gpad ROOT::Imt ROOT::RHTTP ROOT::Net fmt::fmt spdlog::spdlog)
   
 install(TARGETS ${exe_name}
   EXPORT NPDetTargets
