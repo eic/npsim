@@ -38,6 +38,7 @@ struct settings {
   Mode                     mode         = Mode::None;
   bool                     success      = false;
   std::string              infile  = "";
+  std::string              variable  = "";
   std::vector<std::string> constants  = {};
   std::string              format       = "stdout";
   std::string              search_str   = "";
@@ -61,10 +62,12 @@ settings cmdline_settings(int argc, char* argv[]) {
     );
 
   auto printMode =
-      "Print mode" % (command("print").set(s.mode,Mode::Print), //& values("variables",s.constants),
-                      option("--units").set(s.units) % "print units too (default: mm, rad )",
-                      option("-m", "--mat", "--material").set(s.material) % "print materials",
-                      option("--all").set(s.all) % "print all constants");
+      "Print mode" % (command("print").set(s.mode,Mode::Print) & value("variable",s.variable),
+                      option("--value-only").set(s.val_only) % "print only the variable value"
+                     );
+                      //option("--units").set(s.units) % "print units too (default: mm, rad )",
+                      //option("-m", "--mat", "--material").set(s.material) % "print materials",
+                      //option("--all").set(s.all) % "print all constants");
 
   auto listMode =
       "List mode" % (command("list").set(s.mode,Mode::List) & values("variables",s.constants),
@@ -151,7 +154,7 @@ settings cmdline_settings(int argc, char* argv[]) {
     fmt::print("Parse fail\n");
     std::cout << make_man_page(cli, argv[0])
                      .prepend_section("DESCRIPTION", " Tool for quickly looking at magnetic fields.")
-                     .append_section("EXAMPLES", "   npdet_fields --start 0 0 -600 solid_sidis.xml\n");
+                     .append_section("EXAMPLES", "   npdet_info search Tracker  compact.xml\n");
     return s;
   }
 
@@ -199,8 +202,12 @@ int main (int argc, char *argv[]) {
     }
   }
 
-  for(const auto& c: s.constants) {
-    std::cout << c << " = " << detector.constantAsDouble(c) << "\n";
+  //for(const auto& c: s.constants) {
+  //  std::cout << c << " = " << detector.constantAsDouble(c) << "\n";
+  //}
+  
+  if (s.mode == Mode::Print) {
+    fmt::print("{}\n",detector.constantAsDouble(s.variable));
   }
 
   //auto constants = detector.constants();
