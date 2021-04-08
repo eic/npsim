@@ -19,7 +19,7 @@ target_link_libraries(${exe_name}
   PUBLIC DD4hep::DDCore
   )
 
-target_include_directories(${exe_name} PUBLIC
+target_include_directories(${exe_name} 
   PRIVATE include )
 target_compile_features(${exe_name}
   PUBLIC cxx_std_17
@@ -64,7 +64,7 @@ add_executable(${exe_name} src/${exe_name}.cxx)
 #  PUBLIC DD4hep::DDCore
 #  )
 
-target_include_directories(${exe_name} PUBLIC
+target_include_directories(${exe_name}
   PRIVATE include )
 target_compile_features(${exe_name}
   PUBLIC cxx_std_17
@@ -83,7 +83,7 @@ add_executable(${exe_name} src/${exe_name}.cxx)
 #  PUBLIC DD4hep::DDCore
 #  )
 
-target_include_directories(${exe_name} PUBLIC
+target_include_directories(${exe_name}
   PRIVATE include )
 target_compile_features(${exe_name}
   PUBLIC cxx_auto_type
@@ -103,7 +103,7 @@ install(TARGETS ${exe_name}
 set(exe_name npdet_info)
 add_executable(${exe_name} src/${exe_name}.cxx)
 
-target_include_directories(${exe_name} PUBLIC
+target_include_directories(${exe_name}
   PRIVATE include )
 target_compile_features(${exe_name}
   PUBLIC cxx_auto_type
