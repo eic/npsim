@@ -32,7 +32,7 @@ using namespace clipp;
 using namespace ROOT::Math;
 using namespace dd4hep;
 
-enum class Mode { Print, List, Search, None };
+enum class Mode { Print, List, Search, Dump, None };
 
 struct settings {
   Mode                     mode         = Mode::None;
@@ -82,6 +82,9 @@ settings cmdline_settings(int argc, char* argv[]) {
                        //option("-m", "--mat", "--material").set(s.material) % "search materials"
                        );
 
+  auto dumpMode =
+      "Dump mode" % (command("dump").set(s.mode,Mode::Dump));
+
   auto firstOpt = "user interface options:" % (option("-v", "--verbose").set(s.verbose) % "show detailed output",
                                                option("--header").set(s.header) % "print detector header information",
                                                option("-h", "--help").set(s.help) % "show help");
@@ -96,7 +99,7 @@ settings cmdline_settings(int argc, char* argv[]) {
   std::vector<std::string> wrong; 
   auto cli = (
     firstOpt,
-    printMode | listMode | searchMode,// (| printMode | command("list")),
+    printMode | listMode | searchMode | dumpMode,// (| printMode | command("list")),
     lastOpt
     );
   assert(cli.flags_are_prefix_free());
@@ -209,10 +212,21 @@ int main (int argc, char *argv[]) {
     }
   }
 
+  if (s.mode == Mode::Dump) {
+    auto constants = detector.constants();
+    for (const auto& c : constants) {
+      fmt::print("{:<30}", c.first);
+      fmt::print(" = {:>12.3f}", double(detector.constant<double>(c.first)));
+      fmt::print(" = {}", detector.constantAsString(c.first));
+      // std::cout << " = " << detector.constant<double>(c.first);
+      fmt::print("\n");
+    }
+  }
+
   //for(const auto& c: s.constants) {
   //  std::cout << c << " = " << detector.constantAsDouble(c) << "\n";
   //}
-  
+
   if (s.mode == Mode::Print) {
     fmt::print("{}\n",detector.constantAsDouble(s.variable));
   }
