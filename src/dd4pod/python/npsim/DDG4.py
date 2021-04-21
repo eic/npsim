@@ -111,13 +111,12 @@ def importConstants(description, namespace=None, debug=False):
 
     for k, v in list(todo.items()):
       if not hasattr(ns, k):
-        val = evaluator.evaluate(v)
-        status = evaluator.status()
-        if status == 0:
-          evaluator.setVariable(k, val)
-          setattr(ns, k, val)
+        val = evaluator.evaluate(str(v))
+        if val.first == 0:
+          evaluator.setVariable(str(k), val.second)
+          setattr(ns, k, val.second)
           if debug:
-            logger.info('Imported global value: "' + k + '" = "' + str(val) + '" into namespace' + ns.__name__)
+            logger.info('Imported global value: "' + k + '" = "' + str(val.second) + '" into namespace' + ns.__name__)
           del todo[k]
           num = num + 1
   if cnt < 100:
@@ -561,6 +560,11 @@ class Geant4:
     return self
 
   def printDetectors(self):
+    """
+    Scan the list of detectors and print detector name and sensitive type
+
+    \author  M.Frank
+    """
     logger.info('+++  List of sensitive detectors:')
     for i in self.description.detectors():
       o = DetElement(i.second.ptr())  # noqa: F405
@@ -572,7 +576,36 @@ class Geant4:
           sdtyp = self.sensitive_types[typ]
         logger.info('+++  %-32s type:%-12s  --> Sensitive type: %s', o.name(), typ, sdtyp)
 
+  def setupDetectors(self):
+    """
+    Scan the list of detectors and assign the proper sensitive actions
+
+    \author  M.Frank
+    """
+    seq = None
+    actions = []
+    logger.info('+++  Setting up sensitive detectors:')
+    for i in self.description.detectors():
+      o = DetElement(i.second.ptr())  # noqa: F405
+      sd = self.description.sensitiveDetector(str(o.name()))
+      if sd.isValid():
+        typ = sd.type()
+        sdtyp = 'Unknown'
+        if typ in self.sensitive_types:
+          sdtyp = self.sensitive_types[typ]
+          seq, act = self.setupDetector(o.name(), sdtyp, collections=None)
+          logger.info('+++  %-32s type:%-12s  --> Sensitive type: %s', o.name(), typ, sdtyp)
+          actions.append(act)
+          continue
+        logger.info('+++  %-32s --> UNKNOWN Sensitive type: %s', o.name(), typ)
+    return (seq, actions)
+
   def setupDetector(self, name, action, collections=None):
+    """
+    Setup single subdetector and assign the proper sensitive action
+
+    \author  M.Frank
+    """
     # fg: allow the action to be a tuple with parameter dictionary
     sensitive_type = ""
     parameterDict = {}
@@ -625,6 +658,11 @@ class Geant4:
     return (seq, acts[0])
 
   def setupCalorimeter(self, name, type=None, collections=None):
+    """
+    Setup subdetector of type 'calorimeter' and assign the proper sensitive action
+
+    \author  M.Frank
+    """
     self.description.sensitiveDetector(str(name))
     # sd.setType('calorimeter')
     if type is None:
@@ -632,6 +670,11 @@ class Geant4:
     return self.setupDetector(name, type, collections)
 
   def setupTracker(self, name, type=None, collections=None):
+    """
+    Setup subdetector of type 'tracker' and assign the proper sensitive action
+
+    \author  M.Frank
+    """
     self.description.sensitiveDetector(str(name))
     # sd.setType('tracker')
     if type is None:
@@ -688,9 +731,9 @@ class Geant4:
     phys.adopt(opt)
     return opt
 
-  def setupGun(self, name, particle, energy, isotrop=True,
+  def setupGun(self, name, particle, energy, typ="Geant4ParticleGun", isotrop=True,
                multiplicity=1, position=(0.0, 0.0, 0.0), register=True, **args):
-    gun = GeneratorAction(self.kernel(), "Geant4ParticleGun/" + name, True)
+    gun = GeneratorAction(self.kernel(), typ + "/" + name, True)
     for i in args.items():
       setattr(gun, i[0], i[1])
     gun.energy = energy
@@ -709,6 +752,7 @@ class Geant4:
 
     \author  M.Frank
     """
+    #evt_root = EventAction(self.kernel(), 'Geant4Output2ROOT/' + name, True)
     evt_root = EventAction(self.kernel(), 'Geant4Output2Podio/' + name, True)
     evt_root.HandleMCTruth = mc_truth
     evt_root.Control = True
