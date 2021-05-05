@@ -5,7 +5,7 @@ project(NPDet
 
 option(BUILD_DATA_MODEL "build the dd4pod datamodel" ON)
 
-set(USE_GEOCAD OFF CACHE BOOL "build the geocad library. Requires opencascade")
+set(USE_GEOCAD ON CACHE BOOL "build the geocad library. Requires opencascade")
 
 # ---------------------------------------------------------------------------
 # set default install prefix and build type

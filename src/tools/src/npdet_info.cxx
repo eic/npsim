@@ -116,42 +116,42 @@ settings cmdline_settings(int argc, char* argv[]) {
     std::exit(0);
   }
 
-  // parse debugging:
-  auto doc_label = [](const parameter& p) {
-    if (!p.flags().empty())
-      return p.flags().front();
-    if (!p.label().empty())
-      return p.label();
-    return doc_string{"<?>"};
-  };
+  //// parse debugging:
+  //auto doc_label = [](const parameter& p) {
+  //  if (!p.flags().empty())
+  //    return p.flags().front();
+  //  if (!p.label().empty())
+  //    return p.label();
+  //  return doc_string{"<?>"};
+  //};
 
-  std::cout << "args -> parameter mapping:\n";
-  for (const auto& m : result) {
-    std::cout << "#" << m.index() << " " << m.arg() << " -> ";
-    auto p = m.param();
-    if (p) {
-      std::cout << doc_label(*p) << " \t";
-      if (m.repeat() > 0) {
-        std::cout << (m.bad_repeat() ? "[bad repeat " : "[repeat ") << m.repeat() << "]";
-      }
-      if (m.blocked())
-        std::cout << " [blocked]";
-      if (m.conflict())
-        std::cout << " [conflict]";
-      std::cout << '\n';
-    } else {
-      std::cout << " [unmapped]\n";
-    }
-  }
-  std::cout << "missing parameters:\n";
-  for (const auto& m : result.missing()) {
-    auto p = m.param();
-    if (p) {
-      std::cout << doc_label(*p) << " \t";
-      std::cout << " [missing after " << m.after_index() << "]\n";
-    }
-  }
-  std::cout << bool(result) << "\n";
+  //std::cout << "args -> parameter mapping:\n";
+  //for (const auto& m : result) {
+  //  std::cout << "#" << m.index() << " " << m.arg() << " -> ";
+  //  auto p = m.param();
+  //  if (p) {
+  //    std::cout << doc_label(*p) << " \t";
+  //    if (m.repeat() > 0) {
+  //      std::cout << (m.bad_repeat() ? "[bad repeat " : "[repeat ") << m.repeat() << "]";
+  //    }
+  //    if (m.blocked())
+  //      std::cout << " [blocked]";
+  //    if (m.conflict())
+  //      std::cout << " [conflict]";
+  //    std::cout << '\n';
+  //  } else {
+  //    std::cout << " [unmapped]\n";
+  //  }
+  //}
+  //std::cout << "missing parameters:\n";
+  //for (const auto& m : result.missing()) {
+  //  auto p = m.param();
+  //  if (p) {
+  //    std::cout << doc_label(*p) << " \t";
+  //    std::cout << " [missing after " << m.after_index() << "]\n";
+  //  }
+  //}
+  //std::cout << bool(result) << "\n";
 
   if (!result) {
     s.success = false;
