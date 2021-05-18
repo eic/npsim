@@ -227,7 +227,9 @@ void run_http_server(const settings& s) {
   detector.fromCompact(s.infile);
 
   if(s.export_geometry) {
+    spdlog::info("running in batch mode to export geometry ");
     detector.manager().Export(s.outfile.c_str());
+    std::exit(0);
   }
 
 
