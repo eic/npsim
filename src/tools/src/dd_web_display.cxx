@@ -85,6 +85,7 @@ struct settings {
   mode    selected       = mode::list;
   int     color          = 1;
   double  alpha          = 1;
+  bool    export_geometry = false;
   std::map<std::string,int> part_name_levels;
   std::map<std::string,int> part_name_colors;
   std::map<std::string,double> part_name_alphas;
@@ -146,7 +147,8 @@ settings cmdline_settings(int argc, char* argv[])
   auto lastOpt = " options:" % (
     option("-h", "--help").set(s.selected, mode::help)      % "show help",
     option("-g","--global_level") & integer("level",s.geo_level),
-    option("-o","--output") & value("out",s.outfile),
+    option("--export").set(s.export_geometry, true) % "Export geometry to rootfile.",
+    option("-o","--output").set(s.export_geometry, true) & value("out",s.outfile) % "name of exported geometry (implies --export)",
     value("file",s.infile).if_missing([]{
       std::cout << "You need to provide an input xml filename as the last argument!\n";
     } ) % "input xml file"
@@ -223,6 +225,11 @@ void run_http_server(const settings& s) {
   // Get the DD4hep instance
   dd4hep::Detector& detector = dd4hep::Detector::getInstance();
   detector.fromCompact(s.infile);
+
+  if(s.export_geometry) {
+    detector.manager().Export(s.outfile.c_str());
+  }
+
 
   auto serv = new THttpServer((std::string("http:") + s.http_host + ":" +
                                                std::to_string(s.http_port) +
