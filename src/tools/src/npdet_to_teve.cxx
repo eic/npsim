@@ -1,87 +1,11 @@
-#include "Math/Vector3D.h"
-#include "Math/Vector4D.h"
-#include "Math/VectorUtil.h"
-#include "TCanvas.h"
-#include "TLegend.h"
-#include "TMath.h"
-#include "TRandom3.h"
-#include "TFile.h"
-#include "TH1F.h"
-#include "TH2F.h"
-#include "TH1D.h"
-#include "TH2D.h"
-#include "TTree.h"
-#include "TF1.h"
-
-#include <vector>
-#include <tuple>
-#include <algorithm>
-#include <iterator>
-#include <thread>
-#include <filesystem>
-namespace fs = std::filesystem;
-
-// DD4hep
-// -----
-// In .rootlogon.C
-//  gSystem->Load("libDDDetectors");
-//  gSystem->Load("libDDG4IO");
-//  gInterpreter->AddIncludePath("/opt/software/local/include");
-#include "DD4hep/Detector.h"
-#include "DD4hep/Printout.h"
-#include "DDG4/Geant4Data.h"
-#include "DDRec/CellIDPositionConverter.h"
-#include "DDRec/SurfaceManager.h"
-#include "DDRec/Surface.h"
-#include "DD4hep/DD4hepUnits.h"
-
-#include "TApplication.h"
-#include "TMultiGraph.h"
-#include "TGraph.h"
-
-#include "TGeoManager.h"
-#include "TGeoNode.h"
-#include "TGeoVolume.h"
-#include "TEveManager.h"
-#include "TEveGeoNode.h"
-#include "TEveGeoShapeExtract.h"
-#include "TEveGeoShape.h"
-#include "TEveBrowser.h"
-#include "TSystem.h"
-#include "ROOT/TFuture.hxx"
-
-#include "Math/DisplacementVector3D.h"
-
 #include <iostream>
 #include <string>
-#include <chrono>
 
 #include "clipp.h"
 using namespace clipp;
-//______________________________________________________________________________
 
-enum class mode { none, help, list, part };
+#include "settings.h"
 
-struct settings {
-  bool help           = false;
-  bool success        = false;
-  std::string infile  = "";
-  std::string outfile = "detector_geometry";
-  std::string p_name  = "";
-  int     part_level  = -1;
-  bool    level_set      = false; 
-  int     geo_level      = -1;
-  bool    list_all       = false;
-  mode    selected       = mode::list;
-  int     color          = 1;
-  double  alpha          = 1;
-  std::map<std::string,int> part_name_levels;
-  std::map<std::string,int> part_name_colors;
-  std::map<std::string,double> part_name_alphas;
-};
-//______________________________________________________________________________
-
-void run_list_mode(const settings& s);
 void run_part_mode(const settings& s);
 //______________________________________________________________________________
 
@@ -140,7 +64,7 @@ settings cmdline_settings(int argc, char* argv[])
       & value("level",s.part_level)
       & value("name")([&](const std::string& p)
                       {
-                        s.p_name = p;
+                        s.part_name = p;
                         if(!s.level_set) { s.part_level = -1; }
                         s.part_name_levels[p] = s.part_level;
                         s.level_set = false;
@@ -148,72 +72,28 @@ settings cmdline_settings(int argc, char* argv[])
     )
     );
 
-  auto partMode = "part mode:" % repeatable(
-    command("part").set(s.selected,mode::part) % "Select only the first level nodes by name", 
-    //(
-    //repeatable(
-    //  required("-l","--level").set(s.level_set) & integer("level",s.part_level) % "Maximum level navigated to for part",
-    //  value("name")([&](const std::string& p)
-    //                {
-    //                  s.color++;
-    //                  s.p_name = p;
-    //                  if(!s.level_set) { s.p_level = -1; }
-    //                  s.level_set = false;
-    //                  s.part_name_levels[p] = s.part_level;
-    //                  s.part_name_colors[p] = s.color;
-    //                  s.part_name_alphas[p] = s.alpha;
-    //                })                                                     % "Part/Node name (must be child of top node)"
-    //  ) |  
-    //repeatable(
-    //  required("-l","--level").set(s.level_set) & integer("level",s.part_level) % "Maximum level navigated to for part",
-    //  required("-c","--color") & integer("color",s.color),
-    //  value("name")([&](const std::string& p)
-    //                {
-    //                  s.p_name = p;
-    //                  if(!s.level_set) { s.part_level = -1; }
-    //                  s.level_set = false;
-    //                  s.part_name_levels[p] = s.part_level;
-    //                  s.part_name_colors[p] = s.color;
-    //                  s.part_name_alphas[p] = s.alpha;
-    //                })                                                     % "Part/Node name (must be child of top node)"
-    //  )|  
-    repeatable(
-      required("-l","--level").set(s.level_set) & integer("level",s.part_level) % "Maximum level navigated to for part",
-      option("-c","--color") & integer("color",s.color),
-      option("-a","--alpha") & number("alpha",s.alpha),
-      value("name")([&](const std::string& p)
-                    {
-                      s.p_name = p;
-                      if(!s.level_set) { s.part_level = -1; }
-                      s.level_set = false;
-                      std::cout << "s.color " << s.color << "\n";
-                      std::cout << "s.alpha " << s.alpha << "\n";
-                      s.part_name_levels[p] = s.part_level;
-                      s.part_name_colors[p] = s.color;
-                      s.part_name_alphas[p] = s.alpha;
-                    })                                                     % "Part/Node name (must be child of top node)"
-    )
-    //|  
-    //repeatable(
-    //  required("-l","--level").set(s.level_set) & integer("level",s.part_level) % "Maximum level navigated to for part",
-    //  required("-c","--color") & integer("color",s.color),
-    //  required("-t","--transparency") & number("transparency",s.alpha),
-    //  value("name")([&](const std::string& p)
-    //                {
-    //                  s.p_name = p;
-    //                  if(!s.level_set) { s.part_level = -1; }
-    //                  s.level_set = false;
-    //                  s.part_name_levels[p] = s.part_level;
-    //                  s.part_name_colors[p] = s.color;
-    //                  s.part_name_alphas[p] = 1.0 - s.alpha;
-    //                })                                                     % "Part/Node name (must be child of top node)"
-    //  )
-    //)
-    );
+  auto partMode = "part mode:" %
+                  repeatable(command("part").set(s.selected, mode::part) % "Select only the first level nodes by name",
+                             repeatable(required("-l", "--level").set(s.level_set) &
+                                            integer("level", s.part_level) % "Maximum level navigated to for part",
+                                        option("-c", "--color") & integer("color", s.color),
+                                        option("-a", "--alpha") & number("alpha", s.alpha),
+                                        value("name")([&](const std::string& p) {
+                                          s.part_name = p;
+                                          if (!s.level_set) {
+                                            s.part_level = -1;
+                                          }
+                                          s.level_set = false;
+                                          std::cout << "s.color " << s.color << "\n";
+                                          std::cout << "s.alpha " << s.alpha << "\n";
+                                          s.part_name_levels[p] = s.part_level;
+                                          s.part_name_colors[p] = s.color;
+                                          s.part_name_alphas[p] = s.alpha;
+                                        }) % "Part/Node name (must be child of top node)"));
 
   auto lastOpt = " options:" % (
     option("-h", "--help").set(s.selected, mode::help)      % "show help",
-    option("-g","--global_level") & integer("level",s.geo_level),
+    option("-g","--global_level") & integer("level",s.global_level),
     option("-o","--output") & value("out",s.outfile),
     value("file",s.infile).if_missing([]{ std::cout << "You need to provide an input xml filename as the last argument!\n"; } )
     % "input xml file"
@@ -230,7 +110,7 @@ settings cmdline_settings(int argc, char* argv[])
 
   auto res = parse(argc, argv, cli);
 
-  std::cout << "wrong " << wrong << std::endl;
+  //std::cout << "wrong " << wrong << std::endl;
 
   //if( res.any_error() ) {
   //  s.success = false;
@@ -295,56 +175,56 @@ int main (int argc, char *argv[]) {
 //______________________________________________________________________________
 
 
-void run_list_mode(const settings& s)
-{
-  dd4hep::setPrintLevel(dd4hep::WARNING);
-  gErrorIgnoreLevel = kWarning;// kPrint, kInfo, kWarning,
-
-  // -------------------------
-  // Get the DD4hep instance
-  dd4hep::Detector& detector = dd4hep::Detector::getInstance();
-  detector.fromCompact(s.infile);
-
-  std::cout << gGeoManager->GetPath() << "\n";
-
-  for(const auto& [p,l] : s.part_name_levels) {
-    bool dir = gGeoManager->cd(p.c_str());
-    if (!dir) {
-      std::cerr << p << " not found!\n";
-      continue;
-    }
-    TGeoNode *node = gGeoManager->GetCurrentNode();
-    int level = gGeoManager->GetLevel();
-    if( level > l ){
-      std::cout << "\n" << p << " found at level " << level << " but above selected level of " << l << ")\n";
-      continue;
-    }
-    std::cout << "\n";
-    std::cout << "Subnodes for \"" << p << "\" (level = "  << level << ")\n";
-    if(node->GetNdaughters() == 0) {
-      continue;
-    }
-    TObjArrayIter node_array_iter(node->GetVolume()->GetNodes());
-    TGeoNode* a_node = nullptr;
-    while( (a_node = dynamic_cast<TGeoNode*>(node_array_iter.Next())) ) {
-      std::cout << p << "/" << a_node->GetName() << "\n";
-    }
-
-    //TGeoNode* currentNode = nullptr;
-    //auto res = new TEveGeoNode(node);
-    //TGeoIterator nextNode( node->GetVolume() );
-    //nextNode.SetType(1);
-    //while( (currentNode = nextNode()) ) {
-    //  auto nlevel = nextNode.GetLevel();
-    //  if( nlevel > l-level ) {
-    //   break;
-    //  }
-    //  //auto daughter = new TEveGeoNode( currentNode );
-    //  //res->AddElement(daughter);
-    //  currentNode->ls();
-    //}
-  }
-}
+//void run_list_mode(const settings& s)
+//{
+//  dd4hep::setPrintLevel(dd4hep::WARNING);
+//  gErrorIgnoreLevel = kWarning;// kPrint, kInfo, kWarning,
+//
+//  // -------------------------
+//  // Get the DD4hep instance
+//  dd4hep::Detector& detector = dd4hep::Detector::getInstance();
+//  detector.fromCompact(s.infile);
+//
+//  std::cout << gGeoManager->GetPath() << "\n";
+//
+//  for(const auto& [p,l] : s.part_name_levels) {
+//    bool dir = gGeoManager->cd(p.c_str());
+//    if (!dir) {
+//      std::cerr << p << " not found!\n";
+//      continue;
+//    }
+//    TGeoNode *node = gGeoManager->GetCurrentNode();
+//    int level = gGeoManager->GetLevel();
+//    if( level > l ){
+//      std::cout << "\n" << p << " found at level " << level << " but above selected level of " << l << ")\n";
+//      continue;
+//    }
+//    std::cout << "\n";
+//    std::cout << "Subnodes for \"" << p << "\" (level = "  << level << ")\n";
+//    if(node->GetNdaughters() == 0) {
+//      continue;
+//    }
+//    TObjArrayIter node_array_iter(node->GetVolume()->GetNodes());
+//    TGeoNode* a_node = nullptr;
+//    while( (a_node = dynamic_cast<TGeoNode*>(node_array_iter.Next())) ) {
+//      std::cout << p << "/" << a_node->GetName() << "\n";
+//    }
+//
+//    //TGeoNode* currentNode = nullptr;
+//    //auto res = new TEveGeoNode(node);
+//    //TGeoIterator nextNode( node->GetVolume() );
+//    //nextNode.SetType(1);
+//    //while( (currentNode = nextNode()) ) {
+//    //  auto nlevel = nextNode.GetLevel();
+//    //  if( nlevel > l-level ) {
+//    //   break;
+//    //  }
+//    //  //auto daughter = new TEveGeoNode( currentNode );
+//    //  //res->AddElement(daughter);
+//    //  currentNode->ls();
+//    //}
+//  }
+//}
 //______________________________________________________________________________
 
 void run_part_mode(const settings& s)

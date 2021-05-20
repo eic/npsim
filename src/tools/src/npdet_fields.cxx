@@ -76,8 +76,8 @@ settings cmdline_settings(int argc, char* argv[]) {
   auto drawMode =
       "draw mode:" %
       (command("draw"), // values("component").set(s.field_comps),
-       option("--Nsteps") & number("Nsteps", s.step_size),
-        option("--step") & number("step", s.step_size),
+       option("--Nsteps") & number("Nsteps", s.step_size) % "number of steps to evaluate",
+        option("--step") & number("step", s.step_size) % "step size",
        option("--start") & (number("x", s.x0).if_missing([] { std::cout << "x missing!\n"; }),
                             number("y", s.y0).if_missing([] { std::cout << "y missing!\n"; }),
                             number("z", s.z0).if_missing([] { std::cout << "z missing!\n"; })),
@@ -120,11 +120,50 @@ settings cmdline_settings(int argc, char* argv[]) {
   //  command("help")
   //  command("search")
   //  );
-  if(!parse(argc, argv, cli)) {
+
+  auto result = parse(argc, argv, cli);
+  // parse debugging:
+  auto doc_label = [](const parameter& p) {
+    if (!p.flags().empty())
+      return p.flags().front();
+    if (!p.label().empty())
+      return p.label();
+    return doc_string{"<?>"};
+  };
+
+  std::cout << "args -> parameter mapping:\n";
+  for (const auto& m : result) {
+    std::cout << "#" << m.index() << " " << m.arg() << " -> ";
+    auto p = m.param();
+    if (p) {
+      std::cout << doc_label(*p) << " \t";
+      if (m.repeat() > 0) {
+        std::cout << (m.bad_repeat() ? "[bad repeat " : "[repeat ") << m.repeat() << "]";
+      }
+      if (m.blocked())
+        std::cout << " [blocked]";
+      if (m.conflict())
+        std::cout << " [conflict]";
+      std::cout << '\n';
+    } else {
+      std::cout << " [unmapped]\n";
+    }
+  }
+  std::cout << "missing parameters:\n";
+  for (const auto& m : result.missing()) {
+    auto p = m.param();
+    if (p) {
+      std::cout << doc_label(*p) << " \t";
+      std::cout << " [missing after " << m.after_index() << "]\n";
+    }
+  }
+  std::cout << bool(result) << "\n";
+
+  if(!result) {
     s.success = false;
     std::cout << make_man_page(cli, argv[0])
     .prepend_section("DESCRIPTION", " Tool for quickly looking at magnetic fields.")
-    .append_section("EXAMPLES","   npdet_fields --start 0 0 -600 solid_sidis.xml\n");
+    .append_section("EXAMPLES","    npdet_fields draw --start 0 0 0 detector.xml\n");
     return s;
   }
 

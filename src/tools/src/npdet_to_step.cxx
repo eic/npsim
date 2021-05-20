@@ -1,75 +1,12 @@
-#include "Math/Vector3D.h"
-#include "Math/Vector4D.h"
-#include "Math/VectorUtil.h"
-#include "TCanvas.h"
-#include "TLegend.h"
-#include "TMath.h"
-#include "TRandom3.h"
-#include "TFile.h"
-#include "TH1F.h"
-#include "TH2F.h"
-#include "TH1D.h"
-#include "TH2D.h"
-#include "TTree.h"
-#include "TF1.h"
-
-#include <vector>
-#include <tuple>
-#include <algorithm>
-#include <iterator>
-#include <filesystem>
-namespace fs = std::filesystem;
-
-// DD4hep
-// -----
-// In .rootlogon.C
-//  gSystem->Load("libDDDetectors");
-//  gSystem->Load("libDDG4IO");
-//  gInterpreter->AddIncludePath("/opt/software/local/include");
-#include "DD4hep/Detector.h"
-#include "DDG4/Geant4Data.h"
-#include "DDRec/CellIDPositionConverter.h"
-#include "DDRec/SurfaceManager.h"
-#include "DDRec/Surface.h"
-#include "DD4hep/DD4hepUnits.h"
-#include "DD4hep/Printout.h"
-
-#include "TApplication.h"
-#include "TMultiGraph.h"
-#include "TGraph.h"
-#include "TGeoToStep.h"
-#include "TGeoManager.h"
-#include "TGeoNode.h"
-#include "TGeoVolume.h"
-
-#include "Math/DisplacementVector3D.h"
-
 #include <iostream>
 #include <string>
 
 #include "clipp.h"
 using namespace clipp;
 
-enum class mode { none, help, list, part };
+#include "settings.h"
+#include "TGeoToStep.h"
 
-struct settings {
-  using string   = std::string;
-  using part_map = std::map<string,int>;
-  //bool            help              = false;
-  bool            success           = false;
-  string          infile            = "";
-  string          outfile           = "detector_geometry";
-  string          part_name         = "";
-  int             part_level        = -1;
-  mode            selected          = mode::list;
-  bool            level_set         = false;
-  int             global_level      = 1;
-  bool            list_all          = false;
-  part_map        part_name_levels ;
-};
-//______________________________________________________________________________
-
-void run_list_mode(const settings& s);
 void run_part_mode(const settings& s);
 //______________________________________________________________________________
 
@@ -279,56 +216,6 @@ int main (int argc, char *argv[]) {
 //______________________________________________________________________________
 
 
-void print_daughter_nodes(TGeoNode* node, int print_depth) {
-  TGeoIterator nextNode( node->GetVolume() );
-  int path_index = 0;
-  TGeoNode* currentNode = nullptr;
-
-  nextNode.SetType(0);
-  while( (currentNode = nextNode()) ) {
-    // Not iterator level starts at 1 
-    auto nlevel = nextNode.GetLevel();
-    if( nlevel > print_depth ) {
-      continue;
-    }
-    for(int i=0;i<nlevel; i++){
-      std::cout << "  \t";
-    }
-    std::cout << "/" <<currentNode->GetName() << " \t(vol: " << currentNode->GetVolume()->GetName() << ")" << "\n";
-  }
-}
-//______________________________________________________________________________
-
-void run_list_mode(const settings& s)
-{
-  dd4hep::setPrintLevel(dd4hep::WARNING);
-  gErrorIgnoreLevel = kWarning;// kPrint, kInfo, kWarning,
-
-  // -------------------------
-  // Get the DD4hep instance
-  // Load the compact XML file
-  dd4hep::Detector& detector = dd4hep::Detector::getInstance();
-  detector.fromCompact(s.infile);
-
-  if(s.part_name_levels.size() == 0 ){
-    std::cout << gGeoManager->GetPath() << "\n";
-    print_daughter_nodes(gGeoManager->GetTopNode(), 1);
-  }
-  for(const auto& [p,l] : s.part_name_levels){
-    bool dir = gGeoManager->cd(p.c_str());
-    if (!dir) {
-      std::cerr << p << " not found!\n";
-      continue;
-    }
-    std::cout << p << std::endl;
-    TGeoNode *node = gGeoManager->GetCurrentNode();
-    print_daughter_nodes(node, l);
-  }
-
-  //detector.manager().GetTopVolume()->GetNodes()->Print();
-  //detector.manager().GetTopVolume()->GetNode(0)->Dump();
-} 
-//______________________________________________________________________________
 
 void run_part_mode(const settings& s)
 {
@@ -344,7 +231,7 @@ void run_part_mode(const settings& s)
 
   //detector.manager().GetTopVolume()->GetNodes()->Print();
   //detector.manager().GetTopVolume()->GetNode(0)->Dump();
-  
+
   TGeoToStep * mygeom= new TGeoToStep( &(detector.manager()) );
   if( s.part_name_levels.size() > 1 ) {
     mygeom->CreatePartialGeometry( s.part_name_levels, s.outfile.c_str() );

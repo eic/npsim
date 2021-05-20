@@ -133,83 +133,37 @@ void print_man_page(T cli, const char* argv0 ){
 settings cmdline_settings(int argc, char* argv[])
 {
   settings s;
-  auto listMode = "list mode:" % repeatable( 
-    command("list").set(s.selected,mode::list) % "list detectors and print info about geometry ",
-    repeatable(
-      option("-l","--level").set(s.level_set)
-      & value("level",s.part_level)
-      & value("name")([&](const std::string& p)
-                      {
-                        s.p_name = p;
-                        if(!s.level_set) { s.part_level = -1; }
-                        s.part_name_levels[p] = s.part_level;
-                        s.level_set = false;
-                      })                                                     % "Part/Node name (must be child of top node)"
-    )
-    );
+  auto     listMode =
+      "list mode:" %
+      repeatable(command("list").set(s.selected, mode::list) % "list detectors and print info about geometry ",
+                 repeatable(option("-l", "--level").set(s.level_set) & value("level", s.part_level) &
+                            value("name")([&](const std::string& p) {
+                              s.p_name = p;
+                              if (!s.level_set) {
+                                s.part_level = -1;
+                              }
+                              s.part_name_levels[p] = s.part_level;
+                              s.level_set           = false;
+                            }) % "Part/Node name (must be child of top node)"));
 
-  auto partMode = "part mode:" % repeatable(
-    command("part").set(s.selected,mode::part) % "Select only the first level nodes by name", 
-    //(
-    //repeatable(
-    //  required("-l","--level").set(s.level_set) & integer("level",s.part_level) % "Maximum level navigated to for part",
-    //  value("name")([&](const std::string& p)
-    //                {
-    //                  s.color++;
-    //                  s.p_name = p;
-    //                  if(!s.level_set) { s.p_level = -1; }
-    //                  s.level_set = false;
-    //                  s.part_name_levels[p] = s.part_level;
-    //                  s.part_name_colors[p] = s.color;
-    //                  s.part_name_alphas[p] = s.alpha;
-    //                })                                                     % "Part/Node name (must be child of top node)"
-    //  ) |  
-    //repeatable(
-    //  required("-l","--level").set(s.level_set) & integer("level",s.part_level) % "Maximum level navigated to for part",
-    //  required("-c","--color") & integer("color",s.color),
-    //  value("name")([&](const std::string& p)
-    //                {
-    //                  s.p_name = p;
-    //                  if(!s.level_set) { s.part_level = -1; }
-    //                  s.level_set = false;
-    //                  s.part_name_levels[p] = s.part_level;
-    //                  s.part_name_colors[p] = s.color;
-    //                  s.part_name_alphas[p] = s.alpha;
-    //                })                                                     % "Part/Node name (must be child of top node)"
-    //  )|  
-    repeatable(
-      required("-l","--level").set(s.level_set) & integer("level",s.part_level) % "Maximum level navigated to for part",
-      option("-c","--color") & integer("color",s.color),
-      option("-a","--alpha") & number("alpha",s.alpha),
-      value("name")([&](const std::string& p)
-                    {
-                      s.p_name = p;
-                      if(!s.level_set) { s.part_level = -1; }
-                      s.level_set = false;
-                      std::cout << "s.color " << s.color << "\n";
-                      std::cout << "s.alpha " << s.alpha << "\n";
-                      s.part_name_levels[p] = s.part_level;
-                      s.part_name_colors[p] = s.color;
-                      s.part_name_alphas[p] = s.alpha;
-                    })                                                     % "Part/Node name (must be child of top node)"
-    )
-    //|  
-    //repeatable(
-    //  required("-l","--level").set(s.level_set) & integer("level",s.part_level) % "Maximum level navigated to for part",
-    //  required("-c","--color") & integer("color",s.color),
-    //  required("-t","--transparency") & number("transparency",s.alpha),
-    //  value("name")([&](const std::string& p)
-    //                {
-    //                  s.p_name = p;
-    //                  if(!s.level_set) { s.part_level = -1; }
-    //                  s.level_set = false;
-    //                  s.part_name_levels[p] = s.part_level;
-    //                  s.part_name_colors[p] = s.color;
-    //                  s.part_name_alphas[p] = 1.0 - s.alpha;
-    //                })                                                     % "Part/Node name (must be child of top node)"
-    //  )
-    //)
-    );
+  auto partMode = "part mode:" %
+                  repeatable(command("part").set(s.selected, mode::part) % "Select only the first level nodes by name",
+                             repeatable(required("-l", "--level").set(s.level_set) &
+                                            integer("level", s.part_level) % "Maximum level navigated to for part",
+                                        option("-c", "--color") & integer("color", s.color),
+                                        option("-a", "--alpha") & number("alpha", s.alpha),
+                                        value("name")([&](const std::string& p) {
+                                          s.p_name = p;
+                                          if (!s.level_set) {
+                                            s.part_level = -1;
+                                          }
+                                          s.level_set = false;
+                                          std::cout << "s.color " << s.color << "\n";
+                                          std::cout << "s.alpha " << s.alpha << "\n";
+                                          s.part_name_levels[p] = s.part_level;
+                                          s.part_name_colors[p] = s.color;
+                                          s.part_name_alphas[p] = s.alpha;
+                                        }) % "Part/Node name (must be child of top node)"));
 
   auto lastOpt = " options:" % (
     option("-h", "--help").set(s.selected, mode::help)      % "show help",
@@ -230,7 +184,7 @@ settings cmdline_settings(int argc, char* argv[])
 
   auto res = parse(argc, argv, cli);
 
-  std::cout << "wrong " << wrong << std::endl;
+  //std::cout << "wrong " << wrong << std::endl;
 
   //if( res.any_error() ) {
   //  s.success = false;
