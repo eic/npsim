@@ -1,7 +1,7 @@
 #!/bin/bash
 
-export PYTHONPATH=@CMAKE_INSTALL_PREFIX@/share/npdet/python:$PYTHONPATH
+export PYTHONPATH=@CMAKE_INSTALL_PREFIX@/share/npdet/python/DDSim:@CMAKE_INSTALL_PREFIX@/share/npdet/python:$PYTHONPATH
 
-ddsim "$@"
+ddsim.py "$@"
 
 

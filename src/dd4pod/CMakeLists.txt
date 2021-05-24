@@ -101,6 +101,19 @@ install(FILES
   python/npsim/DDG4.py
   DESTINATION share/npdet/python
   )
+install(FILES
+  python/npsim/DDSim/DD4hepSimulation.py
+  DESTINATION share/npdet/python/DDSim
+  )
+install(DIRECTORY
+  python/npsim/DDSim
+  DESTINATION share/npdet/python
+  )
+
+install(PROGRAMS
+  python/ddsim.py
+  DESTINATION bin
+  )
 
 
 

@@ -387,6 +387,7 @@ class Geant4:
     self.sensitive_types = {}
     self.sensitive_types['tracker'] = tracker
     self.sensitive_types['calorimeter'] = calo
+    self.sensitive_types['photoncounter'] = 'PhotoMultiplierSDAction'
     self.sensitive_types['escape_counter'] = 'Geant4EscapeCounter'
 
   def kernel(self):
@@ -679,6 +680,15 @@ class Geant4:
     # sd.setType('tracker')
     if type is None:
       type = self.sensitive_types['tracker']
+    return self.setupDetector(name, type, collections)
+
+  def setupPhotoncounter(self, name, type=None, collections=None):
+    """
+    Setup subdetector of type 'photoncounter' and assign the proper sensitive action
+    """
+    self.description.sensitiveDetector(str(name))
+    if type is None:
+      type = self.sensitive_types['photoncounter']
     return self.setupDetector(name, type, collections)
 
   def _private_setupField(self, field, stepper, equation, prt):
