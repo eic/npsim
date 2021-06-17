@@ -8,7 +8,7 @@ option(BUILD_DATA_MODEL "build the dd4pod datamodel" ON)
 set(USE_GEOCAD ON CACHE BOOL "build the geocad library. Requires opencascade")
 
 # ---------------------------------------------------------------------------
-# set default install prefix and build type
+# set default install prefix, build type, C++ standard
 if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
     set(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT FALSE)
     set(CMAKE_INSTALL_PREFIX "/usr/local" CACHE PATH "..." FORCE)
@@ -16,6 +16,12 @@ endif()
 
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE RelWithDebInfo CACHE STRING "..." FORCE)
+endif()
+
+if(NOT CMAKE_CXX_STANDARD)
+    set(CMAKE_CXX_STANDARD 17 CACHE STRING "...." FORCE)
+    set(CMAKE_CXX_STANDARD_REQUIRED ON)
+    set(CMAKE_CXX_EXTENSIONS OFF)
 endif()
 
 # ---------------------------------------------------------------------------
