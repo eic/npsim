@@ -114,18 +114,19 @@ class Physics(ConfigHelper):
     seq.dump()
     from DDG4 import PhysicsList
 
-    ph = PhysicsList(kernel, 'Geant4OpticalPhotonPhysics/OpticalPhotonPhys')                                                                                                                              
-    ph.VerboseLevel = 0                                                                                                                                                                                        
-    ph.enableUI()                                                                                                                                                                                              
-    seq.adopt(ph)                                                                                                                                                                                             
+    print(" Setting up OPTICAL PHOTON PHYSICS")
+    ph = PhysicsList(kernel, 'Geant4OpticalPhotonPhysics/OpticalPhotonPhys')
+    ph.VerboseLevel = 2
+    ph.enableUI()
+    seq.adopt(ph)
 
-    ph = PhysicsList(kernel, 'Geant4CerenkovPhysics/CerenkovPhys')                                                                                                                                        
-    ph.MaxNumPhotonsPerStep = 10                                                                                                                                                                               
-    ph.MaxBetaChangePerStep = 10.0                                                                                                                                                                             
-    ph.TrackSecondariesFirst = True                                                                                                                                                                            
-    ph.VerboseLevel = 0                                                                                                                                                                                        
-    ph.enableUI()                                                                                                                                                                                              
-    seq.adopt(ph)      
+    cer = PhysicsList(kernel, 'Geant4CerenkovPhysics/CerenkovPhys')
+    cer.MaxNumPhotonsPerStep = 10
+    cer.MaxBetaChangePerStep = 10.0
+    cer.TrackSecondariesFirst = True
+    cer.VerboseLevel = 0
+    cer.enableUI()
+    seq.adopt(cer)
 
     # Add special particle types from specialized physics constructor
     if self.pdgfile:
