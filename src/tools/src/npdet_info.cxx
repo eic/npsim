@@ -77,8 +77,7 @@ settings cmdline_settings(int argc, char* argv[]) {
 
 
   auto searchMode =
-      "Search mode" % (command("search").set(s.mode,Mode::Search) & value("variable",s.search_str),
-                       option("--value").set(s.value) % "print associated value too"
+      "Search mode" % (command("search").set(s.mode,Mode::Search) & value("variable",s.search_str), option("--value").set(s.value) % "print associated value too"
                        //option("-m", "--mat", "--material").set(s.material) % "search materials"
                        );
 

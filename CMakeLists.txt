@@ -3,6 +3,7 @@ project(NPDet
   VERSION 0.5.0
   LANGUAGES CXX)
 
+set(CMAKE_CXX_STANDARD 17)
 option(BUILD_DATA_MODEL "build the dd4pod datamodel" ON)
 
 set(USE_GEOCAD ON CACHE BOOL "build the geocad library. Requires opencascade")
