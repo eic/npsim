@@ -278,9 +278,9 @@ int main(int argc, char* argv[]) {
 
   Vector3D starting_point(0, 0, 0);
   // Line Mode
-  if( s.selected ==  mode::line ) {
-    double eta   = s.line_val; // assuming only eta for now
-    double theta = 2.0 * std::atan(std::exp(-1.0 * eta));
+  if (s.selected == mode::line) {
+    double        eta   = s.line_val; // assuming only eta for now
+    double        theta = 2.0 * std::atan(std::exp(-1.0 * eta));
     Polar3DVector direction_step(s.r_limits.at(1), theta, s.phi0);
 
     Vector3D p0 = starting_point;
@@ -289,7 +289,6 @@ int main(int argc, char* argv[]) {
 
     // const PlacementVec& placements = matMgr.placementsBetween(p0,p1);
     // const MaterialVec& mats = matMgr.materialsBetween(p0,p1);
-
     if (good_subsystem_names.size() > 0) {
       for (const auto& aname : good_subsystem_names) {
         //fmt::print(" Subsystem: {}\n", aname);
@@ -297,6 +296,8 @@ int main(int argc, char* argv[]) {
         // const MaterialVec& mats = ms.scan(p0.x(),p0.y(),p0.z(),p1.x(),p1.y(),p1.z());
         ms.print(p0.x(), p0.y(), p0.z(), p1.x(), p1.y(), p1.z());
       }
+    } else {
+      ms.print(p0.x(), p0.y(), p0.z(), p1.x(), p1.y(), p1.z());
     }
   }
 
