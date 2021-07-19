@@ -4,7 +4,7 @@ include(GNUInstallDirs)
 find_package(fmt REQUIRED)
 find_package(spdlog REQUIRED)
 find_package(DD4hep REQUIRED COMPONENTS DDCore DDG4 )
-find_package(ROOT REQUIRED COMPONENTS Geom GenVector MathCore)
+find_package(ROOT REQUIRED COMPONENTS Geom GenVector MathCore OPTIONAL_COMPONENTS http)
 include(${ROOT_USE_FILE})
 
 # ------------------------------------
@@ -93,43 +93,49 @@ install(TARGETS ${exe_name}
 # ------------------------------------
 # dd_web_display
 # ------------------------------------
-set(exe_name dd_web_display)
-add_executable(${exe_name} src/${exe_name}.cxx src/settings.cxx)
-target_include_directories(${exe_name}
-  PRIVATE include )
-target_compile_features(${exe_name}
-  PUBLIC cxx_auto_type
-  PUBLIC cxx_trailing_return_types
-  PRIVATE cxx_variadic_templates
-  PUBLIC cxx_std_17
-  )
-target_link_libraries(${exe_name}
-  PUBLIC DD4hep::DDCore DD4hep::DDG4 ROOT::Core ROOT::Hist ROOT::GenVector ROOT::Eve ROOT::Gpad ROOT::Imt ROOT::RHTTP ROOT::Net fmt::fmt spdlog::spdlog)
-install(TARGETS ${exe_name}
-  EXPORT NPDetTargets
-  RUNTIME DESTINATION bin )
-
+if (ROOT_http_FOUND)
+ set(exe_name dd_web_display)
+  add_executable(${exe_name} src/${exe_name}.cxx src/settings.cxx)
+  target_include_directories(${exe_name}
+    PRIVATE include )
+  target_compile_features(${exe_name}
+    PUBLIC cxx_auto_type
+    PUBLIC cxx_trailing_return_types
+    PRIVATE cxx_variadic_templates
+    PUBLIC cxx_std_17
+    )
+  target_link_libraries(${exe_name}
+    PUBLIC DD4hep::DDCore DD4hep::DDG4 ROOT::Core ROOT::Hist ROOT::GenVector ROOT::Eve ROOT::Gpad ROOT::Imt ROOT::RHTTP ROOT::Net fmt::fmt spdlog::spdlog)
+  install(TARGETS ${exe_name}
+    EXPORT NPDetTargets
+    RUNTIME DESTINATION bin )
+else(ROOT_http_FOUND)
+  message(WARNING "dd_web_display will not be built")
+endif(ROOT_http_FOUND)
 
 # ------------------------------------
 # npdet_info
 # ------------------------------------
-set(exe_name npdet_info)
-add_executable(${exe_name} src/${exe_name}.cxx )
-target_include_directories(${exe_name}
-  PRIVATE include )
-target_compile_features(${exe_name}
-  PUBLIC cxx_auto_type
-  PUBLIC cxx_trailing_return_types
-  PRIVATE cxx_variadic_templates
-  PUBLIC cxx_std_17)
-target_link_libraries(${exe_name}
-  PUBLIC DD4hep::DDCore DD4hep::DDG4 ROOT::Core ROOT::Hist ROOT::GenVector ROOT::Eve ROOT::Gpad ROOT::Imt ROOT::RHTTP ROOT::Net
-  fmt::fmt
-  spdlog::spdlog)
-install(TARGETS ${exe_name}
-  EXPORT NPDetTargets
-  RUNTIME DESTINATION bin )
-
+if (ROOT_http_FOUND)
+  set(exe_name npdet_info)
+  add_executable(${exe_name} src/${exe_name}.cxx )
+  target_include_directories(${exe_name}
+    PRIVATE include )
+  target_compile_features(${exe_name}
+    PUBLIC cxx_auto_type
+    PUBLIC cxx_trailing_return_types
+    PRIVATE cxx_variadic_templates
+    PUBLIC cxx_std_17)
+  target_link_libraries(${exe_name}
+    PUBLIC DD4hep::DDCore DD4hep::DDG4 ROOT::Core ROOT::Hist ROOT::GenVector ROOT::Eve ROOT::Gpad ROOT::Imt ROOT::RHTTP ROOT::Net
+    fmt::fmt
+    spdlog::spdlog)
+  install(TARGETS ${exe_name}
+    EXPORT NPDetTargets
+    RUNTIME DESTINATION bin )
+else(ROOT_http_FOUND)
+  message(WARNING "npdet_info will not be built")
+endif()
 
 # ----------------------------------------------
 # Tests
