@@ -81,6 +81,7 @@ class DD4hepSimulation(object):
     self.vertexSigma = [0.0, 0.0, 0.0, 0.0]
     self.vertexOffset = [0.0, 0.0, 0.0, 0.0]
     self.enableDetailedShowerMode = False
+    self.enableQtUI = False
 
     self._errorMessages = []
     self._dumpParameter = False
@@ -102,9 +103,7 @@ class DD4hepSimulation(object):
     self.physics = Physics()
 
     self._argv = None
-
-    # use TCSH geant UI instead of QT
-    os.environ['G4UI_USE_TCSH'] = "1"
+    
 
   def readSteeringFile(self):
     """Reads a steering file and sets the parameters to that of the
@@ -152,6 +151,9 @@ class DD4hepSimulation(object):
                         "\nvis: enable visualisation, run the macroFile if it is set"
                         "\nrun: run the macroFile and exit"
                         "\nshell: enable interactive session")
+    
+    parser.add_argument("--enableQtUI", action="store_true", dest="enableQtUI", default=self.enableQtUI,
+                        help="Enable QT UI session and QT GUI (works only for --runType=vis)")
 
     parser.add_argument("--inputFiles", "-I", nargs='+', action="store", default=self.inputFiles,
                         help="InputFiles for simulation %s files are supported" % ", ".join(POSSIBLEINPUTFILES))
@@ -242,6 +244,7 @@ class DD4hepSimulation(object):
     self.enableDetailedShowerMode = parsed.enableDetailedShowerMode
     self.vertexOffset = parsed.vertexOffset
     self.vertexSigma = parsed.vertexSigma
+    self.enableQtUI = parsed.enableQtUI
 
     self._consistencyChecks()
 
@@ -313,8 +316,17 @@ class DD4hepSimulation(object):
 
     simple.printDetectors()
 
+    # change environemnt variable for QT UI if --enableQtUI is given
+    if self.runType == "vis" and self.enableQtUI:
+      os.environ['G4UI_USE_QT'] = "1"
+    else:
+      # By default use TCSH geant UI instead of QT
+      os.environ['G4UI_USE_TCSH'] = "1"
+
+
     if self.runType == "vis":
-      simple.setupUI(typ="csh", vis=True, macro=self.macroFile)
+      typ = "qt" if self.enableQtUI else "csh"
+      simple.setupUI(typ=typ, vis=True, macro=self.macroFile)      
     elif self.runType == "run":
       simple.setupUI(typ="csh", vis=False, macro=self.macroFile, ui=False)
     elif self.runType == "shell":
