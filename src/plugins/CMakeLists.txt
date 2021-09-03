@@ -10,10 +10,12 @@ find_package(ROOT REQUIRED COMPONENTS Geom GenVector MathCore)
 include(${ROOT_USE_FILE})
 
 dd4hep_add_plugin(NPDetPlugins
-    SOURCES 
+    SOURCES
     src/EICInteractionVertexBoost.cxx
     src/EICInteractionVertexSmear.cxx
-    NOINSTALL
+    src/EICOpticalPhotonPhysics.cpp
+    src/EICCerenkovPhysics.cpp
+    src/EICScintillationPhysics.cpp
     )
 
 target_link_libraries(NPDetPlugins

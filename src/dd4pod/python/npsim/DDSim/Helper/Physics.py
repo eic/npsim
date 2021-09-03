@@ -5,8 +5,10 @@ import os
 
 from DDSim.Helper.ConfigHelper import ConfigHelper
 from g4units import mm
+import logging
 import ddsix as six
 
+logger = logging.getLogger(__name__)
 
 class Physics(ConfigHelper):
   """Configuration for the PhysicsList"""
@@ -19,6 +21,7 @@ class Physics(ConfigHelper):
     self._pdgfile = None
     self._rejectPDGs = {1, 2, 3, 4, 5, 6, 21, 23, 24, 25}
     self._zeroTimePDGs = {11, 13, 15, 17}
+    self._trackSecondariesFirst = False
 
   @property
   def rejectPDGs(self):
@@ -106,6 +109,15 @@ class Physics(ConfigHelper):
   def list(self, val):
     self._list = val
 
+  @property
+  def trackSecondariesFirst(self):
+    """Track Cerenkov and scintillation secondaries first (potentially large memory use)."""
+    return self._trackSecondariesFirst
+
+  @trackSecondariesFirst.setter
+  def trackSecondariesFirst(self, val):
+    self._trackSecondariesFirst = self.makeBool(val)
+
   def setupPhysics(self, kernel, name=None):
     seq = kernel.physicsList()
     seq.extends = name if name is not None else self.list
@@ -114,17 +126,18 @@ class Physics(ConfigHelper):
     seq.dump()
     from DDG4 import PhysicsList
 
-    print(" Setting up OPTICAL PHOTON PHYSICS")
-    ph = PhysicsList(kernel, 'Geant4OpticalPhotonPhysics/OpticalPhotonPhys')
-    ph.VerboseLevel = 2
+    logger.info(" Setting up Optical Photon Physics")
+    ph = PhysicsList(kernel, 'EICOpticalPhotonPhysics/OpticalPhotonPhys')
+    ph.VerboseLevel = 0
     ph.enableUI()
     seq.adopt(ph)
 
-    cer = PhysicsList(kernel, 'Geant4CerenkovPhysics/CerenkovPhys')
+    logger.info(" Setting up Cerenkov Physics")
+    cer = PhysicsList(kernel, 'EICCerenkovPhysics/CerenkovPhys')
+    cer.VerboseLevel = 0
     cer.MaxNumPhotonsPerStep = 10
     cer.MaxBetaChangePerStep = 10.0
-    cer.TrackSecondariesFirst = True
-    cer.VerboseLevel = 0
+    cer.TrackSecondariesFirst = self.trackSecondariesFirst
     cer.enableUI()
     seq.adopt(cer)
 
