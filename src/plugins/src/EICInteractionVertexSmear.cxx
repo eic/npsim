@@ -49,16 +49,16 @@ void EICInteractionVertexSmear::smear(Interaction* inter) const {
   if (inter) {
     double    dx  = rndm.gauss(m_offset.x(), m_sigma_Ion.x());
     double    dy  = rndm.gauss(m_offset.y(), m_sigma_Ion.y());
-    double    dz  = rndm.gauss(m_offset.z(), m_sigma_Ion.z());
-    double    dt  = rndm.gauss(m_offset.t(), m_sigma_Ion.t());
-    double    dxe = rndm.gauss(m_offset.x(), m_sigma_Electron.x());
-    double    dye = rndm.gauss(m_offset.y(), m_sigma_Electron.y());
-    double    dze = rndm.gauss(m_offset.z(), m_sigma_Electron.z());
-    double    dte = rndm.gauss(m_offset.t(), m_sigma_Electron.t());
+    //double    dz  = rndm.gauss(m_offset.z(), m_sigma_Ion.z());
+    //double    dt  = rndm.gauss(m_offset.t(), m_sigma_Ion.t());
+    //double    dxe = rndm.gauss(m_offset.x(), m_sigma_Electron.x());
+    //double    dye = rndm.gauss(m_offset.y(), m_sigma_Electron.y());
+    //double    dze = rndm.gauss(m_offset.z(), m_sigma_Electron.z());
+    //double    dte = rndm.gauss(m_offset.t(), m_sigma_Electron.t());
     XYZVector ion_dir(0, 0, 1.0);
-    RotationY rotx(-dx);
-    RotationX roty(dy);
-    auto      new_ion_dir = rotx(roty(ion_dir));
+    RotationY rotx_ion(-dx);
+    RotationX roty_ion(dy);
+    auto      new_ion_dir = rotx_ion(roty_ion(ion_dir));
 
     Geant4PrimaryEvent::Interaction::VertexMap::iterator   iv;
     Geant4PrimaryEvent::Interaction::ParticleMap::iterator ip;
