@@ -77,14 +77,14 @@ settings cmdline_settings(int argc, char* argv[]) {
       "draw mode:" %
       (command("draw"), // values("component").set(s.field_comps),
        option("--Nsteps") & number("Nsteps", s.step_size) % "number of steps to evaluate",
-        option("--step") & number("step", s.step_size) % "step size",
+       option("--step") & number("step", s.step_size) % "step size",
        option("--start") & (number("x", s.x0).if_missing([] { std::cout << "x missing!\n"; }),
                             number("y", s.y0).if_missing([] { std::cout << "y missing!\n"; }),
                             number("z", s.z0).if_missing([] { std::cout << "z missing!\n"; })),
        (option("--end").set(s.with_end_point, true) & (number("x1", s.x1).if_missing([] { std::cout << "x1 missing!\n"; }),
                            number("y1", s.y1).if_missing([] { std::cout << "y1 missing!\n"; }),
-                           number("z1", s.z1).if_missing([] { std::cout << "z1 missing!\n"; })) |
-        option("--direction") &
+                           number("z1", s.z1).if_missing([] { std::cout << "z1 missing!\n"; }))) |
+       (option("--direction") &
             (number("x2", s.x2).if_missing([] { std::cout << "x2 missing!\n"; }),
              number("y2", s.y2).if_missing([] { std::cout << "y2 missing!\n"; }),
              number("z2", s.z2).if_missing([] { std::cout << "z2 missing!\n"; })))
