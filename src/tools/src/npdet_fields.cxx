@@ -194,10 +194,8 @@ TGraph* build_1D_field_graph(dd4hep::Detector& detector, const settings& s,
 /** Cell size example.
  *
  */
-void mag_field(dd4hep::Detector& detector){
-
-  double z0 = 0.0;
-
+void mag_field(dd4hep::Detector& detector)
+{
   double x_min   = -100.0;
   double x_max   = 100.0;
   double y_min   = -100.0;
@@ -272,7 +270,8 @@ int main (int argc, char *argv[]) {
 
   int root_argc = 0;
   char *root_argv[1];
-  argv[0] = "npdet_fields";
+  std::string argv0("npdet_fields");
+  strncpy(root_argv[0], argv0.c_str(), argv0.size());
 
   TApplication theApp("tapp", &root_argc, root_argv);
 

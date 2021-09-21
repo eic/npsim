@@ -229,10 +229,11 @@ int main (int argc, char *argv[]) {
 
 void run_part_mode(const settings& s)
 {
-  int         root_argc = 0;
-  char *root_argv[1] = {"npdet_to_teve"};
-  //argv[0] = "npdet_fields";
-  
+  int   root_argc = 0;
+  char *root_argv[1];
+  std::string argv0("npdet_to_teve");
+  strncpy(root_argv[0], argv0.c_str(), argv0.size());
+
   gErrorIgnoreLevel = kWarning;// kPrint, kInfo, kWarning,
   TApplication app("tapp", &root_argc, root_argv);
 
