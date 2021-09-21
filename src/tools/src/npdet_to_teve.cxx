@@ -266,7 +266,7 @@ void run_part_mode(const settings& s)
       //return;
     }
 
-    int         istate = gGeoManager->GetCurrentNodeId();
+    //int         istate = gGeoManager->GetCurrentNodeId();
     std::string ipath  = gGeoManager->GetPath();
 
     auto pcolor        = s.part_name_colors.find(p)->second;
@@ -286,7 +286,7 @@ void run_part_mode(const settings& s)
     eve_nodes[0] = res;
 
     TGeoIterator nextNode( node->GetVolume() );
-    int path_index = 0;
+    //int path_index = 0;
     TGeoNode* currentNode = nullptr;
 
     while( (currentNode = nextNode()) ) {
