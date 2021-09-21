@@ -12,7 +12,6 @@
 
 void print_daughter_nodes(TGeoNode* node, int print_depth) {
   TGeoIterator nextNode( node->GetVolume() );
-  int path_index = 0;
   TGeoNode* currentNode = nullptr;
 
   nextNode.SetType(0);
