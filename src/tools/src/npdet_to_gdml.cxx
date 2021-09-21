@@ -98,7 +98,7 @@ template<typename T>
 void print_man_page(T cli, const char* argv0 ){
   //all formatting options (with their default values)
   auto fmt = clipp::doc_formatting{}
-  .start_column(8)                           //column where usage lines and documentation starts
+  .first_column(8)                           //column where usage lines and documentation starts
   .doc_column(20)                            //parameter docstring start col
   .indent_size(4)                            //indent of documentation lines for children of a documented group
   .line_spacing(0)                           //number of empty lines after single documentation lines
