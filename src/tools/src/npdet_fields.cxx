@@ -198,15 +198,15 @@ void mag_field(dd4hep::Detector& detector)
 {
   double x_min   = -100.0;
   double x_max   = 100.0;
-  double y_min   = -100.0;
-  double y_max   = 100.0;
+  int    nx_bins = 200;
+  double dx      = (x_max - x_min) / nx_bins;
+  //double y_min   = -100.0;
+  //double y_max   = 100.0;
+  //int    ny_bins = 200;
+  //double dy      = (y_max - y_min) / ny_bins;
   double z_min   = -100.0;
   double z_max   = 100.0;
-  int    nx_bins = 200;
-  int    ny_bins = 200;
   int    nz_bins = 200;
-  double dx      = (x_max - x_min) / nx_bins;
-  double dy      = (y_max - y_min) / ny_bins;
   double dz      = (z_max - z_min) / nz_bins;
 
   double y0 = 20.0 * cm;
