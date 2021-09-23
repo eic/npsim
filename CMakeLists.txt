@@ -46,8 +46,9 @@ find_package( DD4hep REQUIRED COMPONENTS DDCore DDG4 )
 
 # Opencascade
 find_package(OpenCASCADE)
-if(OpenCASCADE_FOUND)
-  set(USE_GEOCAD ON)
+if(NOT OpenCASCADE_FOUND)
+  message(WARNING "OpenCASCADE not found; disabling geocad")
+  set(USE_GEOCAD OFF)
 endif()
 
 # libfmt
