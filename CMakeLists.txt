@@ -45,10 +45,8 @@ include_directories(${podio_INCLUDE_DIR})
 find_package( DD4hep REQUIRED COMPONENTS DDCore DDG4 )
 
 # Opencascade
-find_package(OpenCASCADE)
-if(NOT OpenCASCADE_FOUND)
-  message(WARNING "OpenCASCADE not found; disabling geocad")
-  set(USE_GEOCAD OFF)
+if(USE_GEOCAD)
+  find_package(OpenCASCADE)
 endif()
 
 # libfmt
