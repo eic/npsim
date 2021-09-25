@@ -67,10 +67,10 @@ target_link_libraries(DD4podIO
   #PUBLIC DD4hep::DDG4
   #PUBLIC ROOT::Core ROOT::Tree ROOT::RIO
   )
-target_include_directories(DD4pod
+target_include_directories(DD4podIO
   PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/plugins>
   )
-target_compile_features(NPDetPlugins
+target_compile_features(DD4podIO
     PUBLIC cxx_auto_type
     PUBLIC cxx_trailing_return_types
     PRIVATE cxx_variadic_templates
