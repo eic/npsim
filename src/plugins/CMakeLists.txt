@@ -1,4 +1,7 @@
-cmake_minimum_required(VERSION 3.3 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.12 FATAL_ERROR)
+
+# CMP0074: find_package() uses <PackageName>_ROOT variables
+cmake_policy(SET CMP0074 NEW)
 
 # see https://rix0r.nl/blog/2015/08/13/cmake-guide/
 # Must use GNUInstallDirs to install libraries into correct
