@@ -39,7 +39,7 @@ class Filter(ConfigHelper):
   def __init__(self):
     super(Filter, self).__init__()
     self._mapDetFilter = {}
-    self._tracker = "edep1kev"
+    self._tracker = "edep0"
     self._calo = "edep0"
     self._photo = "opticalphotons"
     self._filters = {}
