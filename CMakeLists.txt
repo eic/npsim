@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.12 FATAL_ERROR)
 cmake_policy(SET CMP0074 NEW)
 
 project(NPDet 
-  VERSION 0.5.0
+  VERSION 1.1.0
   LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
