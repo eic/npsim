@@ -6,6 +6,10 @@ import argparse
 class InvalidHepmc3Error(Exception):
     def __init__(this, *msg):
         print('InvalidHepmc3Error:', *msg, file=sys.stderr)
+
+def warn(*msg):
+    print('WARNING:', *msg, file=sys.stderr)
+
         
 class EventHeader:
     def __init__(this, line):
@@ -19,23 +23,27 @@ class EventHeader:
         this.part_cnt = 0
     def get_record(this):
         if not this.vert_cnt == this.n_vertices:
-            raise InvalidHepmc3Error('Not all vertices found for event:', event.raw)
+            warn('Invalid vertex count for event:', this.raw, "--> skipping event")
+            return None
         if not this.part_cnt == this.n_particles:
-            raise InvalidHepmc3Error('Not all particles found for event:', event.raw)
+            warn('Invalid particle count for event:', this.raw, "--> skipping event")
+            return None
         if this.vertex and not '@' in this.raw:
             return '{} @{}'.format(this.raw[:-1], this.vertex)
         return this.raw
     def process_vertex(this, line):
         this.vert_cnt += 1
         if this.vert_cnt > this.n_vertices:
-            raise InvalidHepmc3Error('Too many vertices for event:', event.raw)
+            warn('Too many vertices for event:', this.raw)
+            return
         if not this.vertex:
             if '@' in line:
                 this.vertex = this._get_vertex_if_present(line)
     def process_particle(this, line):
         this.part_cnt += 1
         if this.part_cnt > this.n_particles:
-            raise InvalidHepmc3Error('Too many particles for event:', event.raw)
+            warn('Too many particles for event:', this.raw)
+            return
     def _get_vertex_if_present(this, line):
         if not '@' in line:
             return None
@@ -43,6 +51,10 @@ class EventHeader:
 
 def flush_buffer(header, buffer):
     if header:
+        event_record = header.get_record()
+        if not event_record:
+            warn('Skipped invalid event', header.raw)
+            return
         sys.stdout.write(header.get_record())
     for line in buffer:
         sys.stdout.write(line)
@@ -63,7 +75,10 @@ if __name__ == '__main__':
     ## read line-by-line, fill the event buffer, and then
     ## write the sanitized output to stdout
     for line in sys.stdin:
-        if end_reached or len(line) == 0:
+        if len(line) == 0:
+            continue
+        if end_reached:
+            warn("Ignoring lines after END_EVENT_LISTING was reached")
             continue
         if not have_first_line:
             if not 'HepMC::Version' in line:
@@ -84,13 +99,17 @@ if __name__ == '__main__':
             buffer = []
         else:
             if header is None:
-                raise InvalidHepmc3Error('Encountered field before the Event header:', line)
+                raise InvalidHepmc3Error('Encountered field before the first Event header:', line)
             if line[0] == 'V':
                 header.process_vertex(line)
             elif line[0] == 'P':
                 header.process_particle(line)
             elif line[0] not in ['W', 'A', 'U']:
-                raise InvalidHepmc3Error('Encountered unknown field:', line)
+                warn('Ignoring unknown field:', line)
+                continue
             buffer.append(line)
+    if not end_reached:
+        warn("File does end with END_EVENT_LISTING, appending")
+        buffer.append('HepMC::Asciiv3-END_EVENT_LISTING\n')
     # final buffer flush at the end
     flush_buffer(header, buffer)
