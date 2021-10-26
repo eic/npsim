@@ -112,3 +112,7 @@ install(FILES
     ${CMAKE_CURRENT_BINARY_DIR}/NPDetConfigVersion.cmake
     DESTINATION lib/NPDet
     )
+
+install(PROGRAMS
+  scripts/sanitize_hepmc3.py DESTINATION bin RENAME sanitize_hepmc3
+    )
