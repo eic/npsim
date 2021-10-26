@@ -109,7 +109,7 @@ if __name__ == '__main__':
                 continue
             buffer.append(line)
     if not end_reached:
-        warn("File does end with END_EVENT_LISTING, appending")
+        warn("File does not end with END_EVENT_LISTING, appending")
         buffer.append('HepMC::Asciiv3-END_EVENT_LISTING\n')
     # final buffer flush at the end
     flush_buffer(header, buffer)
