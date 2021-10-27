@@ -22,8 +22,8 @@ class EventHeader:
         this.vert_cnt = 0
         this.part_cnt = 0
     def get_record(this):
-        if not this.vert_cnt == this.n_vertices:
-            warn('Invalid vertex count for event:', this.raw, "--> skipping event")
+        if this.vert_cnt > this.n_vertices:
+            warn('Too many vertices for event:', this.raw, "--> skipping event")
             return None
         if not this.part_cnt == this.n_particles:
             warn('Invalid particle count for event:', this.raw, "--> skipping event")
@@ -93,13 +93,15 @@ if __name__ == '__main__':
         elif 'HepMC::Asciiv3-END_EVENT_LISTING\n' == line:
             end_reached = True
             buffer.append(line)
+        elif line[0] in ['A']:
+            buffer.append(line)
         elif line[0] == 'E':
             flush_buffer(header, buffer)
             header = EventHeader(line)
             buffer = []
         else:
             if header is None:
-                raise InvalidHepmc3Error('Encountered field before the first Event header:', line)
+                raise InvalidHepmc3Error('Encountered invalid field before the first Event header:', line)
             if line[0] == 'V':
                 header.process_vertex(line)
             elif line[0] == 'P':
