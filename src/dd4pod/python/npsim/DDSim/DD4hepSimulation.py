@@ -369,7 +369,11 @@ class DD4hepSimulation(object):
       e4Out.RunNumberOffset = self.meta.runNumberOffset if self.meta.runNumberOffset > 0 else 0
       e4Out.EventNumberOffset = self.meta.eventNumberOffset if self.meta.eventNumberOffset > 0 else 0
     elif self.outputFile.endswith(".root"):
-      simple.setupROOTOutput('RootOutput', self.outputFile)
+      rootOut = simple.setupROOTOutput('RootOutput', self.outputFile)
+      eventPars = self.meta.parseEventParameters()
+      rootOut.EventParametersString, rootOut.EventParametersInt, rootOut.EventParametersFloat = eventPars
+      rootOut.RunNumberOffset = self.meta.runNumberOffset if self.meta.runNumberOffset > 0 else 0
+      rootOut.EventNumberOffset = self.meta.eventNumberOffset if self.meta.eventNumberOffset > 0 else 0
 
     actionList = []
 
