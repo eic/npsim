@@ -19,7 +19,7 @@ class Physics(ConfigHelper):
     self._list = "FTFP_BERT"
     self._decays = False
     self._pdgfile = None
-    self._rejectPDGs = {1, 2, 3, 4, 5, 6, 21, 23, 24, 25, 2101}
+    self._rejectPDGs = {1, 2, 3, 4, 5, 6, 21, 23, 24, 25, 431, 433, 2101}
     self._zeroTimePDGs = {11, 13, 15, 17}
     self._trackSecondariesFirst = False
 
