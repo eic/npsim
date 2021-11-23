@@ -93,7 +93,7 @@ if __name__ == '__main__':
         elif 'HepMC::Asciiv3-END_EVENT_LISTING\n' == line:
             end_reached = True
             buffer.append(line)
-        elif line[0] in ['A','W']:
+        elif line[0] in ['A','W','T','N']:
             buffer.append(line)
         elif line[0] == 'E':
             flush_buffer(header, buffer)
