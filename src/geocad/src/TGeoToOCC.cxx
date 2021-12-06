@@ -72,7 +72,7 @@ A log file is created in `/tmp/TGeoCad.log`
 #include <BRepBuilderAPI_Transform.hxx>
 #include <BRepBuilderAPI_MakePolygon.hxx>
 #include <BRepBuilderAPI_Sewing.hxx>
-#include <BRepAlgo_Section.hxx>
+#include <BRepAlgoAPI_Section.hxx>
 #include <BRepPrimAPI_MakeSphere.hxx>
 #include <BRepOffsetAPI_ThruSections.hxx>
 #include <BRepPrimAPI_MakeCylinder.hxx>
@@ -86,7 +86,7 @@ A log file is created in `/tmp/TGeoCad.log`
 #include <BRepAlgoAPI_Cut.hxx>
 #include <BRepAlgoAPI_Fuse.hxx>
 #include <BRepAlgoAPI_Common.hxx>
-#include <BRepAlgo_Cut.hxx>
+#include <BRepAlgoAPI_Cut.hxx>
 #include <Geom_Plane.hxx>
 #include <BRepClass3d_SolidClassifier.hxx>
 #include <BRepGProp.hxx>
