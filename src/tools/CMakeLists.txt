@@ -7,7 +7,7 @@ include(GNUInstallDirs)
 find_package(fmt REQUIRED)
 find_package(spdlog REQUIRED)
 find_package(DD4hep REQUIRED COMPONENTS DDCore DDG4 )
-find_package(ROOT REQUIRED COMPONENTS Geom GenVector MathCore OPTIONAL_COMPONENTS http)
+find_package(ROOT REQUIRED COMPONENTS Geom GenVector MathCore)
 include(${ROOT_USE_FILE})
 
 # ------------------------------------
