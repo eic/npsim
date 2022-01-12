@@ -16,9 +16,6 @@ dd4hep_add_plugin(NPDetPlugins
     SOURCES
     src/EICInteractionVertexBoost.cxx
     src/EICInteractionVertexSmear.cxx
-    src/EICOpticalPhotonPhysics.cpp
-    src/EICCerenkovPhysics.cpp
-    src/EICScintillationPhysics.cpp
     )
 
 target_link_libraries(NPDetPlugins

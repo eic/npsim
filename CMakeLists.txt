@@ -46,7 +46,7 @@ find_package(podio 0.11.0 REQUIRED )
 include_directories(${podio_INCLUDE_DIR})
 
 # DD4hep
-find_package( DD4hep REQUIRED COMPONENTS DDCore DDG4 )
+find_package( DD4hep 1.18 REQUIRED COMPONENTS DDCore DDG4 )
 
 # Opencascade
 if(USE_GEOCAD)

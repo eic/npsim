@@ -127,13 +127,13 @@ class Physics(ConfigHelper):
     from DDG4 import PhysicsList
 
     logger.info(" Setting up Optical Photon Physics")
-    ph = PhysicsList(kernel, 'EICOpticalPhotonPhysics/OpticalPhotonPhys')
+    ph = PhysicsList(kernel, 'Geant4OpticalPhotonPhysics/OpticalPhotonPhys')
     ph.VerboseLevel = 0
     ph.enableUI()
     seq.adopt(ph)
 
     logger.info(" Setting up Cerenkov Physics")
-    cer = PhysicsList(kernel, 'EICCerenkovPhysics/CerenkovPhys')
+    cer = PhysicsList(kernel, 'Geant4CerenkovPhysics/CerenkovPhys')
     cer.VerboseLevel = 0
     cer.MaxNumPhotonsPerStep = 10
     cer.MaxBetaChangePerStep = 10.0
