@@ -26,6 +26,8 @@ class Gun(ConfigHelper):
     self.phiMax = None
     self.thetaMin = None
     self.thetaMax = None
+    self.momentumMin = None
+    self.momentumMax = None
 
     self._distribution_EXTRA = {'choices': ['uniform', 'cos(theta)',
                                             'eta', 'pseudorapidity',
@@ -130,6 +132,10 @@ class Gun(ConfigHelper):
       if self.phiMax is not None:
         ddg4Gun.PhiMax = self.phiMax
         ddg4Gun.isotrop = True
+      if self.momentumMin is not None:
+        ddg4Gun.momentumMin = self.momentumMin
+      if self.momentumMax is not None:
+        ddg4Gun.momentumMax = self.momentumMax
     except Exception as e:  # pylint: disable=W0703
       logger.error("parsing gun options:\n%s\nException: %s " % (self, e))
       exit(1)
