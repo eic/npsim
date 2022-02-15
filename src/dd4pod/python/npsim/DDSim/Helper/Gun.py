@@ -133,9 +133,9 @@ class Gun(ConfigHelper):
         ddg4Gun.PhiMax = self.phiMax
         ddg4Gun.isotrop = True
       if self.momentumMin is not None:
-        ddg4Gun.momentumMin = self.momentumMin
+        ddg4Gun.MomentumMin = self.momentumMin
       if self.momentumMax is not None:
-        ddg4Gun.momentumMax = self.momentumMax
+        ddg4Gun.MomentumMax = self.momentumMax
     except Exception as e:  # pylint: disable=W0703
       logger.error("parsing gun options:\n%s\nException: %s " % (self, e))
       exit(1)
