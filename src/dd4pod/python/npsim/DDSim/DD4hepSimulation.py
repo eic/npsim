@@ -362,18 +362,12 @@ class DD4hepSimulation(object):
       lcOut.EventParametersString, lcOut.EventParametersInt, lcOut.EventParametersFloat = eventPars
       lcOut.RunNumberOffset = self.meta.runNumberOffset if self.meta.runNumberOffset > 0 else 0
       lcOut.EventNumberOffset = self.meta.eventNumberOffset if self.meta.eventNumberOffset > 0 else 0
-    elif self.outputFile.endswith("edm4hep.root"):
+    elif self.outputFile.endswith(".root"):
       e4Out = simple.setupEDM4hepOutput('EDM4hepOutput', self.outputFile)
       eventPars = self.meta.parseEventParameters()
       e4Out.EventParametersString, e4Out.EventParametersInt, e4Out.EventParametersFloat = eventPars
       e4Out.RunNumberOffset = self.meta.runNumberOffset if self.meta.runNumberOffset > 0 else 0
       e4Out.EventNumberOffset = self.meta.eventNumberOffset if self.meta.eventNumberOffset > 0 else 0
-    elif self.outputFile.endswith(".root"):
-      rootOut = simple.setupROOTOutput('RootOutput', self.outputFile)
-      eventPars = self.meta.parseEventParameters()
-      rootOut.EventParametersString, rootOut.EventParametersInt, rootOut.EventParametersFloat = eventPars
-      rootOut.RunNumberOffset = self.meta.runNumberOffset if self.meta.runNumberOffset > 0 else 0
-      rootOut.EventNumberOffset = self.meta.eventNumberOffset if self.meta.eventNumberOffset > 0 else 0
 
     actionList = []
 
