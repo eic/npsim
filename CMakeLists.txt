@@ -42,7 +42,7 @@ set(CMAKE_MODULE_PATH CMAKE_MODULE_PATH PODIO)
 # Find Libraries
 #----------------------------------------------------------------------------
 # PODIO
-find_package(podio 0.11.0 REQUIRED )
+find_package(podio 0.14.1 REQUIRED )
 include_directories(${podio_INCLUDE_DIR})
 
 # DD4hep
