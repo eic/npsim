@@ -7,7 +7,30 @@ project(NPDet
   VERSION 1.2.0
   LANGUAGES CXX)
 
+# C++ standard
 set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 17 CACHE STRING "Set the C++ standard to be used")
+if(NOT CMAKE_CXX_STANDARD MATCHES "17|20|23")
+  message(FATAL_ERROR "Unsupported C++ standard: ${CMAKE_CXX_STANDARD}")
+endif()
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+# Build type
+if (NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE RelWithDebInfo CACHE STRING "Build type configuration" FORCE)
+  message(STATUS "Setting default build type: ${CMAKE_BUILD_TYPE}")
+endif()
+
+# Error on all warnings
+if(NOT CMAKE_BUILD_TYPE STREQUAL "Release")
+  #FIXME not ready for this...
+  #add_compile_options(-Wall -Wextra -Werror -pedantic)
+endif()
+
+# Export compile commands as json for run-clang-tidy
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 option(BUILD_DATA_MODEL "build the dd4pod datamodel" ON)
 
 set(USE_GEOCAD ON CACHE BOOL "build the geocad library. Requires opencascade")
