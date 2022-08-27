@@ -198,7 +198,10 @@ int main (int argc, char *argv[]) {
       if (std::regex_search(c.first, txt_regex)) {
         fmt::print("{:<30}", c.first);
         if(s.value || s.all) {
-          fmt::print(" = {:>12.3f}", double(detector.constant<double>(c.first)));
+          if(((Constant)c.second).dataType()=="string")
+            fmt::print(" = {:>12s}", detector.constant<std::string>(c.first));
+          else
+            fmt::print(" = {:>12.3f}", double(detector.constant<double>(c.first)));
         }
         if(s.all) {
           fmt::print(" = {}", detector.constantAsString(c.first));
@@ -215,7 +218,10 @@ int main (int argc, char *argv[]) {
     auto constants = detector.constants();
     for (const auto& c : constants) {
       fmt::print("{:<30}", c.first);
-      fmt::print(" = {:>12.3f}", double(detector.constant<double>(c.first)));
+      if(((Constant)c.second).dataType()=="string")
+        fmt::print(" = {:>12s}", detector.constant<std::string>(c.first));
+      else
+        fmt::print(" = {:>12.3f}", double(detector.constant<double>(c.first)));
       fmt::print(" = {}", detector.constantAsString(c.first));
       // std::cout << " = " << detector.constant<double>(c.first);
       fmt::print("\n");
