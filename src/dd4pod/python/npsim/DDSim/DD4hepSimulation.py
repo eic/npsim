@@ -7,9 +7,10 @@ Based on M. Frank and F. Gaede runSim.py
 
 """
 from __future__ import absolute_import, unicode_literals, division, print_function
-__RCSID__ = "$Id$"
-import sys
+
 import os
+import sys
+import traceback
 from DDSim.Helper.Meta import Meta
 from DDSim.Helper.LCIO import LCIO
 from DDSim.Helper.HepMC3 import HepMC3
@@ -18,6 +19,8 @@ from DDSim.Helper.Physics import Physics
 from DDSim.Helper.Filter import Filter
 from DDSim.Helper.Random import Random
 from DDSim.Helper.Action import Action
+from DDSim.Helper.OutputConfig import OutputConfig
+from DDSim.Helper.InputConfig import InputConfig
 from DDSim.Helper.ConfigHelper import ConfigHelper
 from DDSim.Helper.MagneticField import MagneticField
 from DDSim.Helper.ParticleHandler import ParticleHandler
@@ -62,7 +65,7 @@ class DD4hepSimulation(object):
 
   def __init__(self):
     self.steeringFile = None
-    self.compactFile = ""
+    self.compactFile = []
     self.inputFiles = []
     self.outputFile = "dummyOutput.slcio"
     self.runType = "batch"
@@ -94,6 +97,8 @@ class DD4hepSimulation(object):
     self.part = ParticleHandler()
     self.field = MagneticField()
     self.action = Action()
+    self.outputConfig = OutputConfig()
+    self.inputConfig = InputConfig()
     self.guineapig = GuineaPig()
     self.lcio = LCIO()
     self.hepmc3 = HepMC3()
@@ -142,8 +147,9 @@ class DD4hepSimulation(object):
     if self._argv is None:
       self._argv = list(argv) if argv else list(sys.argv)
 
-    parser.add_argument("--compactFile", action="store", default=self.compactFile,
-                        help="The compact XML file")
+    parser.add_argument("--compactFile", nargs='+', action="store",
+                        default=ConfigHelper.makeList(self.compactFile), type=str,
+                        help="The compact XML file, or multiple compact files, if the last one is the closer.")
 
     parser.add_argument("--runType", action="store", choices=("batch", "vis", "run", "shell"), default=self.runType,
                         help="The type of action to do in this invocation"  # Note: implicit string concatenation
@@ -225,7 +231,7 @@ class DD4hepSimulation(object):
     self._dumpParameter = parsed.dumpParameter
     self._dumpSteeringFile = parsed.dumpSteeringFile
 
-    self.compactFile = parsed.compactFile
+    self.compactFile = ConfigHelper.makeList(parsed.compactFile)
     self.inputFiles = parsed.inputFiles
     self.inputFiles = self.__checkFileFormat(self.inputFiles, POSSIBLEINPUTFILES)
     self.outputFile = parsed.outputFile
@@ -248,6 +254,9 @@ class DD4hepSimulation(object):
 
     self._consistencyChecks()
 
+    if self.printLevel <= 2:  # VERBOSE or DEBUG
+      logger.setLevel(logging.DEBUG)
+
     # self.__treatUnknownArgs( parsed, unknown )
     self.__parseAllHelper(parsed)
     if self._errorMessages and not (self._dumpParameter or self._dumpSteeringFile):
@@ -269,7 +278,7 @@ class DD4hepSimulation(object):
   def getDetectorLists(self, detectorDescription):
     ''' get lists of trackers and calorimeters that are defined in detectorDescription (the compact xml file)'''
     import DDG4
-    trackers, calos, photos = [], [], []
+    trackers, calos, photos, unknown = [], [], [], []
     for i in detectorDescription.detectors():
       det = DDG4.DetElement(i.second.ptr())
       name = det.name()
@@ -277,16 +286,17 @@ class DD4hepSimulation(object):
       if sd.isValid():
         detType = sd.type()
         logger.info('getDetectorLists - found active detector %s type: %s', name, detType)
-        if any(pat in detType.lower() for pat in self.action.trackerSDTypes):
+        if any(pat.lower() in detType.lower() for pat in self.action.trackerSDTypes):
           trackers.append(det.name())
-        elif any(pat in detType.lower() for pat in self.action.calorimeterSDTypes):
+        elif any(pat.lower() in detType.lower() for pat in self.action.calorimeterSDTypes):
           calos.append(det.name())
-        elif any(pat in detType.lower() for pat in self.action.photoncounterSDTypes):
+        elif any(pat.lower() in detType.lower() for pat in self.action.photoncounterSDTypes):
           photos.append(det.name())
         else:
-          logger.warn('Testing Unknown sensitive detector type: %s', detType)
+          logger.warning('Unknown sensitive detector type: %s', detType)
+          unknown.append(det.name())
 
-    return trackers, calos, photos
+    return trackers, calos, photos, unknown
 
 # ==================================================================================
 
@@ -303,7 +313,8 @@ class DD4hepSimulation(object):
     kernel = DDG4.Kernel()
     dd4hep.setPrintLevel(self.printLevel)
 
-    kernel.loadGeometry(str("file:" + self.compactFile))
+    for compactFile in self.compactFile:
+      kernel.loadGeometry(str("file:" + compactFile))
     detectorDescription = kernel.detectorDescription()
 
     DDG4.importConstants(detectorDescription)
@@ -355,19 +366,23 @@ class DD4hepSimulation(object):
     self.random.initialize(DDG4, kernel, self.output.random)
 
     # Configure I/O
-    if self.outputFile.endswith(".slcio"):
+    if callable(self.outputConfig._userPlugin):
+      self.outputConfig._userPlugin(self)
+    elif self.outputFile.endswith(".slcio"):
       lcOut = simple.setupLCIOOutput('LcioOutput', self.outputFile)
       lcOut.RunHeader = self.meta.addParametersToRunHeader(self)
       eventPars = self.meta.parseEventParameters()
       lcOut.EventParametersString, lcOut.EventParametersInt, lcOut.EventParametersFloat = eventPars
       lcOut.RunNumberOffset = self.meta.runNumberOffset if self.meta.runNumberOffset > 0 else 0
       lcOut.EventNumberOffset = self.meta.eventNumberOffset if self.meta.eventNumberOffset > 0 else 0
-    elif self.outputFile.endswith(".root"):
+    elif self.outputFile.endswith("edm4hep.root"):
       e4Out = simple.setupEDM4hepOutput('EDM4hepOutput', self.outputFile)
       eventPars = self.meta.parseEventParameters()
       e4Out.EventParametersString, e4Out.EventParametersInt, e4Out.EventParametersFloat = eventPars
       e4Out.RunNumberOffset = self.meta.runNumberOffset if self.meta.runNumberOffset > 0 else 0
       e4Out.EventNumberOffset = self.meta.eventNumberOffset if self.meta.eventNumberOffset > 0 else 0
+    elif self.outputFile.endswith(".root"):
+      simple.setupROOTOutput('RootOutput', self.outputFile)
 
     actionList = []
 
@@ -396,7 +411,16 @@ class DD4hepSimulation(object):
       logger.info("++++ Adding Geant4 General Particle Source ++++")
       actionList.append(self._g4gps)
 
-    for index, inputFile in enumerate(self.inputFiles, start=4):
+    start = 4
+    for index, plugin in enumerate(self.inputConfig.userInputPlugin, start=start):
+      gen = plugin(self)
+      gen.Mask = index
+      start = index + 1
+      actionList.append(gen)
+      self.__applyBoostOrSmear(kernel, actionList, index)
+      logger.info("++++ Adding User Plugin %s ++++", gen.Name)
+
+    for index, inputFile in enumerate(self.inputFiles, start=start):
       if inputFile.endswith(".slcio"):
         gen = DDG4.GeneratorAction(kernel, "LCIOInputAction/LCIO%d" % index)
         gen.Parameters = self.lcio.getParameters()
@@ -466,28 +490,18 @@ class DD4hepSimulation(object):
     # =================================================================================
     # get lists of trackers and calorimeters in detectorDescription
 
-    trk, cal, photo = self.getDetectorLists(detectorDescription)
+    trk, cal, pho, unk = self.getDetectorLists(detectorDescription)
 
-    # ---- add the trackers:
-    try:
-      self.__setupSensitiveDetectors(trk, simple.setupTracker, self.filter.tracker)
-    except Exception as e:
-      logger.error("Setting up sensitive detector %s", e)
-      raise
-
-  # ---- add the calorimeters:
-    try:
-      self.__setupSensitiveDetectors(cal, simple.setupCalorimeter, self.filter.calo)
-    except Exception as e:
-      logger.error("Setting up sensitive detector %s", e)
-      raise
-
-  # ---- add photon counters:
-    try:
-      self.__setupSensitiveDetectors(photo, simple.setupPhotoncounter, self.filter.photo)
-    except Exception as e:
-      logger.error("Setting up sensitive detector %s", e)
-      raise
+    for detectors, function, defFilter, abort in [(trk, simple.setupTracker, self.filter.tracker, False),
+                                                  (cal, simple.setupCalorimeter, self.filter.calo, False),
+                                                  (pho, simple.setupPhotoncounter, self.filter.photo, False),
+                                                  (unk, simple.setupDetector, None, True),
+                                                  ]:
+      try:
+        self.__setupSensitiveDetectors(detectors, function, defFilter, abort)
+      except Exception as e:
+        logger.error("Failed setting up sensitive detector %s", e)
+        raise
 
   # =================================================================================
     # Now build the physics list:
@@ -575,6 +589,8 @@ class DD4hepSimulation(object):
               obj.setOption(var, parsedDict[key])
             except RuntimeError as e:
               self._errorMessages.append("ERROR: %s " % e)
+              if logger.level <= logging.DEBUG:
+                self._errorMessages.append(traceback.format_exc())
 
   def __checkOutputLevel(self, level):
     """return outputlevel as int so we don't have to import anything for faster startup"""
@@ -593,21 +609,29 @@ class DD4hepSimulation(object):
       self._errorMessages.append("ERROR: printLevel '%s' unknown" % level)
       return -1
 
-  def __setupSensitiveDetectors(self, detectors, setupFuction, defaultFilter=None):
-    """ attach sensitive detector actions for all subdetectors
-    can be steered with the `Action` ConfigHelpers
+  def __setupSensitiveDetectors(self, detectors, setupFuction, defaultFilter=None,
+                                abortForMissingAction=False,
+                                ):
+    """Attach sensitive detector actions for all subdetectors.
+
+    Can be steered with the `Action` ConfigHelpers
 
     :param detectors: list of detectors
     :param setupFunction: function used to register the sensitive detector
+    :param defaultFilter: default filter to apply for given types
+    :param abortForMissingAction: if true end program if there is no action found
     """
     for det in detectors:
-      logger.info('Setting up SD for %s' % det)
+      logger.info('Setting up SD for %s', det)
       action = None
       for pattern in self.action.mapActions:
         if pattern.lower() in det.lower():
           action = self.action.mapActions[pattern]
           logger.info('       replace default action with : %s', action)
           break
+      if abortForMissingAction and action is None:
+        logger.error('Cannot find Action for detector %s. You have to extend "action.mapAction"', det)
+        raise RuntimeError("Cannot find Action")
       seq, act = setupFuction(det, type=action)
       self.filter.applyFilters(seq, det, defaultFilter)
 
@@ -740,6 +764,7 @@ SIM = DD4hepSimulation()
     if have_mctruth:
       gen = GeneratorAction(simple.kernel(), "Geant4PrimaryHandler/PrimaryHandler")
       gen.RejectPDGs = ConfigHelper.makeString(self.physics.rejectPDGs)
+      gen.ZeroTimePDGs = ConfigHelper.makeString(self.physics.zeroTimePDGs)
       gen.enableUI()
       if output_level is not None:
         gen.OutputLevel = output_level

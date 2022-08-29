@@ -5,10 +5,8 @@ import os
 
 from DDSim.Helper.ConfigHelper import ConfigHelper
 from g4units import mm
-import logging
 import ddsix as six
 
-logger = logging.getLogger(__name__)
 
 class Physics(ConfigHelper):
   """Configuration for the PhysicsList"""
@@ -21,6 +19,7 @@ class Physics(ConfigHelper):
     self._pdgfile = None
     self._rejectPDGs = {1, 2, 3, 4, 5, 6, 21, 23, 24, 25, 1103, 2101, 2103, 2203, 3101, 3103, 3201, 3203, 3303, 4101, 4103, 4201, 4203, 4301, 4303, 4403}
     self._zeroTimePDGs = {11, 13, 15, 17}
+    self._userFunctions = []
     self._trackSecondariesFirst = False
 
   @property
@@ -124,15 +123,14 @@ class Physics(ConfigHelper):
     seq.decays = self.decays
     seq.enableUI()
     seq.dump()
+
     from DDG4 import PhysicsList
 
-    logger.info(" Setting up Optical Photon Physics")
     ph = PhysicsList(kernel, 'Geant4OpticalPhotonPhysics/OpticalPhotonPhys')
     ph.VerboseLevel = 0
     ph.enableUI()
     seq.adopt(ph)
 
-    logger.info(" Setting up Cerenkov Physics")
     cer = PhysicsList(kernel, 'Geant4CerenkovPhysics/CerenkovPhys')
     cer.VerboseLevel = 0
     cer.MaxNumPhotonsPerStep = 10
@@ -143,6 +141,7 @@ class Physics(ConfigHelper):
 
     # Add special particle types from specialized physics constructor
     if self.pdgfile:
+      seq = kernel.physicsList()
       part = PhysicsList(kernel, 'Geant4ExtraParticles/ExtraParticles')
       part.enableUI()
       seq.adopt(part)
@@ -150,9 +149,41 @@ class Physics(ConfigHelper):
 
     # Add global range cut
     if self.rangecut is not None:
+      seq = kernel.physicsList()
       rg = PhysicsList(kernel, 'Geant4DefaultRangeCut/GlobalRangeCut')
       rg.enableUI()
       seq.adopt(rg)
       rg.RangeCut = self.rangecut
 
+    for func in self._userFunctions:
+      func(kernel)
+
     return seq
+
+  def setupUserPhysics(self, userFunction):
+    """Add a function to setup physics plugins.
+
+    The function must take the DDG4.Kernel() object as the only argument.
+
+    For example, add a function definition and the call to a steering file::
+
+      def setupCerenkov(kernel):
+        from DDG4 import PhysicsList
+        seq = kernel.physicsList()
+        cerenkov = PhysicsList(kernel, 'Geant4CerenkovPhysics/CerenkovPhys')
+        cerenkov.MaxNumPhotonsPerStep = 10
+        cerenkov.MaxBetaChangePerStep = 10.0
+        cerenkov.TrackSecondariesFirst = True
+        cerenkov.VerboseLevel = 2
+        cerenkov.enableUI()
+        seq.adopt(cerenkov)
+        ph = PhysicsList(kernel, 'Geant4OpticalPhotonPhysics/OpticalGammaPhys')
+        ph.addParticleConstructor('G4OpticalPhoton')
+        ph.VerboseLevel = 2
+        ph.enableUI()
+        seq.adopt(ph)
+        return None
+
+      SIM.physics.setupUserPhysics(setupCerenkov)
+    """
+    self._userFunctions.append(userFunction)
