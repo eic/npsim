@@ -17,10 +17,15 @@ class Physics(ConfigHelper):
     self._list = "FTFP_BERT"
     self._decays = False
     self._pdgfile = None
-    self._rejectPDGs = {1, 2, 3, 4, 5, 6, 21, 23, 24, 25, 1103, 2101, 2103, 2203, 3101, 3103, 3201, 3203, 3303, 4101, 4103, 4201, 4203, 4301, 4303, 4403}
+    self._rejectPDGs = {1, 2, 3, 4, 5, 6,  # quarks
+                        21, 23, 24, 25,  # bosons
+                        1103,  # d? diquarks
+                        2101, 2103, 2203,  # u? diquarks
+                        3101, 3103, 3201, 3203, 3303,  # s? diquarks
+                        4101, 4103, 4201, 4203, 4301, 4303, 4403,  # c? diquarks
+                        5101, 5103, 5201, 5203, 5301, 5303, 5401, 5403, 5503}  # b? diquarks
     self._zeroTimePDGs = {11, 13, 15, 17}
     self._userFunctions = []
-    self._trackSecondariesFirst = False
 
   @property
   def rejectPDGs(self):
@@ -108,15 +113,6 @@ class Physics(ConfigHelper):
   def list(self, val):
     self._list = val
 
-  @property
-  def trackSecondariesFirst(self):
-    """Track Cerenkov and scintillation secondaries first (potentially large memory use)."""
-    return self._trackSecondariesFirst
-
-  @trackSecondariesFirst.setter
-  def trackSecondariesFirst(self, val):
-    self._trackSecondariesFirst = self.makeBool(val)
-
   def setupPhysics(self, kernel, name=None):
     seq = kernel.physicsList()
     seq.extends = name if name is not None else self.list
@@ -135,7 +131,7 @@ class Physics(ConfigHelper):
     cer.VerboseLevel = 0
     cer.MaxNumPhotonsPerStep = 10
     cer.MaxBetaChangePerStep = 10.0
-    cer.TrackSecondariesFirst = self.trackSecondariesFirst
+    cer.TrackSecondariesFirst = False
     cer.enableUI()
     seq.adopt(cer)
 
