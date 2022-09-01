@@ -98,23 +98,10 @@ configure_file(
 install(FILES
   "${CMAKE_CURRENT_BINARY_DIR}/npsim"
   PERMISSIONS OWNER_EXECUTE GROUP_EXECUTE WORLD_EXECUTE OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ 
-  DESTINATION bin)
-
-install(FILES
-  python/npsim/DDG4.py
-  DESTINATION share/npdet/python
+  DESTINATION bin
   )
-install(FILES
-  python/npsim/DDSim/DD4hepSimulation.py
-  DESTINATION share/npdet/python/DDSim
-  )
-install(DIRECTORY
-  python/npsim/DDSim
-  DESTINATION share/npdet/python
-  )
-
 install(PROGRAMS
-  python/ddsim.py
+  python/npsim.py
   DESTINATION bin
   )
 
