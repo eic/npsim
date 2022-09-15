@@ -199,7 +199,7 @@ int main (int argc, char *argv[]) {
         fmt::print("{:<30}", c.first);
         if(s.value || s.all) {
           if(((Constant)c.second).dataType()=="string")
-            fmt::print(" = {:>12s}", detector.constant<std::string>(c.first));
+            fmt::print(" = \"{:>s}\"", detector.constant<std::string>(c.first));
           else
             fmt::print(" = {:>12.3f}", double(detector.constant<double>(c.first)));
         }
@@ -219,7 +219,7 @@ int main (int argc, char *argv[]) {
     for (const auto& c : constants) {
       fmt::print("{:<30}", c.first);
       if(((Constant)c.second).dataType()=="string")
-        fmt::print(" = {:>12s}", detector.constant<std::string>(c.first));
+        fmt::print(" = \"{:>s}\"", detector.constant<std::string>(c.first));
       else
         fmt::print(" = {:>12.3f}", double(detector.constant<double>(c.first)));
       fmt::print(" = {}", detector.constantAsString(c.first));
