@@ -47,10 +47,17 @@ if __name__ == "__main__":
     name='ParticleSelectFilter/OpticalPhotonSelector',
     parameter={"particle": "opticalphoton"},
   )
+  # This could probably be a substring
   SIM.filter.mapDetFilter['DRICH'] = 'opticalphotons'
+  SIM.filter.mapDetFilter['MRICH'] = 'opticalphotons'
+  SIM.filter.mapDetFilter['PFRICH'] = 'opticalphotons'
+  SIM.filter.mapDetFilter['DIRC'] = 'opticalphotons'
 
   # Use the optical tracker for the DRICH
   SIM.action.mapActions['DRICH'] = 'Geant4OpticalTrackerAction'
+  SIM.action.mapActions['MRICH'] = 'Geant4OpticalTrackerAction'
+  SIM.action.mapActions['PFRICH'] = 'Geant4OpticalTrackerAction'
+  SIM.action.mapActions['DIRC'] = 'Geant4OpticalTrackerAction'
 
   # Parse remaining options (command line and steering file override above)
   SIM.parseOptions()
