@@ -18,7 +18,7 @@ add_executable(${exe_name} src/${exe_name}.cxx src/settings.cxx)
 target_link_libraries(${exe_name}
   PUBLIC DD4hep::DDCore
   )
-target_include_directories(${exe_name} 
+target_include_directories(${exe_name}
   PRIVATE include )
 target_compile_features(${exe_name}
   PUBLIC cxx_std_17
@@ -151,8 +151,5 @@ endif()
 ##  $<INSTALL_INTERFACE:include/${PROJECT_NAME}>
 ##  )
 #target_link_libraries(${test_name} Catch2::Catch2)
-#add_test(NAME ${test_name} COMMAND ${test_name} -r junit -o test_result_${test_name}.xml 
+#add_test(NAME ${test_name} COMMAND ${test_name} -r junit -o test_result_${test_name}.xml
 #  WORKING_DIRECTORY ${CMAKE_BINARY_DIR} )
-
-
-

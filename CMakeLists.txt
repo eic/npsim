@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.12 FATAL_ERROR)
 # CMP0074: find_package() uses <PackageName>_ROOT variables
 cmake_policy(SET CMP0074 NEW)
 
-project(NPDet 
+project(NPDet
   VERSION 1.2.0
   LANGUAGES CXX)
 
@@ -52,6 +52,8 @@ if(NOT CMAKE_CXX_STANDARD)
     set(CMAKE_CXX_EXTENSIONS OFF)
 endif()
 
+include(GNUInstallDirs)
+
 # ---------------------------------------------------------------------------
 # load additional OS dependent settings
 include(cmake/os.cmake)
@@ -70,6 +72,10 @@ include_directories(${podio_INCLUDE_DIR})
 
 # DD4hep
 find_package( DD4hep 1.18 REQUIRED COMPONENTS DDCore DDG4 )
+include(${DD4hep_DIR}/cmake/DD4hep.cmake)
+include(${DD4hep_DIR}/cmake/DD4hepBuild.cmake)
+dd4hep_configure_output()
+dd4hep_set_compiler_flags()
 
 # Opencascade
 if(USE_GEOCAD)
@@ -101,7 +107,7 @@ add_subdirectory(src/tools)
 
 #----------------------------------------------------------------------------
 # install examples
-#set(NPDet_EXAMPLES 
+#set(NPDet_EXAMPLES
 #    )
 #install(FILES ${NPDet_EXAMPLES}
 #    DESTINATION "${CMAKE_INSTALL_PREFIX}/share/${PROJECT_NAME}/examples"
@@ -119,7 +125,7 @@ include(CMakePackageConfigHelpers)
 
 set(TARGETS_INSTALL_PATH lib/NPDet/NPDetTargets.cmake)
 CONFIGURE_PACKAGE_CONFIG_FILE(
-    cmake/NPDetConfig.cmake.in  
+    cmake/NPDetConfig.cmake.in
     ${CMAKE_CURRENT_BINARY_DIR}/NPDetConfig.cmake
     INSTALL_DESTINATION lib/NPDet
     PATH_VARS CMAKE_INSTALL_INCLUDEDIR CMAKE_INSTALL_LIBDIR TARGETS_INSTALL_PATH

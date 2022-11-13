@@ -32,30 +32,3 @@ install(
     RUNTIME DESTINATION bin
     COMPONENT bin
     )
-
-
-#install(EXPORT NPDetTargets
-#  FILE GenDetectorsTargets.cmake
-#  NAMESPACE NPDet::
-#  DESTINATION lib/NPDet )
-#
-#include(CMakePackageConfigHelpers)
-#
-#CONFIGURE_PACKAGE_CONFIG_FILE(
-#  cmake/GenDetectorsConfig.cmake.in  
-#  ${CMAKE_CURRENT_BINARY_DIR}/GenDetectorsConfig.cmake
-#  INSTALL_DESTINATION lib/NPDet )
-##[PATH_VARS <var1> <var2> ... <varN>]
-##[NO_SET_AND_CHECK_MACRO]
-##[NO_CHECK_REQUIRED_COMPONENTS_MACRO])
-#
-#write_basic_package_version_file("GenDetectorsConfigVersion.cmake"
-#  VERSION ${NPDet_VERSION}
-#  COMPATIBILITY SameMajorVersion
-#)
-#install(FILES
-#  ${CMAKE_CURRENT_BINARY_DIR}/GenDetectorsConfig.cmake
-#  ${CMAKE_CURRENT_BINARY_DIR}/GenDetectorsConfigVersion.cmake
-#  DESTINATION lib/NPDet
-#)
-

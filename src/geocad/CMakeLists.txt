@@ -9,10 +9,10 @@ find_package(OpenCASCADE REQUIRED)
 
 ROOT_GENERATE_DICTIONARY(G__NPDetGeoCad
   include/TGeoToStep.h
-  OPTIONS -I${OpenCASCADE_INCLUDE_DIR} 
-  OPTIONS -I${CMAKE_CURRENT_SOURCE_DIR} 
-  OPTIONS -I${CMAKE_CURRENT_SOURCE_DIR}/include 
-  OPTIONS -I${CMAKE_CURRENT_SOURCE_DIR}/src 
+  OPTIONS -I${OpenCASCADE_INCLUDE_DIR}
+  OPTIONS -I${CMAKE_CURRENT_SOURCE_DIR}
+  OPTIONS -I${CMAKE_CURRENT_SOURCE_DIR}/include
+  OPTIONS -I${CMAKE_CURRENT_SOURCE_DIR}/src
   LINKDEF include/LinkDef.h
   )
 add_custom_target(G__NPDetGeoCad_ROOTDICT DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/G__NPDetGeoCad.cxx)
@@ -33,23 +33,23 @@ target_compile_features(GeoCad
     PRIVATE cxx_variadic_templates
     )
 
-target_compile_options(GeoCad PRIVATE 
+target_compile_options(GeoCad PRIVATE
   -Wno-extra
   -Wno-ignored-qualifiers
   -Wno-overloaded-virtual
   -Wno-shadow)
 
-target_link_libraries(GeoCad 
+target_link_libraries(GeoCad
   PUBLIC ${OpenCASCADE_LIBRARIES}
   PUBLIC ROOT::Geom)
 
-target_include_directories(GeoCad 
+target_include_directories(GeoCad
   PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   PUBLIC $<INSTALL_INTERFACE:include/npdet>
   PUBLIC ${OpenCASCADE_INCLUDE_DIR})
 
-install(FILES 
+install(FILES
   include/TGeoToStep.h
   DESTINATION include
   )
