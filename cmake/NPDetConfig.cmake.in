@@ -1,0 +1,13 @@
+@PACKAGE_INIT@
+
+include("${CMAKE_CURRENT_LIST_DIR}/NPDetTargets.cmake")
+
+set_and_check(NPDet_INCLUDE_DIR "@PACKAGE_CMAKE_INSTALL_INCLUDEDIR@")
+set_and_check(NPDet_LIBRARY_DIR "@PACKAGE_CMAKE_INSTALL_LIBDIR@")
+#set_and_check(NPDet_PYTHON_DIR "@PACKAGE_NPDet_PYTHON_INSTALLDIR@")
+
+include(CMakeFindDependencyMacro)
+find_dependency(ROOT @ROOT_VERSION@)
+
+
+check_required_components(NPDet)
