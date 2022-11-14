@@ -315,7 +315,9 @@ int main(int argc, char* argv[]) {
     // const PlacementVec& placements = matMgr.placementsBetween(p0,p1);
     // const MaterialVec& mats = matMgr.materialsBetween(p0,p1);
     std::string tempFile = "temp_material_scan_file.txt";
-    freopen(tempFile.c_str(), "w", stdout);
+    if (!freopen(tempFile.c_str(), "w", stdout)) {
+      std::exit(-1);
+    }
     if (good_subsystem_names.size() > 0) {
       for (const auto& aname : good_subsystem_names) {
         //fmt::print(" Subsystem: {}\n", aname);
@@ -324,7 +326,9 @@ int main(int argc, char* argv[]) {
         ms.print(p0.x(), p0.y(), p0.z(), p1.x(), p1.y(), p1.z());
       }
     }
-    freopen("/dev/tty", "w", stdout);
+    if (!freopen("/dev/tty", "w", stdout)) {
+      std::exit(-1);
+    }
     fmt::print("Average Radiation Length {}, full results in file {}.\n", getMeanRadiationLength(tempFile), tempFile);
   }
   
