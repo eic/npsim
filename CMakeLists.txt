@@ -98,7 +98,6 @@ FetchContent_MakeAvailable(Catch2)
 
 #-----------------------------------------
 # add the library sub directories
-add_subdirectory(src/detectors)
 add_subdirectory(src/plugins)
 add_subdirectory(src/dd4pod)
 add_subdirectory(src/geocad)
