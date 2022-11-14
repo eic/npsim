@@ -18,17 +18,3 @@ configure_file(
     "NPDetConfig.h.in"
     "NPDetConfig.h"
     )
-
-# -------------------------------------------------------
-# build and install NPDet-config
-include_directories(${CMAKE_CURRENT_BINARY_DIR})
-
-set(exename "${PROJECT_NAME}-config")
-add_executable(${exename} ${exename}.cxx)
-
-install(
-    TARGETS ${exename}
-    EXPORT ${PROJECT_NAME}Targets
-    RUNTIME DESTINATION bin
-    COMPONENT bin
-    )
