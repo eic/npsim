@@ -59,6 +59,16 @@ if __name__ == "__main__":
   SIM.action.mapActions['PFRICH'] = 'Geant4OpticalTrackerAction'
   SIM.action.mapActions['DIRC'] = 'Geant4OpticalTrackerAction'
 
+  # Set energy thresholds for all detectors
+  # Ref: https://docs.google.com/spreadsheets/d/1s8oXj36SqIh7TJeHFH89gQ_ayU1_SVEpWQNkx6sETKs/
+  thresholds = {
+     "VertexBarrel": 0.65*keV,
+  }
+  for detector, threshold in thresholds:
+    name = f"EnergyDepositMinimumCut/{detector}"
+    SIM.filter.filters[detector] = dict(name, {"Cut": threshold})
+    SIM.filter.mapDetFilter[detector] = detector
+
   # Parse remaining options (command line and steering file override above)
   SIM.parseOptions()
 
