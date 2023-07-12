@@ -62,9 +62,9 @@ if __name__ == "__main__":
   # Set energy thresholds for all detectors
   # Note: For most detectors we can apply this threshold either here, in
   # digitization, or in reconstruction. To allow studies at each stage,
-  # only some of the threshold may be applied here, so another 1/3 can be
-  # applied at the digitization. Ideally nothing is applied at the
-  # reconstruction anymore.
+  # only some of the threshold may be applied here, so the rest can be
+  # applied at the digitization. Ideally nothing should be applied at the
+  # reconstruction stage.
   # Ref: https://docs.google.com/spreadsheets/d/1s8oXj36SqIh7TJeHFH89gQ_ayU1_SVEpWQNkx6sETKs/
   energy_deposit_minimum_cuts = {
      "VertexBarrel": "0.65*keV",
