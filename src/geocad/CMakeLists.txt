@@ -3,7 +3,7 @@ if(NOT USE_GEOCAD)
   return()
 endif()
 
-find_package(ROOT REQUIRED COMPONENTS Geom GenVector MathCore)
+find_package(ROOT REQUIRED COMPONENTS Geom)
 find_package(OpenCASCADE REQUIRED)
 
 

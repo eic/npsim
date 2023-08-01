@@ -20,7 +20,6 @@
 
 #include "DD4hep/DD4hepUnits.h"
 #include "DD4hep/Detector.h"
-#include "DDG4/Geant4Data.h"
 #include "DDRec/CellIDPositionConverter.h"
 #include "DDRec/Surface.h"
 #include "DDRec/SurfaceManager.h"
