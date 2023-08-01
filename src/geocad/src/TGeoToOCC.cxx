@@ -595,9 +595,9 @@ TopoDS_Shape TGeoToOCC::OCC_Xtru(TGeoXtru * TG_Xtru)
 {
    Int_t vert=TG_Xtru->GetNvert();
    Int_t nz=TG_Xtru->GetNz();
-   Double_t x [vert];
-   Double_t y [vert];
-   Double_t z [nz];
+   Double_t* x = new Double_t[vert];
+   Double_t* y = new Double_t[vert];
+   Double_t* z = new Double_t[nz];
    gp_Trsf TR;
    TopoDS_Wire w;
    BRepOffsetAPI_ThruSections sect(true,true);
@@ -612,6 +612,9 @@ TopoDS_Shape TGeoToOCC::OCC_Xtru(TGeoXtru * TG_Xtru)
    }
    sect.Build();
    if (sect.IsDone()) fOccShape = sect.Shape();
+   delete[] x;
+   delete[] y;
+   delete[] z;
    return fOccShape;
 }
 
