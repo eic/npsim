@@ -59,6 +59,38 @@ if __name__ == "__main__":
   SIM.action.mapActions['PFRICH'] = 'Geant4OpticalTrackerAction'
   SIM.action.mapActions['DIRC'] = 'Geant4OpticalTrackerAction'
 
+  # Set energy thresholds for all detectors
+  # Note: For most detectors we can apply this threshold either here, in
+  # digitization, or in reconstruction. To allow studies at each stage,
+  # only some of the threshold may be applied here, so the rest can be
+  # applied at the digitization. Ideally nothing should be applied at the
+  # reconstruction stage.
+  # Ref: https://docs.google.com/spreadsheets/d/1s8oXj36SqIh7TJeHFH89gQ_ayU1_SVEpWQNkx6sETKs/
+  energy_deposit_minimum_cuts = {
+     "VertexBarrel": "0.65*keV",
+     "SiBarrel": "0.65*keV",
+     "MPGDBarrel": "0.25*keV",
+     "TrackerEndcap": "0.65*keV",
+     "BarrelTOF": "0.5*keV",
+     "ForwardTOF": "0.5*keV",
+     "EcalEndcapN": "5*MeV",
+     "EcalBarrelImaging": "15*keV",
+     "EcalEndcapP": "3*MeV",
+     "B0Tracker": "1*keV",
+     "B0ECal": "1*MeV",
+     "ForwardRomanPot": "1*keV",
+     "ForwardOffMTracker": "1*keV",
+     "BackwardsTagger": "1*keV",
+     "ZDC_Crystal": "1*MeV",
+     "ZDC_WSi": "10*MeV",
+     "ZDC_PbSi": "100*MeV",
+     "ZDC_PbSci": "100*MeV",
+  }
+  for detector, cut in energy_deposit_minimum_cuts.items():
+    name = f"EnergyDepositMinimumCut/{detector}/{cut}"
+    SIM.filter.filters[name] = dict(name=name, parameter={"Cut": cut})
+    SIM.filter.mapDetFilter[detector] = name
+
   # Parse remaining options (command line and steering file override above)
   SIM.parseOptions()
 
