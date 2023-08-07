@@ -1,10 +1,24 @@
+#include <cassert>
+#include <filesystem>
 #include <iostream>
 #include <string>
+
+#include <TError.h>
+#include <TApplication.h>
+
+#include <DD4hep/Detector.h>
+#include <DD4hep/Printout.h>
+
+#include <TEveManager.h>
+#include <TEveGeoNode.h>
+
+namespace fs = std::filesystem;
 
 #include "clipp.h"
 using namespace clipp;
 
 #include "settings.h"
+
 
 void run_part_mode(const settings& s);
 //______________________________________________________________________________

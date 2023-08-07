@@ -1,5 +1,15 @@
+#include <cassert>
+#include <filesystem>
 #include <iostream>
 #include <string>
+
+namespace fs = std::filesystem;
+
+#include <TError.h>
+#include <TApplication.h>
+
+#include <DD4hep/Detector.h>
+#include <DD4hep/Printout.h>
 
 #include "clipp.h"
 using namespace clipp;
@@ -219,18 +229,14 @@ int main (int argc, char *argv[]) {
 
 void run_part_mode(const settings& s)
 {
-
   dd4hep::setPrintLevel(dd4hep::WARNING);
-  gErrorIgnoreLevel = kWarning;// kPrint, kInfo, kWarning,
+  gErrorIgnoreLevel = kWarning;
 
   // -------------------------
   // Get the DD4hep instance
   // Load the compact XML file
   dd4hep::Detector& detector = dd4hep::Detector::getInstance();
   detector.fromCompact(s.infile);
-
-  //detector.manager().GetTopVolume()->GetNodes()->Print();
-  //detector.manager().GetTopVolume()->GetNode(0)->Dump();
 
   TGeoToStep * mygeom= new TGeoToStep( &(detector.manager()) );
   if( s.part_name_levels.size() > 1 ) {
@@ -243,6 +249,5 @@ void run_part_mode(const settings& s)
   } else {
     mygeom->CreateGeometry(s.outfile.c_str(), s.global_level);
   }
-  //detector.manager().Export("geometry.gdml");
 }
 
