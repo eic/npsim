@@ -74,6 +74,10 @@ endif()
 # libfmt
 find_package(fmt REQUIRED)
 
+# eAST
+find_package(east)
+message(STATUS "Found eAST: ${east_DIR}")
+
 #-----------------------------------------
 # add the library sub directories
 add_subdirectory(src/plugins)
@@ -81,6 +85,10 @@ add_subdirectory(src/dd4pod)
 add_subdirectory(src/geocad)
 add_subdirectory(src/config)
 add_subdirectory(src/tools)
+
+if(TARGET east::eASTPhysicsListBase)
+  add_subdirectory(src/east)
+endif()
 
 #----------------------------------------------------------------------------
 # Install and export targets
