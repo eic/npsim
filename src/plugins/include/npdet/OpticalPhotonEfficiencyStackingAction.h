@@ -50,26 +50,63 @@ namespace dd4hep {
       virtual void prepare(G4StackManager*) override { };
       /// Return TrackClassification with enum G4ClassificationOfNewTrack or NoTrackClassification
       virtual TrackClassification classifyNewTrack(G4StackManager*, const G4Track* aTrack) override {
+        // Only apply to optical photons
         if (aTrack->GetDefinition() == G4OpticalPhoton::OpticalPhotonDefinition()) {
-          double lambda = hbarc * twopi / aTrack->GetMomentum().mag();
+          double mom = aTrack->GetMomentum().mag();
+          double lambda = CLHEP::hbarc * CLHEP::twopi / mom;
+          auto* pv = aTrack->GetVolume();
+          auto* lv = pv->GetLogicalVolume();
+          printout(VERBOSE, name(), "photon with mom = %f eV, lambda = %f nm in pv %s, lv %s",
+              mom / CLHEP::eV, lambda / CLHEP::nm,
+              pv->GetName().c_str(), lv->GetName().c_str());
+
+          // If not in logical volume, return no action
+          if (lv->GetName() != m_logical_volume) return TrackClassification();
+
           if (m_lambda_min < lambda && lambda < m_lambda_max) {
-            double lambda_step = (m_lambda_max - m_lambda_min) / (m_efficiency.size() - 1);
-            double div = (lambda - m_lambda_min) / lambda_step;
-            auto i = std::llround(std::floor(div));
-            double t = div - m_lambda_min - i * lambda_step;
-            double a = m_efficiency[i];
-            double b = m_efficiency[i+1];
-            double efficiency = a + t * (b - a);
-            double random = m_rndm->uniform();
+            double efficiency{0.};
+            if (m_efficiency.size() == 0) {
+              // No efficiency specified, assume zero
+              efficiency = 0.;
+              // which means kill
+              return TrackClassification(fKill);
+
+            } else if (m_efficiency.size() == 1) {
+              // Single constant value over lambda range
+              efficiency = m_efficiency.front();
+
+            } else {
+              // Linear interpolation on lambda grid
+              double lambda_step = (m_lambda_max - m_lambda_min) / (m_efficiency.size() - 1);
+              double div = (lambda - m_lambda_min) / lambda_step;
+              auto i = std::llround(std::floor(div));
+              double t = div - i;
+              double a = m_efficiency[i];
+              double b = m_efficiency[i+1];
+              efficiency = a + t * (b - a);
+              printout(VERBOSE, name(), "a = %f, b = %f, t = %f", a, b, t);
+              printout(VERBOSE, name(), "efficiency %f", efficiency);
+            }
+
+            // Edge cases
+            if (efficiency == 0.0) return TrackClassification(fKill);
+            if (efficiency == 1.0) return TrackClassification();
+
+            // Throw random value
+            Geant4Event&  evt = context()->event();
+            Geant4Random& rnd = evt.random();
+            double random = rnd.uniform();
             if (random > efficiency) {
+              printout(VERBOSE, name(), "photon killed");
               return TrackClassification(fKill);
             }
+          } else {
+            printout(VERBOSE, name(), "photon outside lambda range [%f,%f] nm", m_lambda_min / CLHEP::nm, m_lambda_max / CLHEP::nm);
           }
         }
         return TrackClassification();
       };
     private:
-      Geant4Random* m_rndm = Geant4Random::instance();
       double m_lambda_min{0.}, m_lambda_max{0.};
       std::vector<double> m_efficiency;
       std::string m_logical_volume;
