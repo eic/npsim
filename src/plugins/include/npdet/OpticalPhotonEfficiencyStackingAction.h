@@ -61,7 +61,10 @@ namespace dd4hep {
               pv->GetName().c_str(), lv->GetName().c_str());
 
           // If not in logical volume, return no action
-          if (lv->GetName() != m_logical_volume) return TrackClassification();
+          if (lv->GetName() != m_logical_volume) {
+            printout(VERBOSE, name(), "in lv %s != %s required", lv->GetName().c_str(), m_logical_volume.c_str());
+            return TrackClassification();
+          }
 
           if (m_lambda_min < lambda && lambda < m_lambda_max) {
             double efficiency{0.};
