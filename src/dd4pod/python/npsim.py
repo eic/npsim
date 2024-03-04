@@ -63,7 +63,7 @@ if __name__ == "__main__":
   SIM.action.stack = [
     {
       "name": "OpticalPhotonEfficiencyStackingAction",
-      "parameer": {
+      "parameter": {
         "LambdaMin": "200*nm",
         "LambdaMax": "700*nm",
         "LogicalVolume": "bar_vol",
