@@ -89,8 +89,9 @@ settings cmdline_settings(int argc, char* argv[])
   auto partMode = "part mode:" % repeatable(
     command("part").set(s.selected,mode::part) % "Select only the first level nodes by name", 
     repeatable(
-      option("-l","--level").set(s.level_set) & value("level",s.part_level) % "Maximum level navigated to for part",
-      value("name")([&](const std::string& p)
+      option("-l","--level").set(s.level_set)
+      & value("level",s.part_level) % "Maximum level navigated to for part"
+      & value("name")([&](const std::string& p)
                     {
                       s.part_name = p;
                       if(!s.level_set) { s.part_level = -1; }
