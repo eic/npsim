@@ -64,8 +64,8 @@ if __name__ == "__main__":
     {
       "name": "OpticalPhotonEfficiencyStackingAction",
       "parameter": {
-        "LambdaMin": "200*nm",
-        "LambdaMax": "700*nm",
+        "LambdaMin": "180*nm",
+        "LambdaMax": "678*nm",
         "LogicalVolume": "bar_vol",
         "Efficiency": [e/100. for e in [
           0,    0,    14.0, 14.8, 14.5, 14.9, 14.4, 14.2, 13.9, 14.6, 15.2, 15.7, 16.4, 16.9, 17.5,
