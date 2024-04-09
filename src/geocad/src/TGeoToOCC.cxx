@@ -154,9 +154,9 @@ TopoDS_Shape TGeoToOCC::OCC_SimpleShape(TGeoShape *TG_Shape)
       return OCC_Cones(TG_Cone->GetRmin1(),TG_Cone->GetRmax1(),TG_Cone->GetRmin2(), TG_Cone->GetRmax2(),TG_Cone->GetDz(), 0, 2*M_PI);
    } else if(TG_Shape->IsA()==TGeoConeSeg::Class()) {
       TGeoConeSeg* TG_ConeSeg=(TGeoConeSeg*)TG_Shape;
-      Double_t r  = (TG_ConeSeg->GetPhi2()-TG_ConeSeg->GetPhi1());
+      Double_t DPhi = (TG_ConeSeg->GetPhi2()-TG_ConeSeg->GetPhi1());
       return OCC_Cones(TG_ConeSeg->GetRmin1(), TG_ConeSeg->GetRmax1(),TG_ConeSeg->GetRmin2(), TG_ConeSeg->GetRmax2(),
-      TG_ConeSeg->GetDz(), (TG_ConeSeg->GetPhi1())*M_PI/180., r*M_PI/180.);
+      TG_ConeSeg->GetDz(), (TG_ConeSeg->GetPhi1())*M_PI/180., DPhi*M_PI/180.);
    } else if(TG_Shape->IsA()==TGeoTorus::Class()) {
       TGeoTorus* TG_Torus=(TGeoTorus*)TG_Shape;
       Double_t DPhi=(Double_t)TG_Torus->GetDphi()-TG_Torus->GetPhi1();
@@ -220,7 +220,7 @@ TopoDS_Shape TGeoToOCC::OCC_SimpleShape(TGeoShape *TG_Shape)
       TG_Shape->SetPoints(vertex);
       return OCC_ParaTrap(vertex);
    } else {
-      throw std::domain_error("Unknown Shape");
+      throw std::domain_error(Form("Unknown Shape %s", TG_Shape->IsA()->GetName()));
    }
 }
 
@@ -356,9 +356,9 @@ TopoDS_Shape TGeoToOCC::OCC_Torus(Double_t Rmin, Double_t Rmax, Double_t Rtor,
    TopoDS_Solid torMax;
    TopoDS_Shape tor;
    gp_Trsf t;
-   if (Rmin==0) Rmin=0.000001;
-   if (Rmax==0) Rmax=0.000001;
-   if (Rtor==0) Rtor=0.000001;
+   if (Rmin < Precision::Confusion()) Rmin=0.000001;
+   if (Rmax < Precision::Confusion()) Rmax=0.000001;
+   if (Rtor < Precision::Confusion()) Rtor=0.000001;
    torMin = BRepPrimAPI_MakeTorus(Rtor,Rmin,DPhi);
    torMax = BRepPrimAPI_MakeTorus(Rtor,Rmax,DPhi);
    BRepAlgoAPI_Cut cutResult(torMax, torMin);
@@ -388,8 +388,12 @@ TopoDS_Shape TGeoToOCC::OCC_Sphere(Double_t rmin, Double_t rmax,
    TopoDS_Wire w;
 
 
-   if(rmin==0&&phi1==0&&Dphi==2*M_PI&&theta1==0&&Dtheta==M_PI) {
-      TopoDS_Solid s= BRepPrimAPI_MakeSphere(rmax);
+   if (rmin < Precision::Confusion() &&
+       fabs(phi1) < Precision::Confusion() &&
+       fabs(Dphi - 2*M_PI) < Precision::Confusion() &&
+       theta1 < Precision::Confusion() &&
+       fabs(Dtheta - M_PI) < Precision::Confusion()) {
+      TopoDS_Solid s = BRepPrimAPI_MakeSphere(rmax);
       return s;
    }
    Handle(Geom_TrimmedCurve) arcO =   GC_MakeArcOfCircle (gp_Circ (gp_Ax2 (gp_Pnt(0., 0., 0.),
@@ -397,7 +401,7 @@ TopoDS_Shape TGeoToOCC::OCC_Sphere(Double_t rmin, Double_t rmax,
                                                                theta1+Dtheta, true);
    BRepBuilderAPI_MakeEdge makeEO(arcO);
    eO = TopoDS::Edge(makeEO.Shape());
-   if(rmin>0) {
+   if (rmin > Precision::Confusion()) {
       Handle(Geom_TrimmedCurve) arcI =   GC_MakeArcOfCircle (gp_Circ (gp_Ax2 (gp_Pnt(0.,0., 0.),
                                                                                    gp_Dir (0,1, 0)),rmin),
                                                                   theta1, theta1+Dtheta,true);
@@ -434,9 +438,9 @@ TopoDS_Shape TGeoToOCC::OCC_Tube(Double_t rmin, Double_t rmax,
    TopoDS_Shape  tubsT;
    gp_Trsf TT;
    gp_Trsf TR;
-   if (rmin==0) rmin=rmin+0.00001;
-   if (rmax==0) rmax=rmax+0.00001;
-   if (phi1==0&&phi2==0) {
+   if (rmin < Precision::Confusion()) rmin=rmin+0.00001;
+   if (rmax < Precision::Confusion()) rmax=rmax+0.00001;
+   if (fabs(phi1) < Precision::Confusion() && fabs(phi2) < Precision::Confusion()) {
      innerCyl = BRepPrimAPI_MakeCylinder(rmin,dz*2);
      outerCyl = BRepPrimAPI_MakeCylinder(rmax,dz*2);
    } else {
@@ -462,23 +466,23 @@ TopoDS_Shape TGeoToOCC::OCC_Tube(Double_t rmin, Double_t rmax,
    return  Reverse(fOccShape);
 }
 
-TopoDS_Shape TGeoToOCC::OCC_Cones(Double_t rmin1, Double_t rmax1, Double_t rmin2, Double_t rmax2, Double_t dz, Double_t phi1, Double_t phi2)
+TopoDS_Shape TGeoToOCC::OCC_Cones(Double_t rmin1, Double_t rmax1, Double_t rmin2, Double_t rmax2, Double_t dz, Double_t phi1, Double_t dphi)
 {
    TopoDS_Solid innerCon;
-   TopoDS_Solid  outerCon;
+   TopoDS_Solid outerCon;
    TopoDS_Shape cons;
    gp_Trsf TT;
    gp_Trsf TR;
-   if (rmin1==0) rmin1=rmin1+0.000001;
-   if (rmax1==0) rmax1=rmax1+0.000001;
-   if(rmin1!=rmin2)
-      innerCon = BRepPrimAPI_MakeCone(rmin1,rmin2,dz*2,phi2);
+   if (rmin1 < Precision::Confusion()) rmin1=rmin1+0.000001;
+   if (rmax1 < Precision::Confusion()) rmax1=rmax1+0.000001;
+   if (fabs(rmin1 - rmin2) > Precision::Confusion())
+      innerCon = BRepPrimAPI_MakeCone(rmin1,rmin2,dz*2,dphi);
    else
-      innerCon = BRepPrimAPI_MakeCylinder(rmin1,dz*2,phi2);
-   if(rmax1!=rmax2)
-      outerCon = BRepPrimAPI_MakeCone(rmax1,rmax2,dz*2,phi2);
+      innerCon = BRepPrimAPI_MakeCylinder(rmin1,dz*2,dphi);
+   if (fabs(rmax1 - rmax2) > Precision::Confusion())
+      outerCon = BRepPrimAPI_MakeCone(rmax1,rmax2,dz*2,dphi);
    else
-      outerCon = BRepPrimAPI_MakeCylinder(rmax1,dz*2,phi2);
+      outerCon = BRepPrimAPI_MakeCylinder(rmax1,dz*2,dphi);
    BRepAlgoAPI_Cut cutResult(outerCon, innerCon);
    cutResult.Build();
    cons = cutResult.Shape();
@@ -510,8 +514,8 @@ TopoDS_Shape TGeoToOCC::OCC_Cuttub(Double_t rmin, Double_t rmax, Double_t dz,
 
    gp_Trsf TT;
    gp_Trsf TR;
-   if (rmin==0) rmin=rmin+0.000001;
-   if (rmax==0) rmax=rmax+0.000001;
+   if (rmin < Precision::Confusion()) rmin=rmin+0.000001;
+   if (rmax < Precision::Confusion()) rmax=rmax+0.000001;
    TopoDS_Solid rminCyl= BRepPrimAPI_MakeCylinder(rmin,2*dz,Dphi);
    TopoDS_Solid rmaxCyl = BRepPrimAPI_MakeCylinder(rmax,2*dz,Dphi);
    BRepAlgoAPI_Cut cutResult(rmaxCyl, rminCyl);
@@ -530,10 +534,10 @@ TopoDS_Shape TGeoToOCC::OCC_Cuttub(Double_t rmin, Double_t rmax, Double_t dz,
    BRepBuilderAPI_Transform theTR(TR);
    theTR.Perform(tubs, Standard_True);
    tubs=theTR.Shape();
-   if ((Nhigh[0]>-1e-4)&&(Nhigh[0]<1e-4)) nhigh0=0;
-   if ((Nhigh[1]>-1e-4)&&(Nhigh[1]<1e-4)) nhigh1=0;
-   if ((Nlow[0]>-1e-4)&&(Nlow[0]<1e-4)) nlow0=0;
-   if ((Nlow[1]>-1e-4)&&(Nlow[1]<1e-4)) nlow1=0;
+   if (fabs(Nhigh[0]) < Precision::Confusion()) nhigh0=0;
+   if (fabs(Nhigh[1]) < Precision::Confusion()) nhigh1=0;
+   if (fabs(Nlow[0]) < Precision::Confusion()) nlow0=0;
+   if (fabs(Nlow[1]) < Precision::Confusion()) nlow1=0;
    Handle(Geom_Plane) pH = new Geom_Plane (gp_Pnt(0,0,dz), gp_Dir(nhigh0,nhigh1,Nhigh[2]));
    Handle(Geom_Plane) pL = new Geom_Plane (gp_Pnt(0,0,-dz), gp_Dir(nlow0,nlow1,Nlow[2]));
 
