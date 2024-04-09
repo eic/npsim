@@ -154,9 +154,9 @@ TopoDS_Shape TGeoToOCC::OCC_SimpleShape(TGeoShape *TG_Shape)
       return OCC_Cones(TG_Cone->GetRmin1(),TG_Cone->GetRmax1(),TG_Cone->GetRmin2(), TG_Cone->GetRmax2(),TG_Cone->GetDz(), 0, 2*M_PI);
    } else if(TG_Shape->IsA()==TGeoConeSeg::Class()) {
       TGeoConeSeg* TG_ConeSeg=(TGeoConeSeg*)TG_Shape;
-      Double_t r  = (TG_ConeSeg->GetPhi2()-TG_ConeSeg->GetPhi1());
+      Double_t DPhi = (TG_ConeSeg->GetPhi2()-TG_ConeSeg->GetPhi1());
       return OCC_Cones(TG_ConeSeg->GetRmin1(), TG_ConeSeg->GetRmax1(),TG_ConeSeg->GetRmin2(), TG_ConeSeg->GetRmax2(),
-      TG_ConeSeg->GetDz(), (TG_ConeSeg->GetPhi1())*M_PI/180., r*M_PI/180.);
+      TG_ConeSeg->GetDz(), (TG_ConeSeg->GetPhi1())*M_PI/180., DPhi*M_PI/180.);
    } else if(TG_Shape->IsA()==TGeoTorus::Class()) {
       TGeoTorus* TG_Torus=(TGeoTorus*)TG_Shape;
       Double_t DPhi=(Double_t)TG_Torus->GetDphi()-TG_Torus->GetPhi1();
