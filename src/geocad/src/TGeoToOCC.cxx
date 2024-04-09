@@ -38,6 +38,7 @@ TGeoEltu               ->           OCC_Eltu(..)
 TGeoHype               ->           OCC_Hype(..)
 TGeoXtru               ->           OCC_Xtru(..)
 TGeoCompositeShape     ->           OCC_CompositeShape(..)
+TGeoTessellated        ->           OCC_Mesh(..)
 ~~~
 
 A log file is created in `/tmp/TGeoCad.log`
@@ -71,6 +72,7 @@ A log file is created in `/tmp/TGeoCad.log`
 #include <BRepBuilderAPI_MakeSolid.hxx>
 #include <BRepBuilderAPI_Transform.hxx>
 #include <BRepBuilderAPI_MakePolygon.hxx>
+#include <BRepBuilderAPI_MakeShapeOnMesh.hxx>
 #include <BRepBuilderAPI_Sewing.hxx>
 #include <BRepAlgoAPI_Section.hxx>
 #include <BRepPrimAPI_MakeSphere.hxx>
@@ -93,6 +95,7 @@ A log file is created in `/tmp/TGeoCad.log`
 #include <GProp_GProps.hxx>
 #include <TColgp_HArray1OfPnt.hxx>
 #include <ShapeFix_ShapeTolerance.hxx>
+#include <Poly_Triangulation.hxx>
 
 //ROOT
 #include "TString.h"
@@ -113,6 +116,7 @@ A log file is created in `/tmp/TGeoCad.log`
 #include "TGeoHype.h"
 #include "TGeoPolygon.h"
 #include "TGeoMatrix.h"
+#include "TGeoTessellated.h"
 
 #include <exception>
 
@@ -219,9 +223,41 @@ TopoDS_Shape TGeoToOCC::OCC_SimpleShape(TGeoShape *TG_Shape)
       Double_t vertex[24];
       TG_Shape->SetPoints(vertex);
       return OCC_ParaTrap(vertex);
+   } else if (TG_Shape->IsA()==TGeoTessellated::Class()) {
+      TGeoTessellated * TG_Tess=(TGeoTessellated*)TG_Shape;
+      return OCC_Mesh(TG_Tess);
    } else {
       throw std::domain_error("Unknown Shape");
    }
+}
+
+TopoDS_Shape TGeoToOCC::OCC_Mesh(TGeoTessellated *tess)
+{
+  using namespace std;
+   Int_t n_vertices = tess->GetNvertices();
+   Int_t n_facets = tess->GetNfacets();
+
+   Handle(Poly_Triangulation) mesh = new Poly_Triangulation(n_vertices, n_facets, false, false);
+   for (Int_t i_vertex = 0; i_vertex < n_vertices; i_vertex++) {
+     auto& vertex = tess->GetVertex(i_vertex);
+     mesh->SetNode(i_vertex+1, gp_Pnt(vertex.x(), vertex.y(), vertex.z()));
+   }
+   for (Int_t i_facet = 0; i_facet < n_facets; i_facet++) {
+     auto& facet = tess->GetFacet(i_facet);
+     if (facet.GetNvert() != 3) {
+       throw std::domain_error("TGeoTessellated with quadrilateral facets unsupported");
+     }
+     mesh->SetTriangle(
+       i_facet+1,
+       Poly_Triangle(
+         facet.GetVertexIndex(0)+1,
+         facet.GetVertexIndex(1)+1,
+         facet.GetVertexIndex(2)+1));
+   }
+   BRepBuilderAPI_MakeShapeOnMesh builder(mesh);
+   builder.Build();
+   TopoDS_Shape shape = builder.Shape();
+   return Reverse(shape);
 }
 
 TopoDS_Shape TGeoToOCC::OCC_CompositeShape(TGeoCompositeShape *comp, TGeoHMatrix m)
