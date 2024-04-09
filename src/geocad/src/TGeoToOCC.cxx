@@ -220,7 +220,7 @@ TopoDS_Shape TGeoToOCC::OCC_SimpleShape(TGeoShape *TG_Shape)
       TG_Shape->SetPoints(vertex);
       return OCC_ParaTrap(vertex);
    } else {
-      throw std::domain_error("Unknown Shape");
+      throw std::domain_error(Form("Unknown Shape %s", TG_Shape->IsA()->GetName()));
    }
 }
 
