@@ -389,7 +389,7 @@ TopoDS_Shape TGeoToOCC::OCC_Sphere(Double_t rmin, Double_t rmax,
 
 
    if (rmin < Precision::Confusion() &&
-       phi1 < Precision::Confusion() &&
+       fabs(phi1) < Precision::Confusion() &&
        fabs(Dphi - 2*M_PI) < Precision::Confusion() &&
        theta1 < Precision::Confusion() &&
        fabs(Dtheta - M_PI) < Precision::Confusion()) {
@@ -440,7 +440,7 @@ TopoDS_Shape TGeoToOCC::OCC_Tube(Double_t rmin, Double_t rmax,
    gp_Trsf TR;
    if (rmin < Precision::Confusion()) rmin=rmin+0.00001;
    if (rmax < Precision::Confusion()) rmax=rmax+0.00001;
-   if (phi1 < Precision::Confusion() && phi2 < Precision::Confusion()) {
+   if (fabs(phi1) < Precision::Confusion() && fabs(phi2) < Precision::Confusion()) {
      innerCyl = BRepPrimAPI_MakeCylinder(rmin,dz*2);
      outerCyl = BRepPrimAPI_MakeCylinder(rmax,dz*2);
    } else {
