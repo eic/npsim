@@ -24,6 +24,7 @@
 //Root
 #include "TGeoXtru.h"
 #include "TGeoCompositeShape.h"
+#include "TGeoTessellated.h"
 
 #include <fstream>
 
@@ -48,6 +49,7 @@ private:
    TopoDS_Shape OCC_Pgon(Int_t np, Int_t nz, Double_t * p, Double_t phi1, Double_t DPhi, Int_t numpoint);
    TopoDS_Shape OCC_Box(Double_t dx, Double_t dy, Double_t dz, Double_t OX, Double_t OY, Double_t OZ);
    TopoDS_Shape OCC_Trd(Double_t dx1, Double_t dx2, Double_t dy1, Double_t dy2, Double_t dz);
+   TopoDS_Shape OCC_Mesh(TGeoTessellated *tess);
    std::ofstream out;
    TopoDS_Shape fOccShape;
 
