@@ -49,14 +49,12 @@ if __name__ == "__main__":
   )
   # This could probably be a substring
   SIM.filter.mapDetFilter['DRICH'] = 'opticalphotons'
-  SIM.filter.mapDetFilter['MRICH'] = 'opticalphotons'
-  SIM.filter.mapDetFilter['PFRICH'] = 'opticalphotons'
+  SIM.filter.mapDetFilter['RICHEndcapN'] = 'opticalphotons'
   SIM.filter.mapDetFilter['DIRC'] = 'opticalphotons'
 
   # Use the optical tracker for the DRICH
   SIM.action.mapActions['DRICH'] = 'Geant4OpticalTrackerAction'
-  SIM.action.mapActions['MRICH'] = 'Geant4OpticalTrackerAction'
-  SIM.action.mapActions['PFRICH'] = 'Geant4OpticalTrackerAction'
+  SIM.action.mapActions['RICHEndcapN'] = 'Geant4OpticalTrackerAction'
   SIM.action.mapActions['DIRC'] = 'Geant4OpticalTrackerAction'
 
   # Use the optical photon efficiency stacking action for hpDIRC
