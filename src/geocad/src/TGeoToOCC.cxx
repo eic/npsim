@@ -250,9 +250,17 @@ TopoDS_Shape TGeoToOCC::OCC_Mesh(TGeoTessellated *tess)
      mesh->SetTriangle(
        i_facet+1,
        Poly_Triangle(
+#if ROOT_VERSION_CODE >= ROOT_VERSION(6, 32, 0)
+         facet[0]+1,
+         facet[1]+1,
+         facet[2]+1
+#else
          facet.GetVertexIndex(0)+1,
          facet.GetVertexIndex(1)+1,
-         facet.GetVertexIndex(2)+1));
+         facet.GetVertexIndex(2)+1
+#endif
+       )
+     );
    }
    BRepBuilderAPI_MakeShapeOnMesh builder(mesh);
    builder.Build();
