@@ -238,6 +238,12 @@ void run_part_mode(const settings& s)
   dd4hep::Detector& detector = dd4hep::Detector::getInstance();
   detector.fromCompact(s.infile);
 
+  // change units from mm to cm
+  // std::cout << detector.manager().GetDefaultUnits() << std::endl;
+  TGeoManager::LockDefaultUnits(false);
+  TGeoManager::SetDefaultUnits(TGeoManager::kG4Units);
+  // std::cout << detector.manager().GetDefaultUnits() << std::endl;
+
   TGeoToStep * mygeom= new TGeoToStep( &(detector.manager()) );
   if( s.part_name_levels.size() > 1 ) {
     mygeom->CreatePartialGeometry( s.part_name_levels, s.outfile.c_str() );
