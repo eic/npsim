@@ -32,9 +32,9 @@ public:
    TGeoToStep(TGeoManager *geom);
    virtual ~TGeoToStep();
 
-   void CreateGeometry(const char* fname = "geometry.stp", int max_level = -1);
-   void CreatePartialGeometry(const char* part_name, int max_level = -1,  const char* fname = "geometry.stp");
-   void CreatePartialGeometry(std::map<std::string,int> part_name_levels,  const char* fname = "geometry.stp");
+   void CreateGeometry(const char* fname = "geometry.stp", int max_level = -1, double length_unit_to_mm = 1.);
+   void CreatePartialGeometry(const char* part_name, int max_level = -1,  const char* fname = "geometry.stp", double length_unit_to_mm = 1.);
+   void CreatePartialGeometry(std::map<std::string,int> part_name_levels,  const char* fname = "geometry.stp", double length_unit_to_mm = 1.);
 
    ClassDef(TGeoToStep,1)
 };

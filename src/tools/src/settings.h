@@ -23,8 +23,9 @@ struct settings {
   bool            level_set         = false;
   int             global_level      = 1;
   bool            list_all          = false;
-  int     color          = 1;
-  double  alpha          = 1;
+  int             color             = 1;
+  double          alpha             = 1;
+  double          unit_factor       = 10;
   std::map<std::string, int>    part_name_levels;
   std::map<std::string, int>    part_name_colors;
   std::map<std::string, double> part_name_alphas;

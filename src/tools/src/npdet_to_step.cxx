@@ -105,7 +105,8 @@ settings cmdline_settings(int argc, char* argv[])
     option("-g","--global_level") & integer("level",s.global_level),
     option("-o","--output") & value("out",s.outfile),
     value("file",s.infile).if_missing([]{ std::cout << "You need to provide an input xml filename as the last argument!\n"; } )
-    % "input xml file"
+    % "input xml file",
+    option("-u","--unit-factor") & value("unit",s.unit_factor) % "conversion factor of the length unit to mm"
     );
 
   auto helpMode = command("help").set(s.selected, mode::help);
@@ -238,22 +239,16 @@ void run_part_mode(const settings& s)
   dd4hep::Detector& detector = dd4hep::Detector::getInstance();
   detector.fromCompact(s.infile);
 
-  // change units from mm to cm
-  // std::cout << detector.manager().GetDefaultUnits() << std::endl;
-  TGeoManager::LockDefaultUnits(false);
-  TGeoManager::SetDefaultUnits(TGeoManager::kG4Units);
-  // std::cout << detector.manager().GetDefaultUnits() << std::endl;
-
   TGeoToStep * mygeom= new TGeoToStep( &(detector.manager()) );
   if( s.part_name_levels.size() > 1 ) {
-    mygeom->CreatePartialGeometry( s.part_name_levels, s.outfile.c_str() );
+    mygeom->CreatePartialGeometry( s.part_name_levels, s.outfile.c_str(), s.unit_factor );
   } else if( s.part_name_levels.size() == 1 ) {
     // loop of 1
     for(const auto& [n,l] : s.part_name_levels){
-      mygeom->CreatePartialGeometry( n.c_str(), l, s.outfile.c_str() );
+      mygeom->CreatePartialGeometry( n.c_str(), l, s.outfile.c_str(), s.unit_factor );
     }
   } else {
-    mygeom->CreateGeometry(s.outfile.c_str(), s.global_level);
+    mygeom->CreateGeometry(s.outfile.c_str(), s.global_level, s.unit_factor);
   }
 }
 

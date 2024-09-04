@@ -51,7 +51,7 @@ private:
 public:
    TOCCToStep();
    void      PrintAssembly();
-   TDF_Label OCCShapeCreation(TGeoManager *m);
+   TDF_Label OCCShapeCreation(TGeoManager *m, double length_unit_to_mm = 1.);
    void      OCCTreeCreation(TGeoManager *m, int max_level = -1);
    bool      OCCPartialTreeCreation(TGeoManager *m, const char* node_name, int max_level = -1);
    bool      OCCPartialTreeCreation(TGeoManager *m, std::map<std::string,int> part_name_levels);
