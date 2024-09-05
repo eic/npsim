@@ -68,9 +68,9 @@ void TOCCToStep::OCCDocCreation()
 ////////////////////////////////////////////////////////////////////////////////
 /// Logical fTree creation.
 
-TDF_Label TOCCToStep::OCCShapeCreation(TGeoManager *m, double length_unit_to_mm)
+TDF_Label TOCCToStep::OCCShapeCreation(TGeoManager *m, double tgeo_length_unit_in_mm)
 {
-   XCAFDoc_DocumentTool::SetLengthUnit(fDoc, length_unit_to_mm, UnitsMethods_LengthUnit_Millimeter);
+   XCAFDoc_DocumentTool::SetLengthUnit(fDoc, tgeo_length_unit_in_mm, UnitsMethods_LengthUnit_Millimeter);
    TDF_Label motherLabel;
    TGeoVolume * currentVolume;
    TGeoVolume * motherVol;

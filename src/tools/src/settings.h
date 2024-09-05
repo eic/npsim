@@ -25,7 +25,7 @@ struct settings {
   bool            list_all          = false;
   int             color             = 1;
   double          alpha             = 1;
-  double          unit_factor       = 10;
+  double          tgeo_length_unit_in_mm  = 10;
   std::map<std::string, int>    part_name_levels;
   std::map<std::string, int>    part_name_colors;
   std::map<std::string, double> part_name_alphas;
