@@ -68,22 +68,22 @@ TGeoToStep::~TGeoToStep()
    if (fGeometry) delete fGeometry;
 }
 
-void TGeoToStep::CreateGeometry(const char* fname, int max_level)
+void TGeoToStep::CreateGeometry(const char* fname, int max_level, double tgeo_length_unit_in_mm)
 {
    //ROOT CAD CONVERSION
    fCreate = new TOCCToStep();
-   fCreate->OCCShapeCreation(fGeometry);
+   fCreate->OCCShapeCreation(fGeometry, tgeo_length_unit_in_mm);
    fCreate->OCCTreeCreation(fGeometry, max_level);
    fCreate->OCCWriteStep(fname);
    //fCreate->PrintAssembly();
    delete(fCreate);
 }
 
-void TGeoToStep::CreatePartialGeometry(const char* part_name, int max_level, const char* fname)
+void TGeoToStep::CreatePartialGeometry(const char* part_name, int max_level, const char* fname, double tgeo_length_unit_in_mm)
 {
    //ROOT CAD CONVERSION
    fCreate = new TOCCToStep();
-   fCreate->OCCShapeCreation(fGeometry);
+   fCreate->OCCShapeCreation(fGeometry, tgeo_length_unit_in_mm);
    if( !(fCreate->OCCPartialTreeCreation(fGeometry, part_name, max_level)) ) {
    //  std::cout << " Part: " << part_name << ", max_level = " << max_level;
    //  std::cout << ", Found.\n";
@@ -97,11 +97,11 @@ void TGeoToStep::CreatePartialGeometry(const char* part_name, int max_level, con
 }
 
 
-void TGeoToStep::CreatePartialGeometry(std::map<std::string,int> part_name_levels, const char* fname)
+void TGeoToStep::CreatePartialGeometry(std::map<std::string,int> part_name_levels, const char* fname, double tgeo_length_unit_in_mm)
 {
   //ROOT CAD CONVERSION
   fCreate = new TOCCToStep();
-  fCreate->OCCShapeCreation(fGeometry);
+  fCreate->OCCShapeCreation(fGeometry, tgeo_length_unit_in_mm);
   if( !(fCreate->OCCPartialTreeCreation(fGeometry, part_name_levels)) ) {
   //  std::cout << " At least one part found.\n";
   //} else {

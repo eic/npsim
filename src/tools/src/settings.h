@@ -3,6 +3,7 @@
 
 #include <map>
 #include <string>
+#include "TGeoManager.h"
 
 class TGeoNode;
 
@@ -23,8 +24,10 @@ struct settings {
   bool            level_set         = false;
   int             global_level      = 1;
   bool            list_all          = false;
-  int     color          = 1;
-  double  alpha          = 1;
+  int             color             = 1;
+  double          alpha             = 1;
+  // TGeoManager has two sets of units: kRootUnits (cm) and kG4Units (mm)
+  double          tgeo_length_unit_in_mm  = (TGeoManager::GetDefaultUnits() == TGeoManager::kRootUnits)? 10.:1.;
   std::map<std::string, int>    part_name_levels;
   std::map<std::string, int>    part_name_colors;
   std::map<std::string, double> part_name_alphas;
