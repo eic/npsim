@@ -86,7 +86,6 @@ auto getMeanRadiationLength(std::string infile){
   return instr;
 }
 
-using namespace dd4hep;
 using namespace dd4hep::rec;
 
 template <typename T>
@@ -245,7 +244,7 @@ int main(int argc, char* argv[]) {
   //  }
   //}
 
-  Detector& description = Detector::getInstance();
+  dd4hep::Detector& description = dd4hep::Detector::getInstance();
   description.fromXML(s.infile);
   //CellIDPositionConverter  pos_converter(description);
 
@@ -270,7 +269,7 @@ int main(int argc, char* argv[]) {
 
   TFile* rootFile = new TFile(s.outfile.c_str(), "recreate");
 
-  Volume world = description.world().volume();
+  dd4hep::Volume world = description.world().volume();
   MaterialManager matMgr(world);
 
   using ROOT::Math::XYZVector;

@@ -35,7 +35,7 @@
 
 using namespace clipp;
 using namespace ROOT::Math;
-using namespace dd4hep;
+using dd4hep::cm, dd4hep::mm, dd4hep::tesla;
 
 struct settings {
   bool success = false;
@@ -274,7 +274,7 @@ int main (int argc, char *argv[]) {
 
   TApplication theApp("tapp", &root_argc, root_argv);
 
-  TMultiGraph* mg = new TMultiGraph();
+  TMultiGraph* mgr = new TMultiGraph();
   for(const auto& comp : s.field_comps){
     std::cout << comp << "\n";
 
@@ -283,7 +283,7 @@ int main (int argc, char *argv[]) {
     gr->SetLineWidth(2);
     gr->SetFillColor(0);
     gr->SetTitle("B_{z}");
-    mg->Add(gr,"l");
+    mgr->Add(gr,"l");
 
     gr = build_1D_field_graph(detector, s,
                               [&](ROOT::Math::XYZVector B) { return B.Rho(); });
@@ -291,7 +291,7 @@ int main (int argc, char *argv[]) {
     gr->SetLineWidth(2);
     gr->SetFillColor(0);
     gr->SetTitle("B_{#perp}");
-    mg->Add(gr,"l");
+    mgr->Add(gr,"l");
 
     gr = build_1D_field_graph(detector, s, [&](ROOT::Math::XYZVector B) {
       return (B - B.Unit() * (B.Dot(s.direction))).r();
@@ -300,12 +300,12 @@ int main (int argc, char *argv[]) {
     gr->SetLineWidth(2);
     gr->SetFillColor(0);
     gr->SetTitle("B_{perp}");
-    //mg->Add(gr,"l");
+    //mgr->Add(gr,"l");
 
   }
 
   auto c = new TCanvas();
-  mg->Draw("a");
+  mgr->Draw("a");
   //mag_field( detector );
   c->BuildLegend();
 

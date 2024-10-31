@@ -30,7 +30,6 @@
 #include "DD4hep/detail/OpticalSurfaceManagerInterna.h"
 using namespace clipp;
 using namespace ROOT::Math;
-using namespace dd4hep;
 
 enum class Mode { Print, List, Search, Dump, None };
 
