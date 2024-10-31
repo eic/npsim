@@ -105,7 +105,8 @@ settings cmdline_settings(int argc, char* argv[])
     option("-g","--global_level") & integer("level",s.global_level),
     option("-o","--output") & value("out",s.outfile),
     value("file",s.infile).if_missing([]{ std::cout << "You need to provide an input xml filename as the last argument!\n"; } )
-    % "input xml file"
+    % "input xml file",
+    option("-u","--unit-factor") & value("unit",s.tgeo_length_unit_in_mm) % "conversion factor of the length unit to mm"
     );
 
   auto helpMode = command("help").set(s.selected, mode::help);
@@ -240,14 +241,14 @@ void run_part_mode(const settings& s)
 
   TGeoToStep * mygeom= new TGeoToStep( &(detector.manager()) );
   if( s.part_name_levels.size() > 1 ) {
-    mygeom->CreatePartialGeometry( s.part_name_levels, s.outfile.c_str() );
+    mygeom->CreatePartialGeometry( s.part_name_levels, s.outfile.c_str(), s.tgeo_length_unit_in_mm );
   } else if( s.part_name_levels.size() == 1 ) {
     // loop of 1
     for(const auto& [n,l] : s.part_name_levels){
-      mygeom->CreatePartialGeometry( n.c_str(), l, s.outfile.c_str() );
+      mygeom->CreatePartialGeometry( n.c_str(), l, s.outfile.c_str(), s.tgeo_length_unit_in_mm );
     }
   } else {
-    mygeom->CreateGeometry(s.outfile.c_str(), s.global_level);
+    mygeom->CreateGeometry(s.outfile.c_str(), s.global_level, s.tgeo_length_unit_in_mm);
   }
 }
 
