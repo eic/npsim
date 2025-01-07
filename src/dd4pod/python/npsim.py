@@ -21,7 +21,7 @@ if __name__ == "__main__":
   SIM = DD4hepSimulation()
 
   # Parse remaining options (command line and steering file override above)
-  # XXX This is done before updating the settings to workaround issue reported in
+  # This is done before updating the settings to workaround issue reported in
   # https://github.com/AIDASoft/DD4hep/pull/1376
   SIM.parseOptions()
 
