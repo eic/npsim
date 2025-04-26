@@ -70,7 +70,13 @@ if __name__ == "__main__":
   RUNNER.action.run = [
     {
       "name": "DetectorChecksumRunAction",
-      "parameter": {}
+      "parameter": {
+        "ignoreDetectors": [
+          "ForwardRomanPot_Station_1",
+          "ForwardRomanPot_Station_2",
+          "RICHEndcapN"
+        ]
+      }
     }
   ]
 

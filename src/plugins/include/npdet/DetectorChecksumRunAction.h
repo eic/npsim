@@ -43,13 +43,16 @@ namespace sim {
     public:
       /// Standard constructor with initializing arguments
       DetectorChecksumRunAction(Geant4Context* c, const std::string& n)
-      : Geant4RunAction(c, n) {};
+      : Geant4RunAction(c, n) {
+        declareProperty("ignoreDetectors", m_ignoreDetectors);
+      };
       /// Default destructor
       virtual ~DetectorChecksumRunAction() {};
 
       void begin(const G4Run* run);
     private:
       hashMap_t getHashMap(Detector& detector);
+      std::set<std::string> m_ignoreDetectors;
     };
 
 void DetectorChecksumRunAction::begin(const G4Run* /* run */) {
@@ -74,6 +77,9 @@ DetectorChecksumRunAction::getHashMap(Detector& detector) {
     checksum.hash_meshes  = true;
     checksum.hash_readout = true;
     for (const auto& [name, det] : detector.world().children()) {
+      if (m_ignoreDetectors.contains(name)) {
+        continue;
+      }
       checksum.analyzeDetector(det);
       DetectorChecksum::hashes_t hash_vec{checksum.handleHeader().hash};
       checksum.checksumDetElement(0, det, hash_vec, true);
