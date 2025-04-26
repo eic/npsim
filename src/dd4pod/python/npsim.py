@@ -66,6 +66,14 @@ if __name__ == "__main__":
   RUNNER.action.mapActions['RICHEndcapN'] = 'Geant4OpticalTrackerAction'
   RUNNER.action.mapActions['DIRC'] = 'Geant4OpticalTrackerAction'
 
+  # Store detector checksum in run action
+  RUNNER.action.run = [
+    {
+      "name": "DetectorChecksumRunAction",
+      "parameter": {}
+    }
+  ]
+
   # Use the optical photon efficiency stacking action for hpDIRC
   RUNNER.action.stack = [
     {
