@@ -221,7 +221,7 @@ void run_http_server(const settings& s) {
                                                std::string("?top=geometry&thrds=1;rw;noglobal"))
                                                   .c_str()); 
 
-  spdlog::info("Creating display server at http://{}:{}",s.http_host,s.http_port);
+  //spdlog::info("Creating display server at http://{}:{}",s.http_host,s.http_port);
   if( !(serv->IsAnyEngine()) ) {
     spdlog::error("Failed to start http server.");
     std::exit(-1);
