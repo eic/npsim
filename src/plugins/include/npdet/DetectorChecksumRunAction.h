@@ -56,18 +56,12 @@ namespace sim {
 
 void DetectorChecksumRunAction::begin(const G4Run* /* run */) {
   try {
-    bool newParameters{false};
-    RunParameters* parameters = nullptr;
-    try {
-      parameters = context()->run().extension<RunParameters>();
-    } catch (std::exception& e) {
+    auto* parameters = context()->run().extension<RunParameters>(false);
+    if (!parameters) {
       parameters = new RunParameters();
-      newParameters = true;
-    }
-    parameters->ingestParameters(getHashMap(context()->detectorDescription()));
-    if (newParameters) {
       context()->run().addExtension<RunParameters>(parameters);
     }
+    parameters->ingestParameters(getHashMap(context()->detectorDescription()));
   } catch(std::exception &e) {
     printout(ERROR,"DetectorChecksumRunAction::begin","Failed to register run parameters: %s", e.what());
   }
