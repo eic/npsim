@@ -13,9 +13,10 @@
 #ifndef DETECTORCHECKSUMRUNACTION_H
 #define DETECTORCHECKSUMRUNACTION_H
 
-#include "DDG4/Geant4Random.h"
-#include "DDG4/Geant4RunAction.h"
+#include <DDG4/Geant4Random.h>
+#include <DDG4/Geant4RunAction.h>
 #include <DDG4/RunParameters.h>
+#include <format>
 
 #if __has_include(<DD4hep/plugins/DetectorChecksum.h>)
 #include <DD4hep/plugins/DetectorChecksum.h>
@@ -33,9 +34,7 @@ namespace sim {
     template <class T = hashMap_t> void RunParameters::ingestParameters(T const& hashMap) {
       for (auto& [name, hash] : hashMap) {
         // hashes are 64 bit, so we have to cast to string
-        // FIXME: should be hex string since that's printed
-        // FIXME: suffix or prefix with "hash"
-        m_strValues[name.c_str()] = {std::to_string(hash)};
+        m_strValues[name + "_hash"] = {std::format("{:x}",hash)};
       }
     }
 
@@ -51,42 +50,51 @@ namespace sim {
 
       void begin(const G4Run* run);
     private:
-      hashMap_t getHashMap(Detector& detector);
+      hashMap_t getHashMap(Detector& detector) const;
       std::set<std::string> m_ignoreDetectors;
     };
 
 void DetectorChecksumRunAction::begin(const G4Run* /* run */) {
   try {
-    auto *parameters = new RunParameters();
+    bool newParameters{false};
+    RunParameters* parameters = nullptr;
+    try {
+      parameters = context()->run().extension<RunParameters>();
+    } catch (std::exception& e) {
+      parameters = new RunParameters();
+      newParameters = true;
+    }
     parameters->ingestParameters(getHashMap(context()->detectorDescription()));
-    context()->run().addExtension<RunParameters>(parameters);
+    if (newParameters) {
+      context()->run().addExtension<RunParameters>(parameters);
+    }
   } catch(std::exception &e) {
     printout(ERROR,"DetectorChecksumRunAction::begin","Failed to register run parameters: %s", e.what());
   }
 }
 
 std::map<std::string,DetectorChecksum::hash_t>
-DetectorChecksumRunAction::getHashMap(Detector& detector) {
+DetectorChecksumRunAction::getHashMap(Detector& detector) const {
   std::map<std::string, DetectorChecksum::hash_t> hashMap;
 #if __has_include(<DD4hep/plugins/DetectorChecksum.h>)
-    // Determine detector checksum
-    // FIXME: ctor expects non-const detector
-    DetectorChecksum checksum(detector);
-    checksum.debug        = 0;
-    checksum.precision    = 3;
-    checksum.hash_meshes  = true;
-    checksum.hash_readout = true;
-    for (const auto& [name, det] : detector.world().children()) {
-      if (m_ignoreDetectors.contains(name)) {
-        continue;
-      }
-      checksum.analyzeDetector(det);
-      DetectorChecksum::hashes_t hash_vec{checksum.handleHeader().hash};
-      checksum.checksumDetElement(0, det, hash_vec, true);
-      DetectorChecksum::hash_t hash =
-          dd4hep::detail::hash64(&hash_vec[0], hash_vec.size() * sizeof(DetectorChecksum::hash_t));
-      hashMap[name] = hash;
+  // Determine detector checksum
+  // FIXME: ctor expects non-const detector
+  DetectorChecksum checksum(detector);
+  checksum.debug        = 0;
+  checksum.precision    = 3;
+  checksum.hash_meshes  = true;
+  checksum.hash_readout = true;
+  for (const auto& [name, det] : detector.world().children()) {
+    if (m_ignoreDetectors.contains(name)) {
+      continue;
     }
+    checksum.analyzeDetector(det);
+    DetectorChecksum::hashes_t hash_vec{checksum.handleHeader().hash};
+    checksum.checksumDetElement(0, det, hash_vec, true);
+    DetectorChecksum::hash_t hash =
+        dd4hep::detail::hash64(&hash_vec[0], hash_vec.size() * sizeof(DetectorChecksum::hash_t));
+    hashMap[name] = hash;
+  }
 #endif
   return hashMap;
 }
