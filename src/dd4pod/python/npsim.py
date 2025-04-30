@@ -8,6 +8,7 @@ Based on M. Frank and F. Gaede runSim.py
 Modified with standard EIC EPIC requirements.
 """
 from __future__ import absolute_import, unicode_literals
+import argparse
 import logging
 import sys
 
@@ -19,6 +20,13 @@ if __name__ == "__main__":
   logger = logging.getLogger('DDSim')
 
   RUNNER = DD4hepSimulation()
+
+  # Parse our own options
+  parser = argparse.ArgumentParser()
+  parser.add_argument("--disableChecksum", action="store_true", default=False,
+                        help="Disable the detector checksum calculations")
+  args, unknown = parser.parse_known_args()
+  sys.argv = [sys.argv[0]] + unknown
 
   # Parse remaining options (command line and steering file override above)
   # This is done before updating the settings to workaround issue reported in
@@ -67,8 +75,8 @@ if __name__ == "__main__":
   RUNNER.action.mapActions['DIRC'] = 'Geant4OpticalTrackerAction'
 
   # Store detector checksum in run action
-  if len(RUNNER.action.run) == 0:
-    RUNNER.action.run = [
+  if not args.disableChecksum:
+    RUNNER.action.run += [
       {
         "name": "DetectorChecksumRunAction",
         "parameter": {
