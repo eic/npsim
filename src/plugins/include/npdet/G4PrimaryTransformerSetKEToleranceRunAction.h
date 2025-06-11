@@ -29,7 +29,7 @@ namespace dd4hep {
       void begin(const G4Run*)  override {
         #if G4VERSION_NUMBER >= 1130
         printout(INFO, name(), "setting KE tolerance to %f MeV", m_KETolerance / dd4hep::MeV);
-        printout(INFO, name(), "setting KE severity to %s", m_KESeverity);
+        printout(INFO, name(), "setting KE severity to %s", m_KESeverity.c_str());
         G4ExceptionSeverity KESeverity{G4ExceptionSeverity::JustWarning};
         if (m_KESeverity == "IgnoreTheIssue") KESeverity = G4ExceptionSeverity::IgnoreTheIssue;
         G4PrimaryTransformer::SetKETolerance(m_KETolerance, KESeverity);
