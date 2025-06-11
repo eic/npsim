@@ -5,6 +5,7 @@
 
 #include "G4Version.hh"
 #if G4VERSION_NUMBER >= 1130
+#include "G4ExceptionSeverity.hh"
 #include "G4PrimaryTransformer.hh"
 #endif
 
@@ -20,6 +21,7 @@ namespace dd4hep {
       G4PrimaryTransformerSetKEToleranceRunAction(Geant4Context* c, const std::string& n)
       : Geant4RunAction(c, n) {
         declareProperty("KETolerance", m_KETolerance);
+        declareProperty("KESeverity", m_KESeverity);
       };
       /// Default destructor
       virtual ~G4PrimaryTransformerSetKEToleranceRunAction() = default;
@@ -27,11 +29,15 @@ namespace dd4hep {
       void begin(const G4Run*)  override {
         #if G4VERSION_NUMBER >= 1130
         printout(INFO, name(), "setting KE tolerance to %f MeV", m_KETolerance / dd4hep::MeV);
-        G4PrimaryTransformer::SetKETolerance(m_KETolerance);
+        printout(INFO, name(), "setting KE severity to %s", m_KESeverity);
+        G4ExceptionSeverity KESeverity{G4ExceptionSeverity::JustWarning};
+        if (m_KESeverity == "IgnoreTheIssue") KESeverity = G4ExceptionSeverity::IgnoreTheIssue;
+        G4PrimaryTransformer::SetKETolerance(m_KETolerance, KESeverity);
         #endif
       };
     private:
       double m_KETolerance{1.0 * dd4hep::MeV};
+      std::string m_KESeverity{"JustWarning"};
     };
   }    // End namespace sim
 }      // End namespace dd4hep

@@ -67,7 +67,8 @@ if __name__ == "__main__":
   RUNNER.action.run = {
     "name": "G4PrimaryTransformerSetKEToleranceRunAction",
     "parameter": {
-      "KETolerance": "1*MeV"
+      "KETolerance": "1*MeV",
+      "KESeverity": "IgnoreTheIssue"
     }
   }
   
