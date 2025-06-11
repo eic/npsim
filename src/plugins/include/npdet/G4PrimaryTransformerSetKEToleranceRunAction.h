@@ -24,6 +24,7 @@ namespace dd4hep {
       /// begin-of-run callback
       void begin(const G4Run*)  override {
         #if G4VERSION_NUMBER >= 1130
+        printout(INFO, name(), "setting KE tolerance to %f MeV", m_KETolerance / dd4hep::MeV);
         G4PrimaryTransformer::SetKETolerance(m_KETolerance);
         #endif
       };
