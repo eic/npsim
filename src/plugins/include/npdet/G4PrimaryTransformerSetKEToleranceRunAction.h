@@ -2,6 +2,8 @@
 #define G4PRIMARYTRANSFORMERSETKETOLERANCERUNACTION_H
 
 #include "DDG4/Geant4RunAction.h"
+
+#include "G4Version.hh"
 #if G4VERSION_NUMBER >= 1130
 #include "G4PrimaryTransformer.hh"
 #endif
