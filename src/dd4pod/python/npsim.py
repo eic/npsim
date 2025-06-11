@@ -65,7 +65,7 @@ if __name__ == "__main__":
   # Use the G4PrimaryTransformer::SetKETolerance run action to suppress
   # warnings for off-shell unstable particles
   RUNNER.action.run = {
-    "name": "G4PrimaryTransformer",
+    "name": "G4PrimaryTransformerSetKEToleranceRunAction",
     "parameter": {
       "KETolerance": "1*MeV"
     }
