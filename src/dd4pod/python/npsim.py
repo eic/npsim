@@ -62,6 +62,15 @@ if __name__ == "__main__":
   RUNNER.action.mapActions['RICHEndcapN'] = 'Geant4OpticalTrackerAction'
   RUNNER.action.mapActions['DIRC'] = 'Geant4OpticalTrackerAction'
 
+  # Use the G4PrimaryTransformer::SetKETolerance run action to suppress
+  # warnings for off-shell unstable particles
+  RUNNER.action.run = {
+    "name": "G4PrimaryTransformer",
+    "parameter": {
+      "KETolerance": "1*MeV"
+    }
+  }
+  
   # Use the optical photon efficiency stacking action for hpDIRC
   RUNNER.action.stack = [
     {
