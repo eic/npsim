@@ -8,6 +8,7 @@ Based on M. Frank and F. Gaede runSim.py
 Modified with standard EIC EPIC requirements.
 """
 from __future__ import absolute_import, unicode_literals
+import g4units
 import logging
 import sys
 
@@ -67,7 +68,7 @@ if __name__ == "__main__":
   RUNNER.action.run = {
     "name": "G4PrimaryTransformerSetKEToleranceRunAction",
     "parameter": {
-      "KETolerance": "1*MeV",
+      "KETolerance": 1 * g4units.MeV,
       "KESeverity": "IgnoreTheIssue"
     }
   }
