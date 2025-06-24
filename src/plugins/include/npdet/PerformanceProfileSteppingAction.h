@@ -15,15 +15,18 @@
 
 #include "DDG4/Geant4SteppingAction.h"
 #include "G4Step.hh"
+#include "TFile.h"
+#include "TH2F.h"
 
 #include <chrono>
-using namespace std::chrono_literals;
 
 /// Namespace for the AIDA detector description toolkit
 namespace dd4hep {
 
   /// Namespace for the Geant4 based simulation part of the AIDA detector description toolkit
   namespace sim {
+
+    using namespace std::chrono_literals;
 
     class PerformanceProfileSteppingAction : public Geant4SteppingAction {
      public:
@@ -45,6 +48,10 @@ namespace dd4hep {
           total_duration += std::chrono::duration_cast<std::chrono::milliseconds>(duration);
         }
         printout(INFO, name(), "total duration: %ld ms", total_duration);
+        TFile f("histos.root", "recreate");
+        m_xy.Write();
+        m_zr.Write();
+        f.Close();
       };
       /// User stepping callback
       void operator()(const G4Step* step, G4SteppingManager*) override {
@@ -63,6 +70,8 @@ namespace dd4hep {
           m_duration[track_id] += (std::chrono::steady_clock::now() - m_previous_timepoint);
           m_poststep_position[track_id] = poststep_position;
           m_poststep_energy[track_id]   = poststep_energy;
+          m_xy.Fill(poststep_position.x(), poststep_position.y(), m_duration[track_id].count());
+          m_zr.Fill(poststep_position.z(), std::hypot(poststep_position.x(), poststep_position.y()), m_duration[track_id].count());
         } else {
           if (track_id == 0) {
             m_duration.clear();
@@ -88,6 +97,8 @@ namespace dd4hep {
       std::map<G4int, G4double>                          m_poststep_energy;
       G4int                                              m_previous_track_id{0};
       std::chrono::time_point<std::chrono::steady_clock> m_previous_timepoint;
+      TH2F m_xy{"m_xy", "xy", 100, -3.5*CLHEP::m, +3.5*CLHEP::m, 100, -3.5*CLHEP::m, +3.5*CLHEP::m};
+      TH2F m_zr{"m_zr", "zr", 100, -3.5*CLHEP::m, +3.5*CLHEP::m, 100, 0., +7.0*CLHEP::m};
     };
   } // End namespace sim
 } // End namespace dd4hep
