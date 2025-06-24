@@ -18,12 +18,12 @@ if __name__ == "__main__":
   logging.basicConfig(format='%(name)-16s %(levelname)s %(message)s', level=logging.INFO, stream=sys.stdout)
   logger = logging.getLogger('DDSim')
 
-  SIM = DD4hepSimulation()
+  RUNNER = DD4hepSimulation()
 
   # Parse remaining options (command line and steering file override above)
   # This is done before updating the settings to workaround issue reported in
   # https://github.com/AIDASoft/DD4hep/pull/1376
-  SIM.parseOptions()
+  RUNNER.parseOptions()
 
   # Ensure that Cerenkov and optical physics are always loaded
   def setupCerenkov(kernel):
@@ -42,28 +42,28 @@ if __name__ == "__main__":
     ph.enableUI()
     seq.adopt(ph)
     return None
-  SIM.physics.setupUserPhysics(setupCerenkov)
+  RUNNER.physics.setupUserPhysics(setupCerenkov)
 
   # Allow energy depositions to 0 energy in trackers (which include optical detectors)
-  SIM.filter.tracker = 'edep0'
+  RUNNER.filter.tracker = 'edep0'
 
   # Some detectors are only sensitive to optical photons
-  SIM.filter.filters['opticalphotons'] = dict(
+  RUNNER.filter.filters['opticalphotons'] = dict(
     name='ParticleSelectFilter/OpticalPhotonSelector',
     parameter={"particle": "opticalphoton"},
   )
   # This could probably be a substring
-  SIM.filter.mapDetFilter['DRICH'] = 'opticalphotons'
-  SIM.filter.mapDetFilter['RICHEndcapN'] = 'opticalphotons'
-  SIM.filter.mapDetFilter['DIRC'] = 'opticalphotons'
+  RUNNER.filter.mapDetFilter['DRICH'] = 'opticalphotons'
+  RUNNER.filter.mapDetFilter['RICHEndcapN'] = 'opticalphotons'
+  RUNNER.filter.mapDetFilter['DIRC'] = 'opticalphotons'
 
   # Use the optical tracker for the DRICH
-  SIM.action.mapActions['DRICH'] = 'Geant4OpticalTrackerAction'
-  SIM.action.mapActions['RICHEndcapN'] = 'Geant4OpticalTrackerAction'
-  SIM.action.mapActions['DIRC'] = 'Geant4OpticalTrackerAction'
+  RUNNER.action.mapActions['DRICH'] = 'Geant4OpticalTrackerAction'
+  RUNNER.action.mapActions['RICHEndcapN'] = 'Geant4OpticalTrackerAction'
+  RUNNER.action.mapActions['DIRC'] = 'Geant4OpticalTrackerAction'
 
   # Use the optical photon efficiency stacking action for hpDIRC
-  SIM.action.stack = [
+  RUNNER.action.stack = [
     {
       "name": "OpticalPhotonEfficiencyStackingAction",
       "parameter": {
@@ -94,7 +94,7 @@ if __name__ == "__main__":
   ]
 
   try:
-    SIM.run()
+    sys.exit(RUNNER.run())
   except NameError as e:
     if "global name" in str(e):
       globalToSet = str(e).split("'")[1]
