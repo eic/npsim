@@ -93,6 +93,10 @@ if __name__ == "__main__":
     }
   ]
 
+  RUNNER.action.step = {
+    "name": "PerformanceProfileSteppingAction"
+  }
+
   try:
     sys.exit(RUNNER.run())
   except NameError as e:
