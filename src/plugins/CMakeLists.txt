@@ -7,7 +7,7 @@ dd4hep_add_plugin(NPDetPlugins
     src/OpticalPhotonEfficiencyStackingAction.cxx
     src/PerformanceProfileSteppingAction.cxx
   INCLUDES $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  USES DD4hep::DDCore DD4hep::DDG4
+  USES DD4hep::DDCore DD4hep::DDG4 ROOT::Core
 )
 
 install(TARGETS NPDetPlugins
