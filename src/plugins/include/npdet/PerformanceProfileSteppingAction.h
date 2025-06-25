@@ -55,6 +55,9 @@ namespace dd4hep {
       };
       /// User stepping callback
       void operator()(const G4Step* step, G4SteppingManager*) override {
+        std::chrono::nanoseconds step_duration = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - m_previous_timepoint);
+
+        // Get step info
         auto* track                      = step->GetTrack();
         auto* particle                   = track->GetParticleDefinition();
         auto  pdg                        = particle->GetPDGEncoding();
@@ -66,13 +69,16 @@ namespace dd4hep {
         auto  poststep_energy            = poststep->GetTotalEnergy();
         auto  firststep [[maybe_unused]] = step->IsFirstStepInVolume();
         auto  laststep [[maybe_unused]]  = step->IsLastStepInVolume();
+
         if (track_id == m_previous_track_id) {
-          m_duration[track_id] += (std::chrono::steady_clock::now() - m_previous_timepoint);
+          // Current track
+          m_duration[track_id] += step_duration;
           m_poststep_position[track_id] = poststep_position;
           m_poststep_energy[track_id]   = poststep_energy;
-          m_xy.Fill(poststep_position.x(), poststep_position.y(), m_duration[track_id].count());
-          m_zr.Fill(poststep_position.z(), std::hypot(poststep_position.x(), poststep_position.y()), m_duration[track_id].count());
+          m_xy.Fill(poststep_position.x(), poststep_position.y(), step_duration.count());
+          m_zr.Fill(poststep_position.z(), std::hypot(poststep_position.x(), poststep_position.y()), step_duration.count());
         } else {
+          // New track
           if (track_id == 0) {
             m_duration.clear();
             m_pdg.clear();
@@ -86,6 +92,7 @@ namespace dd4hep {
           m_duration[track_id]         = std::chrono::nanoseconds::zero();
           m_prestep_position[track_id] = prestep_position;
         }
+
         m_previous_timepoint = std::chrono::steady_clock::now();
       };
 
@@ -97,8 +104,8 @@ namespace dd4hep {
       std::map<G4int, G4double>                          m_poststep_energy;
       G4int                                              m_previous_track_id{0};
       std::chrono::time_point<std::chrono::steady_clock> m_previous_timepoint;
-      TH2F m_xy{"m_xy", "xy", 100, -3.5*CLHEP::m, +3.5*CLHEP::m, 100, -3.5*CLHEP::m, +3.5*CLHEP::m};
-      TH2F m_zr{"m_zr", "zr", 100, -3.5*CLHEP::m, +3.5*CLHEP::m, 100, 0., +7.0*CLHEP::m};
+      TH2F m_xy{"m_xy", "xy", 100, -3.*CLHEP::m, +3.*CLHEP::m, 100, -3.*CLHEP::m, +3.*CLHEP::m};
+      TH2F m_zr{"m_zr", "zr", 100, -4.5*CLHEP::m, +5.5*CLHEP::m, 100, 0., +3.*CLHEP::m};
     };
   } // End namespace sim
 } // End namespace dd4hep
