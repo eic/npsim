@@ -79,7 +79,11 @@ TDF_Label TOCCToStep::OCCShapeCreation(TGeoManager *m, double tgeo_length_unit_i
    Int_t level = 0;
    TIter next(m->GetListOfVolumes());
    fLabel = XCAFDoc_DocumentTool::ShapeTool(fDoc->Main())->NewShape();
-   fShape = fRootShape.OCC_SimpleShape(m->GetTopVolume()->GetShape());
+   if (m->GetTopVolume()->GetShape()->IsA()==TGeoCompositeShape::Class()) {
+     fShape = fRootShape.OCC_CompositeShape((TGeoCompositeShape*)m->GetTopVolume()->GetShape(), TGeoIdentity());
+   } else {
+     fShape = fRootShape.OCC_SimpleShape(m->GetTopVolume()->GetShape());
+   }
    XCAFDoc_DocumentTool::ShapeTool(fDoc->Main())->SetShape(fLabel, fShape);
    TDataStd_Name::Set(fLabel, m->GetTopVolume()->GetName());
    XCAFDoc_DocumentTool::ShapeTool(fDoc->Main())->UpdateAssemblies();//fDoc->Main());
