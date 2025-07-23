@@ -44,6 +44,9 @@ if __name__ == "__main__":
     return None
   RUNNER.physics.setupUserPhysics(setupCerenkov)
 
+  # Disable warnings for unstable resonances with off-shell mass
+  RUNNER.physics.ESeverity = "IgnoreTheIssue"
+
   # Allow energy depositions to 0 energy in trackers (which include optical detectors)
   RUNNER.filter.tracker = 'edep0'
 
