@@ -16,6 +16,7 @@
 #include <DDG4/Geant4Random.h>
 #include <DDG4/Geant4RunAction.h>
 #include <DDG4/RunParameters.h>
+#include <chrono>
 #include <format>
 
 #if __has_include(<DD4hep/plugins/DetectorChecksum.h>)
@@ -73,6 +74,7 @@ DetectorChecksumRunAction::getHashMap(Detector& detector) const {
 #if __has_include(<DD4hep/plugins/DetectorChecksum.h>)
   // Determine detector checksum
   // FIXME: ctor expects non-const detector
+  const auto start{std::chrono::steady_clock::now()};
   DetectorChecksum checksum(detector);
   checksum.debug        = 0;
   checksum.precision    = 3;
@@ -89,6 +91,9 @@ DetectorChecksumRunAction::getHashMap(Detector& detector) const {
         dd4hep::detail::hash64(&hash_vec[0], hash_vec.size() * sizeof(DetectorChecksum::hash_t));
     hashMap[name] = hash;
   }
+  const auto finish{std::chrono::steady_clock::now()};
+  const std::chrono::duration<double> elapsed_seconds{finish - start};
+  printout(INFO,"DetectorChecksumRunAction::getHashMap", "duration: %f seconds", elapsed_seconds.count());
 #endif
   return hashMap;
 }
