@@ -77,16 +77,18 @@ DetectorChecksumRunAction::getHashMap(Detector& detector) const {
   const auto start{std::chrono::steady_clock::now()};
   DetectorChecksum checksum(detector);
   checksum.debug        = 0;
+  checksum.max_level    = -1;
   checksum.precision    = 3;
   checksum.hash_meshes  = true;
   checksum.hash_readout = true;
+  bool checksum_det_element_recursive = true;
   for (const auto& [name, det] : detector.world().children()) {
     if (m_ignoreDetectors.contains(name)) {
       continue;
     }
     checksum.analyzeDetector(det);
     DetectorChecksum::hashes_t hash_vec{checksum.handleHeader().hash};
-    checksum.checksumDetElement(0, det, hash_vec, true);
+    checksum.checksumDetElement(0, det, hash_vec, checksum_det_element_recursive);
     DetectorChecksum::hash_t hash =
         dd4hep::detail::hash64(&hash_vec[0], hash_vec.size() * sizeof(DetectorChecksum::hash_t));
     hashMap[name] = hash;
