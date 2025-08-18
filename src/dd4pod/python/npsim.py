@@ -22,11 +22,15 @@ if __name__ == "__main__":
   RUNNER = DD4hepSimulation()
 
   # Parse our own options
-  parser = argparse.ArgumentParser()
+  parser = argparse.ArgumentParser("Running ePIC/EIC Simulations:", add_help=False)
   parser.add_argument("--disableChecksum", action="store_true", default=False,
                         help="Disable the detector checksum calculations")
   args, unknown = parser.parse_known_args()
   sys.argv = [sys.argv[0]] + unknown
+  if "--help" in unknown:
+    parser.print_help()
+    print()
+    print()
 
   # Parse remaining options (command line and steering file override above)
   # This is done before updating the settings to workaround issue reported in
