@@ -73,6 +73,7 @@ DetectorChecksumRunAction::getHashMap(Detector& detector) const {
   std::map<std::string, DetectorChecksum::hash_t> hashMap;
 #if __has_include(<DD4hep/plugins/DetectorChecksum.h>)
   // Determine detector checksum
+  printout(INFO,"DetectorChecksumRunAction::getHashMap", "determining checksum... (disable with --disableChecksum)");
   // FIXME: ctor expects non-const detector
   const auto start{std::chrono::steady_clock::now()};
   DetectorChecksum checksum(detector);
@@ -87,7 +88,7 @@ DetectorChecksumRunAction::getHashMap(Detector& detector) const {
       continue;
     }
     checksum.analyzeDetector(det);
-    DetectorChecksum::hashes_t hash_vec{checksum.handleHeader().hash};
+    DetectorChecksum::hashes_t hash_vec{};
     checksum.checksumDetElement(0, det, hash_vec, checksum_det_element_recursive);
     DetectorChecksum::hash_t hash =
         dd4hep::detail::hash64(&hash_vec[0], hash_vec.size() * sizeof(DetectorChecksum::hash_t));
