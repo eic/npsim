@@ -12,7 +12,6 @@
             "settings": {
                 "cmake.configureOnOpen": true,
                 "C_Cpp.default.includePath": [
-                    "/usr/local/include",
                     "/opt/local/include"
                 ]
             }
