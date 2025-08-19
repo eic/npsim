@@ -12,17 +12,13 @@
 
 using namespace dd4hep::sim;
 
-// Macro to suppress unused parameter warnings
-#define UNUSED(x) (void)(x)
-
 namespace npdet {
 
 DetectorVersionRunAction::DetectorVersionRunAction(Geant4Context* context, const std::string& name)
     : Geant4RunAction(context, name) {
 }
 
-void DetectorVersionRunAction::begin(const G4Run* run) {
-  UNUSED(run);
+void DetectorVersionRunAction::begin([[maybe_unused]] const G4Run* run) {
   // Get the DD4hep detector description
   auto& detector = context()->kernel().detectorDescription();
   
@@ -41,8 +37,7 @@ void DetectorVersionRunAction::begin(const G4Run* run) {
   }
 }
 
-void DetectorVersionRunAction::end(const G4Run* run) {
-  UNUSED(run);
+void DetectorVersionRunAction::end([[maybe_unused]] const G4Run* run) {
 }
 
 } // namespace npdet

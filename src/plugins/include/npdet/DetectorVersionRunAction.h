@@ -30,10 +30,10 @@ public:
   virtual ~DetectorVersionRunAction() = default;
 
   /// Begin-of-run callback
-  virtual void begin(const G4Run* run) override;
+  virtual void begin([[maybe_unused]] const G4Run* run) override;
 
   /// End-of-run callback
-  virtual void end(const G4Run* run) override;
+  virtual void end([[maybe_unused]] const G4Run* run) override;
 };
 
 } // namespace npdet
