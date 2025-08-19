@@ -11,14 +11,27 @@ This development container is based on the `eicweb/eic_ci:nightly` image, which 
 
 ## Getting Started
 
-1. Install VS Code and the "Remote - Containers" extension
-2. Open this repository in VS Code
-3. When prompted, click "Reopen in Container"
-4. VS Code will build and start the development container
+You can develop with this repository in two ways:
+
+### Option 1: GitHub Codespaces (Recommended)
+
+1. Click the green "Code" button on the repository
+2. Select "Open with Codespaces"
+3. Click "New codespace"
+4. Wait for the environment to be ready
+5. Start developing in your browser!
+
+### Option 2: Local VS Code with Dev Containers
+
+1. Install VS Code and the "Dev Containers" extension
+2. Clone this repository
+3. Open the repository in VS Code
+4. When prompted, click "Reopen in Container"
+5. VS Code will build and start the development container
 
 ## Build Instructions
 
-Once inside the container:
+Once inside the container (either Codespaces or local):
 
 ```bash
 mkdir build
@@ -29,9 +42,8 @@ make
 
 ## Included Tools and Software
 
-- DD4hep
-- ROOT
-- Geant4
+- DD4hep with Geant4 integration
+- ROOT 
 - CMake
 - GCC/G++
 - Essential development tools
@@ -39,13 +51,6 @@ make
 ## VS Code Extensions
 
 The following extensions are automatically installed:
-- C/C++ tools
-- CMake/CMake Tools
+- C/C++ tools for intellisense and debugging
+- CMake Tools for project configuration and building
 - Doxygen Documentation Generator
-
-## Environment Variables
-
-Key environment variables are pre-configured:
-- DD4HEP_DIR
-- LD_LIBRARY_PATH
-- ROOT_INCLUDE_PATH
