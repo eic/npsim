@@ -24,18 +24,11 @@
         "source=${localWorkspaceFolder},target=/workspaces/npsim,type=bind,consistency=cached"
     ],
 
-    // Use this environment variable if they are needed
-    "remoteEnv": {
-        "DD4HEP_DIR": "/opt/software",
-        "LD_LIBRARY_PATH": "/opt/software/lib:${LD_LIBRARY_PATH}"
-    },
-
     // Use 'postCreateCommand' to run commands after the container is created
     "postCreateCommand": "cmake --version && gcc --version",
 
     // Configure tool-specific properties
     "containerEnv": {
-        "DISPLAY": "${localEnv:DISPLAY}",
-        "ROOT_INCLUDE_PATH": "/opt/software/include"
+        "DISPLAY": "${localEnv:DISPLAY}"
     }
 }
