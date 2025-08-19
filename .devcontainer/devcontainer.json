@@ -1,0 +1,43 @@
+{
+    "name": "EIC Development Environment",
+    "image": "eicweb/eic_ci:nightly",
+    
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "ms-vscode.cpptools",
+                "twxs.cmake",
+                "ms-vscode.cmake-tools",
+                "cschlosser.doxdocgen"
+            ],
+            "settings": {
+                "cmake.configureOnOpen": true,
+                "C_Cpp.default.includePath": [
+                    "/usr/local/include",
+                    "/opt/local/include"
+                ]
+            }
+        }
+    },
+
+    "remoteUser": "root",
+
+    "mounts": [
+        "source=${localWorkspaceFolder},target=/workspaces/npsim,type=bind,consistency=cached"
+    ],
+
+    // Use this environment variable if they are needed
+    "remoteEnv": {
+        "DD4HEP_DIR": "/opt/software",
+        "LD_LIBRARY_PATH": "/opt/software/lib:${LD_LIBRARY_PATH}"
+    },
+
+    // Use 'postCreateCommand' to run commands after the container is created
+    "postCreateCommand": "cmake --version && gcc --version",
+
+    // Configure tool-specific properties
+    "containerEnv": {
+        "DISPLAY": "${localEnv:DISPLAY}",
+        "ROOT_INCLUDE_PATH": "/opt/software/include"
+    }
+}
