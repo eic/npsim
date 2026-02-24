@@ -58,12 +58,12 @@ if __name__ == "__main__":
   )
   # This could probably be a substring
   RUNNER.filter.mapDetFilter['DRICH'] = 'opticalphotons'
-  RUNNER.filter.mapDetFilter['RICHEndcapN'] = 'opticalphotons'
+  RUNNER.filter.mapDetFilter['PFRICH'] = 'opticalphotons'
   RUNNER.filter.mapDetFilter['DIRC'] = 'opticalphotons'
 
-  # Use the optical tracker for the DRICH
+  # Use the optical tracker for the dRICH, pfRICH and hpDIRC
   RUNNER.action.mapActions['DRICH'] = 'Geant4OpticalTrackerAction'
-  RUNNER.action.mapActions['RICHEndcapN'] = 'Geant4OpticalTrackerAction'
+  RUNNER.action.mapActions['PFRICH'] = 'Geant4OpticalTrackerAction'
   RUNNER.action.mapActions['DIRC'] = 'Geant4OpticalTrackerAction'
 
   # Use the optical photon efficiency stacking action for hpDIRC
