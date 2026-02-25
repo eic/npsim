@@ -8,6 +8,7 @@ Based on M. Frank and F. Gaede runSim.py
 Modified with standard EIC EPIC requirements.
 """
 from __future__ import absolute_import, unicode_literals
+import g4units
 import logging
 import sys
 
@@ -24,6 +25,40 @@ if __name__ == "__main__":
   # This is done before updating the settings to workaround issue reported in
   # https://github.com/AIDASoft/DD4hep/pull/1376
   RUNNER.parseOptions()
+
+  # Set the magnetic field stepper
+  # Reference situations:
+  # - a 1 MeV delta electron in a 1.7 T field bends with a radius of about 0.002 m
+  # - a 100 MeV electron in a 1.7 T field bends with a radius of about 0.2 m
+  # - a 1 GeV electron in a 1.7 T field bends with a radius of about 2 m
+  # - a 5 GeV electron in a 1.7 T field bends with a radius of about 10 m
+  #
+  # stepper: DormandPrince745 has 6 field evaluations per step, compared to 11 in ClassicalRK4
+  RUNNER.field.stepper = "DormandPrince745"
+  # equation: Mag_UsualEqRhs is the default
+  RUNNER.field.equation = "Mag_UsualEqRhs"
+  # eps_min: min relative step error, Geant4 recommended default is 5e-05
+  RUNNER.field.eps_min = 5e-05
+  # eps_max: max relative step error, Geant4 recommended default is 0.001
+  # i.e. a 100 MeV electron with eps_min = 1e-04 may accumulate absolute errors
+  # on the scale of 0.02 mm per radius, or of order the vertex silicon tracker pixel pitch
+  RUNNER.field.eps_max = 1e-04
+  # delta_chord: max distance between true curved track and chord,
+  # which defines maximum step size L = √(8 r · delta_chord),
+  # i.e. a 100 MeV electron with delta_chord of 0.025 mm (chosen
+  # to be on the order of the vertex tracker pixel size)
+  # will have max step size of 6 mm
+  RUNNER.field.delta_chord = 0.025 * g4units.mm
+  # delta_one_step: max distance between true endpoint and step endpoint,
+  # chosen on the order of the vertex tracker pixel size
+  RUNNER.field.delta_one_step = 0.01 * g4units.mm
+  # delta_intersection: max distance between true intersection and intersection found by stepper,
+  # chosen on the order of the vertex tracker pixel size
+  RUNNER.field.delta_intersection = 0.01 * g4units.mm
+  # min_chord_step: floor on the chord finder's step size to prevent runaway bisection
+  # near boundaries or for sub-MeV secondaries (r < 0.5 mm). For all physical tracks
+  # the natural step L = √(8r·delta_chord) >> 0.01 mm so this rarely activates.
+  RUNNER.field.min_chord_step = 0.01 * g4units.mm
 
   # Ensure that Cerenkov and optical physics are always loaded
   def setupCerenkov(kernel):
