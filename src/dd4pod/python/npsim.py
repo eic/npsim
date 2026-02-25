@@ -40,7 +40,7 @@ if __name__ == "__main__":
   # eps_min: min relative step error, Geant4 recommended default is 5e-05
   RUNNER.field.eps_min = 5e-05
   # eps_max: max relative step error, Geant4 recommended default is 0.001
-  # i.e. a 100 MeV electron with eps_min = 1e-04 may accumulate absolute errors
+  # i.e. a 100 MeV electron with eps_max = 1e-04 may accumulate absolute errors
   # on the scale of 0.02 mm per radius, or of order the vertex silicon tracker pixel pitch
   RUNNER.field.eps_max = 1e-04
   # delta_chord: max distance between true curved track and chord,
