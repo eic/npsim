@@ -44,7 +44,7 @@ if __name__ == "__main__":
   # on the scale of 0.02 mm per radius, or of order the vertex silicon tracker pixel pitch
   RUNNER.field.eps_max = 1e-04
   # delta_chord: max distance between true curved track and chord,
-  # which defines maximum step size L = √(8 r · delta_chord),
+  # which defines maximum step size L = sqrt(8 * r * delta_chord),
   # i.e. a 100 MeV electron with delta_chord of 0.025 mm (chosen
   # to be on the order of the vertex tracker pixel size)
   # will have max step size of 6 mm
