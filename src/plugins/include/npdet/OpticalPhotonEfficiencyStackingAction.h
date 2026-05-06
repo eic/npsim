@@ -55,6 +55,7 @@ namespace dd4hep {
         // Only apply to optical photons
         if (aTrack->GetDefinition() == G4OpticalPhoton::OpticalPhotonDefinition()) {
           auto* pv = aTrack->GetVolume();
+          if (pv == nullptr) return TrackClassification();
           auto* lv = pv->GetLogicalVolume();
           printout(VERBOSE, name(), "photon in pv %s lv %s",
             pv->GetName().c_str(), lv->GetName().c_str());
