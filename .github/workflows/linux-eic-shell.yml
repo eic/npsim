@@ -375,7 +375,7 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        continue-on-error: true
+        continue-on-error: false
         uses: actions/deploy-pages@v5
       - name: Find capybara comment
         if: ${{ github.event_name == 'pull_request' }}
