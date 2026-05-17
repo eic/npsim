@@ -161,11 +161,9 @@ void TOCCToStep::OCCWriteStep(const char *fname)
 
 TDF_Label TOCCToStep::GetLabelOfVolume(TGeoVolume * v)
 {
-   TDF_Label null;
-   if (fTree.find(v) != fTree.end())
-      return fTree[v];
-   else
-      return null;
+   if (fTree.contains(v))
+      return fTree.at(v);
+   return TDF_Label{};
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -404,5 +402,4 @@ void TOCCToStep::PrintAssembly()
    XCAFDoc_DocumentTool::ShapeTool(fDoc->Main())->Dump(std::cout);
 #endif
 }
-
 
