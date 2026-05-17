@@ -22,6 +22,7 @@ endif()
 
 # Use GNU install dirs
 include(GNUInstallDirs)
+include(CheckCXXCompilerFlag)
 
 # Build type
 if (NOT CMAKE_BUILD_TYPE)
@@ -38,9 +39,104 @@ endif()
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # ---------------------------------------------------------------------------
-# Options
+# Feature options
 
 set(USE_GEOCAD ON CACHE BOOL "build the geocad library. Requires opencascade")
+
+# ---------------------------------------------------------------------------
+# Sanitizers options
+
+option(USE_ASAN "Compile with address sanitizer" OFF)
+option(USE_TSAN "Compile with thread sanitizer" OFF)
+option(USE_UBSAN "Compile with undefined behavior sanitizer" OFF)
+
+if(USE_ASAN)
+  add_compile_options(-fsanitize=address -fno-omit-frame-pointer -g -O1)
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address")
+  set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -fsanitize=address")
+  set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -fsanitize=address")
+  # Clang does not link the full ASAN runtime into shared/module libs by default;
+  # it only adds bootstrap stubs that require the runtime from the main binary.
+  # Since DD4hep binaries are not ASAN-instrumented, link the shared ASAN DSO directly.
+  if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -shared-libasan")
+    set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -shared-libasan")
+    # Clang's ASAN DSO has an architecture-specific name
+    execute_process(
+      COMMAND ${CMAKE_CXX_COMPILER} -print-file-name=libclang_rt.asan-${CMAKE_SYSTEM_PROCESSOR}.so
+      OUTPUT_VARIABLE PRELOAD_SANITIZER_LIB_ASAN
+      OUTPUT_STRIP_TRAILING_WHITESPACE)
+  else()
+    execute_process(
+      COMMAND ${CMAKE_CXX_COMPILER} -print-file-name=libasan.so
+      OUTPUT_VARIABLE PRELOAD_SANITIZER_LIB_ASAN
+      OUTPUT_STRIP_TRAILING_WHITESPACE)
+  endif()
+  get_filename_component(ASAN_RUNTIME_DIR "${PRELOAD_SANITIZER_LIB_ASAN}" DIRECTORY)
+  list(APPEND CMAKE_BUILD_RPATH "${ASAN_RUNTIME_DIR}")
+  list(APPEND SANITIZER_RUNTIME_DIRS "${ASAN_RUNTIME_DIR}")
+  list(PREPEND PRELOAD_SANITIZER_LIB ${PRELOAD_SANITIZER_LIB_ASAN})
+endif()
+
+if(USE_TSAN)
+  add_compile_options(-fsanitize=thread -g -O1)
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=thread")
+  set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -fsanitize=thread")
+  set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -fsanitize=thread")
+  if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -shared-libsan")
+    set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -shared-libsan")
+    execute_process(
+      COMMAND ${CMAKE_CXX_COMPILER} -print-file-name=libclang_rt.tsan-${CMAKE_SYSTEM_PROCESSOR}.so
+      OUTPUT_VARIABLE PRELOAD_SANITIZER_LIB_TSAN
+      OUTPUT_STRIP_TRAILING_WHITESPACE)
+  else()
+    execute_process(
+      COMMAND ${CMAKE_CXX_COMPILER} -print-file-name=libtsan.so
+      OUTPUT_VARIABLE PRELOAD_SANITIZER_LIB_TSAN
+      OUTPUT_STRIP_TRAILING_WHITESPACE)
+  endif()
+  get_filename_component(TSAN_RUNTIME_DIR "${PRELOAD_SANITIZER_LIB_TSAN}" DIRECTORY)
+  list(APPEND CMAKE_BUILD_RPATH "${TSAN_RUNTIME_DIR}")
+  list(APPEND SANITIZER_RUNTIME_DIRS "${TSAN_RUNTIME_DIR}")
+  list(PREPEND PRELOAD_SANITIZER_LIB ${PRELOAD_SANITIZER_LIB_TSAN})
+endif()
+
+if(USE_UBSAN)
+  foreach(sanitizer undefined float-divide-by-zero unsigned-integer-overflow implicit-conversion local-bounds nullability)
+    check_cxx_compiler_flag("-fsanitize=${sanitizer}" CXX_COMPILER_HAS_sanitize_${sanitizer})
+    if(CXX_COMPILER_HAS_sanitize_${sanitizer})
+      add_compile_options(-fsanitize=${sanitizer})
+      set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=${sanitizer}")
+      set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -fsanitize=${sanitizer}")
+      set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -fsanitize=${sanitizer}")
+    endif()
+  endforeach()
+  add_compile_options(-g -O1)
+  if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -shared-libsan")
+    set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -shared-libsan")
+    execute_process(
+      COMMAND ${CMAKE_CXX_COMPILER} -print-file-name=libclang_rt.ubsan_standalone-${CMAKE_SYSTEM_PROCESSOR}.so
+      OUTPUT_VARIABLE PRELOAD_SANITIZER_LIB_UBSAN
+      OUTPUT_STRIP_TRAILING_WHITESPACE)
+  else()
+    execute_process(
+      COMMAND ${CMAKE_CXX_COMPILER} -print-file-name=libubsan.so
+      OUTPUT_VARIABLE PRELOAD_SANITIZER_LIB_UBSAN
+      OUTPUT_STRIP_TRAILING_WHITESPACE)
+  endif()
+  get_filename_component(UBSAN_RUNTIME_DIR "${PRELOAD_SANITIZER_LIB_UBSAN}" DIRECTORY)
+  list(APPEND CMAKE_BUILD_RPATH "${UBSAN_RUNTIME_DIR}")
+  list(APPEND SANITIZER_RUNTIME_DIRS "${UBSAN_RUNTIME_DIR}")
+  # With Clang, the ASAN runtime already integrates UBSAN; preloading
+  # libclang_rt.ubsan_standalone alongside libclang_rt.asan causes runtime
+  # conflicts (both provide overlapping interceptors). Skip the UBSAN preload
+  # when ASAN is also active — ASAN handles both.
+  if(NOT (USE_ASAN AND CMAKE_CXX_COMPILER_ID MATCHES "Clang"))
+    list(PREPEND PRELOAD_SANITIZER_LIB ${PRELOAD_SANITIZER_LIB_UBSAN})
+  endif()
+endif()
 
 # ---------------------------------------------------------------------------
 # Load additional OS dependent settings
@@ -62,6 +158,52 @@ endif()
 find_package(DD4hep 1.18 REQUIRED COMPONENTS DDCore DDG4)
 include(${DD4hep_DIR}/cmake/DD4hep.cmake)
 include(${DD4hep_DIR}/cmake/DD4hepBuild.cmake)
+
+# Redefine for sanitizer support 
+function(dd4hep_generate_rootmap library)
+  if(APPLE)
+    set(ENV_VAR DYLD_LIBRARY_PATH)
+  else()
+    set(ENV_VAR LD_LIBRARY_PATH)
+  endif()
+  set(${ENV_VAR}_VALUE $<TARGET_FILE_DIR:${library}>:$<TARGET_FILE_DIR:DD4hep::DD4hepGaudiPluginMgr>:$ENV{${ENV_VAR}})
+
+  set(rootmapfile ${CMAKE_SHARED_MODULE_PREFIX}${library}.components)
+
+  # Build the listcomponents invocation. When sanitizers are active we must
+  # LD_PRELOAD the runtime so ASAN initialises before any allocation occurs;
+  # loading it lazily via dlopen (RPATH) after DD4hep has already allocated
+  # memory causes a crash. To prevent LeakSanitizer from scanning the entire
+  # DD4hep/ROOT heap at process exit (which hangs the build), we force
+  # detect_leaks=0 for this helper invocation only.
+  string(JOIN ":" LD_PRELOAD_VALUE ${PRELOAD_SANITIZER_LIB})
+  if(LD_PRELOAD_VALUE)
+    set(EXTRA_ENV
+      "LD_PRELOAD=${LD_PRELOAD_VALUE}"
+      "ASAN_OPTIONS=detect_leaks=0:verify_asan_link_order=0"
+      "LSAN_OPTIONS=detect_leaks=0"
+    )
+  endif()
+
+  add_custom_command(OUTPUT ${rootmapfile}
+    DEPENDS ${library}
+    COMMAND ${CMAKE_COMMAND} -E env
+      "${ENV_VAR}=${${ENV_VAR}_VALUE}"
+      ${EXTRA_ENV}
+      $<TARGET_FILE:DD4hep::listcomponents> -o ${rootmapfile} $<TARGET_FILE_NAME:${library}>
+    WORKING_DIRECTORY ${LIBRARY_OUTPUT_PATH}
+    COMMAND_EXPAND_LISTS
+  )
+
+  add_custom_target(Components_${library} ALL DEPENDS ${rootmapfile})
+  set(install_destination "lib")
+  if(CMAKE_INSTALL_LIBDIR)
+    set(install_destination ${CMAKE_INSTALL_LIBDIR})
+  endif()
+  install(FILES $<TARGET_FILE_DIR:${library}>/${rootmapfile}
+    DESTINATION ${install_destination}
+  )
+endfunction()
 
 dd4hep_configure_output()
 dd4hep_set_compiler_flags()
