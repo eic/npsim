@@ -25,7 +25,7 @@ on:
         default: 'nightly'
         required: false
         type: string
-      detector-version:
+      detector_version:
         description: 'epic geometry version'
         default: 'main'
         required: false
@@ -42,7 +42,7 @@ env:
   organization: ${{ inputs.organization || vars.organization || 'eicweb' }}
   platform: ${{ inputs.platform || 'eic_xl' }}
   release: ${{ inputs.release || 'nightly' }}
-  detector-version: ${{ inputs.detector-version || 'main' }}
+  detector_version: ${{ inputs.detector_version || 'main' }}
 
 jobs:
   build:
@@ -95,9 +95,9 @@ jobs:
         with:
           organization: "${{ env.organization }}"
           platform-release: "${{ env.platform }}:${{ env.release }}"
-          setup: /opt/detector/epic-${{ env.detector-version }}/bin/thisepic.sh
+          setup: /opt/detector/epic-${{ env.detector_version }}/bin/thisepic.sh
           run: |
-            export DETECTOR_CACHE=/opt/detector/epic-${{ env.detector-version }}/share/epic
+            export DETECTOR_CACHE=/opt/detector/epic-${{ env.detector_version }}/share/epic
             export PATH=$PWD/install/bin${PATH:+:$PATH}
             export LD_LIBRARY_PATH=$PWD/install/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}
             npsim --compactFile ${DETECTOR_PATH}/${{ matrix.detector_config }}.xml -G \
@@ -128,7 +128,7 @@ jobs:
         with:
           organization: "${{ env.organization }}"
           platform-release: "${{ env.platform }}:${{ env.release }}"
-          setup: /opt/detector/epic-${{ env.detector-version }}/bin/thisepic.sh
+          setup: /opt/detector/epic-${{ env.detector_version }}/bin/thisepic.sh
           run: |
             export PATH=$PWD/install/bin${PATH:+:$PATH}
             mkdir capybara-reports
@@ -170,9 +170,9 @@ jobs:
         with:
           organization: "${{ env.organization }}"
           platform-release: "${{ env.platform }}:${{ env.release }}"
-          setup: /opt/detector/epic-${{ env.detector-version }}/bin/thisepic.sh
+          setup: /opt/detector/epic-${{ env.detector_version }}/bin/thisepic.sh
           run: |
-            export DETECTOR_CACHE=/opt/detector/epic-${{ env.detector-version }}/share/epic
+            export DETECTOR_CACHE=/opt/detector/epic-${{ env.detector_version }}/share/epic
             export PATH=$PWD/install/bin${PATH:+:$PATH}
             export LD_LIBRARY_PATH=$PWD/install/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}
             url=root://dtn-eic.jlab.org//volatile/eic/EPIC/EVGEN/DIS/NC/${{ matrix.beam }}/minQ2=${{ matrix.minq2 }}/pythia8NCDIS_${{ matrix.beam }}_minQ2=${{ matrix.minq2 }}_beamEffects_xAngle=-0.025_hiDiv_1.hepmc3.tree.root
@@ -202,7 +202,7 @@ jobs:
         with:
           organization: "${{ env.organization }}"
           platform-release: "${{ env.platform }}:${{ env.release }}"
-          setup: /opt/detector/epic-${{ env.detector-version }}/bin/thisepic.sh
+          setup: /opt/detector/epic-${{ env.detector_version }}/bin/thisepic.sh
           run: |
             export PATH=$PWD/install/bin${PATH:+:$PATH}
             mkdir capybara-reports
