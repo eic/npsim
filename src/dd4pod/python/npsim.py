@@ -88,7 +88,7 @@ if __name__ == "__main__":
       "name": "OpticalPhotonEfficiencyStackingAction",
       "parameter": {
         "LambdaValues": drich_lambda_values,
-        "LogicalVolume": "DRICH_pss_sec[0-9]+",
+        "LogicalVolume": "DRICH_(gas|aerogel)",
         "Efficiency": drich_efficiency,
       }
     },
@@ -96,7 +96,7 @@ if __name__ == "__main__":
       "name": "OpticalPhotonEfficiencyStackingAction",
       "parameter": {
         "LambdaValues": pfrich_lambda_values,
-        "LogicalVolume": "PFRICH-photocathode-[0-9]+",
+        "LogicalVolume": "PFRICH(_GasVol|-aerogel-[0-9]+-[0-9]+)",
         "Efficiency": pfrich_efficiency,
       }
     },
