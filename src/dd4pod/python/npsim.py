@@ -12,7 +12,8 @@ import logging
 import sys
 
 from DDSim.DD4hepSimulation import DD4hepSimulation
-
+import DDG4
+from g4units import keV
 
 if __name__ == "__main__":
   logging.basicConfig(format='%(name)-16s %(levelname)s %(message)s', level=logging.INFO, stream=sys.stdout)
@@ -70,7 +71,7 @@ if __name__ == "__main__":
   RUNNER.action.mapActions['DIRC'] = 'Geant4OpticalTrackerAction'
 
   # Use the optical photon efficiency stacking action
-  nm = 1e-6  # dd4hep length unit
+  nm = 1e-6 * mm  # dd4hep length unit
   drich_lambda_values = [l * nm for l in [ # [nm]
     315, 325, 340, 350, 370, 400, 450, 500, 550, 600, 650, 700, 750, 800, 850, 900, 1000
   ]]
