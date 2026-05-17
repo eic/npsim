@@ -46,7 +46,7 @@ namespace dd4hep {
       };
       /// Default destructor
       virtual ~OpticalPhotonEfficiencyStackingAction() {
-        printout(DEBUG, name(), "Suppressed %d of %d photons in lv regex %s or region regex %s",
+        printout(WARNING, name(), "Suppressed %zu of %zu photons in lv regex %s or region regex %s",
           m_killed_photons, m_total_photons, m_logical_volume.c_str(), m_region.c_str());
         printout(DEBUG, name(), "lambda range: [%f,%f] nm",
           m_lambda_min / CLHEP::nm, m_lambda_max / CLHEP::nm);
@@ -106,7 +106,10 @@ namespace dd4hep {
                 return TrackClassification(fKill);
               }
             } else {
+              // Outside the QE-specified wavelength range: efficiency is 0
               printout(VERBOSE, name(), "outside lambda range [%f,%f] nm", lambda_min / CLHEP::nm, lambda_max / CLHEP::nm);
+              ++m_killed_photons;
+              return TrackClassification(fKill);
             }
           } else {
             printout(VERBOSE, name(), "no QE match for lv %s against %s or region %s against %s",
