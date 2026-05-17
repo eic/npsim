@@ -12,8 +12,8 @@ import logging
 import sys
 
 from DDSim.DD4hepSimulation import DD4hepSimulation
-import DDG4
-from g4units import keV
+
+from g4units import mm
 
 if __name__ == "__main__":
   logging.basicConfig(format='%(name)-16s %(levelname)s %(message)s', level=logging.INFO, stream=sys.stdout)
