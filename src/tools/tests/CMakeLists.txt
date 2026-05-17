@@ -22,5 +22,5 @@ if(TARGET npdet_to_step)
     COMMAND $<TARGET_FILE:npdet_to_step> list /tmp/npsim_missing_compact.xml
   )
   set_tests_properties(tools_integration_npdet_to_step_missing_input
-    PROPERTIES WILL_FAIL TRUE)
+    PROPERTIES PASS_REGULAR_EXPRESSION "does not exist")
 endif()
