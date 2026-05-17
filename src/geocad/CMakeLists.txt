@@ -29,7 +29,7 @@ add_dependencies(GeoCad G__NPDetGeoCad_ROOTDICT)
 target_compile_features(GeoCad
     PUBLIC cxx_auto_type
     PUBLIC cxx_trailing_return_types
-    PUBLIC cxx_std_17
+    PUBLIC cxx_std_20
     PRIVATE cxx_variadic_templates
     )
 
