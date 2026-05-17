@@ -18,6 +18,7 @@
 #include "G4OpticalPhoton.hh"
 #include "G4Track.hh"
 #include <algorithm>
+#include <cmath>
 #include <iterator>
 #include <mutex>
 #include <regex>
@@ -134,7 +135,7 @@ namespace dd4hep {
           m_interp_lambda_values = m_lambda_values;
         }
       }
-      double interpolate(double lambda) const {
+      inline double interpolate(double lambda) const {
         if (m_efficiency.size() == 1) {
           return m_efficiency.front();
         }
@@ -149,8 +150,13 @@ namespace dd4hep {
         double a = m_efficiency[i];
         double b = m_efficiency[i+1];
         printout(VERBOSE, name(), "a = %f, b = %f, t = %f", a, b, t);
-        printout(VERBOSE, name(), "efficiency %f", a + t * (b - a));
-        return a + t * (b - a);
+#if defined(__cpp_lib_interpolate) && __cpp_lib_interpolate >= 201902L
+        double efficiency = std::lerp(a, b, t);
+#else
+        double efficiency = a + t * (b - a);
+#endif
+        printout(VERBOSE, name(), "efficiency %f", efficiency);
+        return efficiency;
       }
       double m_lambda_min{0.}, m_lambda_max{0.};
       std::vector<double> m_lambda_values;
