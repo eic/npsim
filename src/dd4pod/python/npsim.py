@@ -13,6 +13,7 @@ import sys
 
 from DDSim.DD4hepSimulation import DD4hepSimulation
 
+from g4units import mm
 
 if __name__ == "__main__":
   logging.basicConfig(format='%(name)-16s %(levelname)s %(message)s', level=logging.INFO, stream=sys.stdout)
@@ -69,8 +70,37 @@ if __name__ == "__main__":
   RUNNER.action.mapActions['PFRICH'] = 'Geant4OpticalTrackerAction'
   RUNNER.action.mapActions['DIRC'] = 'Geant4OpticalTrackerAction'
 
-  # Use the optical photon efficiency stacking action for hpDIRC
+  # Use the optical photon efficiency stacking action
+  nm = 1e-6 * mm  # dd4hep length unit
+  drich_lambda_values = [l * nm for l in [ # [nm]
+    315, 325, 340, 350, 370, 400, 450, 500, 550, 600, 650, 700, 750, 800, 850, 900, 1000
+  ]]
+  drich_efficiency = [e/100. for e in [ # [%]
+    0.00, 4.00, 10.0, 20.0, 30.0, 35.0, 40.0, 38.0, 35.0, 27.0, 20.0, 15.0, 12.0, 8.00, 6.00, 4.00, 0.00
+  ]]
+  pfrich_lambda_values = [l * nm for l in [ # [nm]
+    315, 325, 340, 350, 370, 400, 450, 500, 550, 600, 650, 700, 750, 800, 850, 900, 1000
+  ]]
+  pfrich_efficiency = [e/100. for e in [ # [%]
+    0.00, 4.00, 10.0, 20.0, 30.0, 35.0, 40.0, 38.0, 35.0, 27.0, 20.0, 15.0, 12.0, 8.00, 6.00, 4.00, 0.00
+  ]]
   RUNNER.action.stack = [
+    {
+      "name": "OpticalPhotonEfficiencyStackingAction",
+      "parameter": {
+        "LambdaValues": drich_lambda_values,
+        "LogicalVolume": "DRICH_(gas|aerogel)",
+        "Efficiency": drich_efficiency,
+      }
+    },
+    {
+      "name": "OpticalPhotonEfficiencyStackingAction",
+      "parameter": {
+        "LambdaValues": pfrich_lambda_values,
+        "LogicalVolume": "PFRICH(_GasVol|-aerogel-[0-9]+-[0-9]+)",
+        "Efficiency": pfrich_efficiency,
+      }
+    },
     {
       "name": "OpticalPhotonEfficiencyStackingAction",
       "parameter": {
