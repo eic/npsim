@@ -51,6 +51,13 @@ if(USE_ASAN)
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address")
   set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -fsanitize=address")
   set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -fsanitize=address")
+  # Clang does not link the full ASAN runtime into shared/module libs by default;
+  # it only adds bootstrap stubs that require the runtime from the main binary.
+  # Since DD4hep binaries are not ASAN-instrumented, link the shared ASAN DSO directly.
+  if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -shared-libasan")
+    set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -shared-libasan")
+  endif()
   execute_process(
     COMMAND ${CMAKE_CXX_COMPILER} -print-file-name=libasan.so
     OUTPUT_VARIABLE PRELOAD_SANITIZER_LIB_ASAN
@@ -63,6 +70,10 @@ if(USE_TSAN)
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=thread")
   set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -fsanitize=thread")
   set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -fsanitize=thread")
+  if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -shared-libsan")
+    set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -shared-libsan")
+  endif()
 endif()
 
 if(USE_UBSAN)
@@ -76,6 +87,10 @@ if(USE_UBSAN)
     endif()
   endforeach()
   add_compile_options(-g -O1)
+  if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -shared-libsan")
+    set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -shared-libsan")
+  endif()
   execute_process(
     COMMAND ${CMAKE_CXX_COMPILER} -print-file-name=libubsan.so
     OUTPUT_VARIABLE PRELOAD_SANITIZER_LIB_UBSAN
