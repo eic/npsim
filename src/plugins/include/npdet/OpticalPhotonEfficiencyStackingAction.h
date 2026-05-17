@@ -43,15 +43,8 @@ namespace dd4hep {
       };
       /// Default destructor
       virtual ~OpticalPhotonEfficiencyStackingAction() {
-        printout(DEBUG, name(), "Suppressed %d of %d photons in lv %s",
+        printout(WARNING, name(), "Suppressed %zu of %zu photons in lv %s",
           m_killed_photons, m_total_photons, m_logical_volume.c_str());
-        printout(DEBUG, name(), "lambda range: [%f,%f] nm",
-          m_lambda_min / CLHEP::nm, m_lambda_max / CLHEP::nm);
-        std::ostringstream oss_efficiency;
-        std::copy(m_efficiency.begin(), m_efficiency.end(),
-          std::ostream_iterator<double>(oss_efficiency, " "));
-        std::string str_efficiency = oss_efficiency.str();
-        printout(DEBUG, name(), "efficiency: %s", str_efficiency.c_str());
       };
       /// New-stage callback
       virtual void newStage(G4StackManager*) override { };
@@ -96,7 +89,10 @@ namespace dd4hep {
                 return TrackClassification(fKill);
               }
             } else {
+              // Outside the QE-specified wavelength range: efficiency is 0
               printout(VERBOSE, name(), "outside lambda range [%f,%f] nm", lambda_min / CLHEP::nm, lambda_max / CLHEP::nm);
+              ++m_killed_photons;
+              return TrackClassification(fKill);
             }
           } else {
             printout(VERBOSE, name(), "not in volume %s", m_logical_volume.c_str());
