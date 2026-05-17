@@ -22,6 +22,7 @@ endif()
 
 # Use GNU install dirs
 include(GNUInstallDirs)
+include(CheckCXXCompilerFlag)
 
 # Build type
 if (NOT CMAKE_BUILD_TYPE)
@@ -41,6 +42,33 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # Options
 
 set(USE_GEOCAD ON CACHE BOOL "build the geocad library. Requires opencascade")
+option(USE_ASAN "Compile with address sanitizer" OFF)
+option(USE_TSAN "Compile with thread sanitizer" OFF)
+option(USE_UBSAN "Compile with undefined behavior sanitizer" OFF)
+
+if(USE_ASAN)
+  add_compile_options(-fsanitize=address -fno-omit-frame-pointer -g -O1)
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address")
+  set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -fsanitize=address")
+endif()
+
+if(USE_TSAN)
+  add_compile_options(-fsanitize=thread -g -O1)
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=thread")
+  set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -fsanitize=thread")
+endif()
+
+if(USE_UBSAN)
+  foreach(sanitizer undefined float-divide-by-zero unsigned-integer-overflow implicit-conversion local-bounds nullability)
+    check_cxx_compiler_flag("-fsanitize=${sanitizer}" CXX_COMPILER_HAS_sanitize_${sanitizer})
+    if(CXX_COMPILER_HAS_sanitize_${sanitizer})
+      add_compile_options(-fsanitize=${sanitizer})
+      set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=${sanitizer}")
+      set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -fsanitize=${sanitizer}")
+    endif()
+  endforeach()
+  add_compile_options(-g -O1)
+endif()
 
 # ---------------------------------------------------------------------------
 # Load additional OS dependent settings
