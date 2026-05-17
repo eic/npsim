@@ -39,9 +39,13 @@ endif()
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # ---------------------------------------------------------------------------
-# Options
+# Feature options
 
 set(USE_GEOCAD ON CACHE BOOL "build the geocad library. Requires opencascade")
+
+# ---------------------------------------------------------------------------
+# Sanitizers options
+
 option(USE_ASAN "Compile with address sanitizer" OFF)
 option(USE_TSAN "Compile with thread sanitizer" OFF)
 option(USE_UBSAN "Compile with undefined behavior sanitizer" OFF)
@@ -155,6 +159,7 @@ find_package(DD4hep 1.18 REQUIRED COMPONENTS DDCore DDG4)
 include(${DD4hep_DIR}/cmake/DD4hep.cmake)
 include(${DD4hep_DIR}/cmake/DD4hepBuild.cmake)
 
+# Redefine for sanitizer support 
 function(dd4hep_generate_rootmap library)
   if(APPLE)
     set(ENV_VAR DYLD_LIBRARY_PATH)
