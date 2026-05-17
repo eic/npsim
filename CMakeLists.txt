@@ -7,7 +7,7 @@ project(npsim
 # C++ standard
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD 20 CACHE STRING "Set the C++ standard to be used")
-if(NOT CMAKE_CXX_STANDARD MATCHES "20|23")
+if(NOT CMAKE_CXX_STANDARD MATCHES "^(20|23)$")
   message(FATAL_ERROR "Unsupported C++ standard: ${CMAKE_CXX_STANDARD}")
 endif()
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
