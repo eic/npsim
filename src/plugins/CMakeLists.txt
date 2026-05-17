@@ -9,6 +9,15 @@ dd4hep_add_plugin(NPDetPlugins
   USES DD4hep::DDCore DD4hep::DDG4
 )
 
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+  if(USE_ASAN)
+    target_link_options(NPDetPlugins PRIVATE -fsanitize=address)
+  endif()
+  if(USE_UBSAN)
+    target_link_options(NPDetPlugins PRIVATE -fsanitize=undefined)
+  endif()
+endif()
+
 install(TARGETS NPDetPlugins
   EXPORT NPDetTargets
   LIBRARY DESTINATION lib
