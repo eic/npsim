@@ -57,7 +57,7 @@ if(USE_ASAN)
   if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -shared-libasan")
     set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -shared-libasan")
-    # Clang's ASAN DSO has an architecture-specific name; use it for LD_PRELOAD
+    # Clang's ASAN DSO has an architecture-specific name
     execute_process(
       COMMAND ${CMAKE_CXX_COMPILER} -print-file-name=libclang_rt.asan-${CMAKE_SYSTEM_PROCESSOR}.so
       OUTPUT_VARIABLE PRELOAD_SANITIZER_LIB_ASAN
@@ -68,6 +68,9 @@ if(USE_ASAN)
       OUTPUT_VARIABLE PRELOAD_SANITIZER_LIB_ASAN
       OUTPUT_STRIP_TRAILING_WHITESPACE)
   endif()
+  get_filename_component(ASAN_RUNTIME_DIR "${PRELOAD_SANITIZER_LIB_ASAN}" DIRECTORY)
+  list(APPEND CMAKE_BUILD_RPATH "${ASAN_RUNTIME_DIR}")
+  list(APPEND SANITIZER_RUNTIME_DIRS "${ASAN_RUNTIME_DIR}")
   list(PREPEND PRELOAD_SANITIZER_LIB ${PRELOAD_SANITIZER_LIB_ASAN})
 endif()
 
@@ -89,6 +92,9 @@ if(USE_TSAN)
       OUTPUT_VARIABLE PRELOAD_SANITIZER_LIB_TSAN
       OUTPUT_STRIP_TRAILING_WHITESPACE)
   endif()
+  get_filename_component(TSAN_RUNTIME_DIR "${PRELOAD_SANITIZER_LIB_TSAN}" DIRECTORY)
+  list(APPEND CMAKE_BUILD_RPATH "${TSAN_RUNTIME_DIR}")
+  list(APPEND SANITIZER_RUNTIME_DIRS "${TSAN_RUNTIME_DIR}")
   list(PREPEND PRELOAD_SANITIZER_LIB ${PRELOAD_SANITIZER_LIB_TSAN})
 endif()
 
@@ -116,7 +122,16 @@ if(USE_UBSAN)
       OUTPUT_VARIABLE PRELOAD_SANITIZER_LIB_UBSAN
       OUTPUT_STRIP_TRAILING_WHITESPACE)
   endif()
-  list(PREPEND PRELOAD_SANITIZER_LIB ${PRELOAD_SANITIZER_LIB_UBSAN})
+  get_filename_component(UBSAN_RUNTIME_DIR "${PRELOAD_SANITIZER_LIB_UBSAN}" DIRECTORY)
+  list(APPEND CMAKE_BUILD_RPATH "${UBSAN_RUNTIME_DIR}")
+  list(APPEND SANITIZER_RUNTIME_DIRS "${UBSAN_RUNTIME_DIR}")
+  # With Clang, the ASAN runtime already integrates UBSAN; preloading
+  # libclang_rt.ubsan_standalone alongside libclang_rt.asan causes runtime
+  # conflicts (both provide overlapping interceptors). Skip the UBSAN preload
+  # when ASAN is also active — ASAN handles both.
+  if(NOT (USE_ASAN AND CMAKE_CXX_COMPILER_ID MATCHES "Clang"))
+    list(PREPEND PRELOAD_SANITIZER_LIB ${PRELOAD_SANITIZER_LIB_UBSAN})
+  endif()
 endif()
 
 # ---------------------------------------------------------------------------
@@ -149,11 +164,28 @@ function(dd4hep_generate_rootmap library)
   set(${ENV_VAR}_VALUE $<TARGET_FILE_DIR:${library}>:$<TARGET_FILE_DIR:DD4hep::DD4hepGaudiPluginMgr>:$ENV{${ENV_VAR}})
 
   set(rootmapfile ${CMAKE_SHARED_MODULE_PREFIX}${library}.components)
-  string(JOIN ":" LD_PRELOAD ${PRELOAD_SANITIZER_LIB})
+
+  # Build the listcomponents invocation. When sanitizers are active we must
+  # LD_PRELOAD the runtime so ASAN initialises before any allocation occurs;
+  # loading it lazily via dlopen (RPATH) after DD4hep has already allocated
+  # memory causes a crash. To prevent LeakSanitizer from scanning the entire
+  # DD4hep/ROOT heap at process exit (which hangs the build), we force
+  # detect_leaks=0 for this helper invocation only.
+  string(JOIN ":" LD_PRELOAD_VALUE ${PRELOAD_SANITIZER_LIB})
+  if(LD_PRELOAD_VALUE)
+    set(EXTRA_ENV
+      "LD_PRELOAD=${LD_PRELOAD_VALUE}"
+      "ASAN_OPTIONS=detect_leaks=0:verify_asan_link_order=0"
+      "LSAN_OPTIONS=detect_leaks=0"
+    )
+  endif()
 
   add_custom_command(OUTPUT ${rootmapfile}
     DEPENDS ${library}
-    COMMAND ${ENV_VAR}=${${ENV_VAR}_VALUE} LD_PRELOAD=${LD_PRELOAD} $<TARGET_FILE:DD4hep::listcomponents> -o ${rootmapfile} $<TARGET_FILE_NAME:${library}>
+    COMMAND ${CMAKE_COMMAND} -E env
+      "${ENV_VAR}=${${ENV_VAR}_VALUE}"
+      ${EXTRA_ENV}
+      $<TARGET_FILE:DD4hep::listcomponents> -o ${rootmapfile} $<TARGET_FILE_NAME:${library}>
     WORKING_DIRECTORY ${LIBRARY_OUTPUT_PATH}
     COMMAND_EXPAND_LISTS
   )
