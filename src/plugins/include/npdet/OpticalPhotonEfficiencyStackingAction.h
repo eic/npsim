@@ -79,14 +79,6 @@ namespace dd4hep {
             auto lambda_max = !m_interp_lambda_values.empty() ? m_interp_lambda_values.back() : m_lambda_max;
             if (lambda_min < lambda && lambda < lambda_max) {
               double efficiency = interpolate(lambda);
-              if (m_efficiency.size() == 0) {
-                // No efficiency specified, assume zero
-                efficiency = 0.;
-                // which means kill
-                ++m_killed_photons;
-                return TrackClassification(fKill);
-              }
-
               // Edge cases
               if (efficiency == 0.0) {
                 ++m_killed_photons;
