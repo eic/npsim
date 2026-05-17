@@ -17,6 +17,7 @@
 #include "DDG4/Geant4StackingAction.h"
 #include "G4OpticalPhoton.hh"
 #include "G4Track.hh"
+#include <algorithm>
 
 /// Namespace for the AIDA detector description toolkit
 namespace dd4hep {
@@ -31,6 +32,7 @@ namespace dd4hep {
       : Geant4StackingAction(c, n) {
         declareProperty("LambdaMin", m_lambda_min);
         declareProperty("LambdaMax", m_lambda_max);
+        declareProperty("Wavelengths", m_wavelengths);
         declareProperty("Efficiency", m_efficiency);
         declareProperty("LogicalVolume", m_logical_volume);
       };
@@ -80,6 +82,25 @@ namespace dd4hep {
                 // Single constant value over lambda range
                 efficiency = m_efficiency.front();
 
+              } else if (m_wavelengths.size() == m_efficiency.size() && m_wavelengths.size() > 1) {
+                // Linear interpolation on non-uniform wavelength grid
+                auto lambda_nm = lambda / CLHEP::nm;
+                if (lambda_nm <= m_wavelengths.front()) {
+                  efficiency = m_efficiency.front();
+                } else if (lambda_nm >= m_wavelengths.back()) {
+                  efficiency = m_efficiency.back();
+                } else {
+                  auto upper = std::upper_bound(m_wavelengths.begin(), m_wavelengths.end(), lambda_nm);
+                  auto i = std::distance(m_wavelengths.begin(), upper) - 1;
+                  double a_lambda = m_wavelengths[i];
+                  double b_lambda = m_wavelengths[i+1];
+                  double t = (lambda_nm - a_lambda) / (b_lambda - a_lambda);
+                  double a = m_efficiency[i];
+                  double b = m_efficiency[i+1];
+                  efficiency = a + t * (b - a);
+                  printout(VERBOSE, name(), "a = %f, b = %f, t = %f", a, b, t);
+                  printout(VERBOSE, name(), "efficiency %f", efficiency);
+                }
               } else {
                 // Linear interpolation on lambda grid
                 double lambda_step = (m_lambda_max - m_lambda_min) / (m_efficiency.size() - 1);
@@ -120,6 +141,7 @@ namespace dd4hep {
       };
     private:
       double m_lambda_min{0.}, m_lambda_max{0.};
+      std::vector<double> m_wavelengths;
       std::vector<double> m_efficiency;
       std::string m_logical_volume;
       std::size_t m_total_photons{0}, m_killed_photons{0};

@@ -69,8 +69,27 @@ if __name__ == "__main__":
   RUNNER.action.mapActions['PFRICH'] = 'Geant4OpticalTrackerAction'
   RUNNER.action.mapActions['DIRC'] = 'Geant4OpticalTrackerAction'
 
-  # Use the optical photon efficiency stacking action for hpDIRC
+  # Use the optical photon efficiency stacking action
+  drich_wavelengths = [ # [nm]
+    315, 325, 340, 350, 370, 400, 450, 500, 550, 600, 650, 700, 750, 800, 850, 900, 1000
+  ]
+  drich_efficiency = [ # [%]
+    0.00, 0.04, 0.10, 0.20, 0.30, 0.35, 0.40, 0.38, 0.35, 0.27, 0.20, 0.15, 0.12, 0.08, 0.06, 0.04, 0.00
+  ]
   RUNNER.action.stack = [
+    *[
+      {
+        "name": "OpticalPhotonEfficiencyStackingAction",
+        "parameter": {
+          "LambdaMin": f"{drich_wavelengths[0]}*nm",
+          "LambdaMax": f"{drich_wavelengths[-1]}*nm",
+          "Wavelengths": drich_wavelengths,
+          "LogicalVolume": f"DRICH_pss_sec{isec}",
+          "Efficiency": drich_efficiency,
+        }
+      }
+      for isec in range(6)
+    ],
     {
       "name": "OpticalPhotonEfficiencyStackingAction",
       "parameter": {
