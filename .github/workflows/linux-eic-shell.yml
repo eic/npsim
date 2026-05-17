@@ -322,6 +322,7 @@ jobs:
       - name: Download artifacts for page
         uses: actions/download-artifact@v8
         with:
+          pattern: github-pages-staging-*
           path: artifacts/
       - name: Build static page content
         run: |
