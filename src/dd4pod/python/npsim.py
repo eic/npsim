@@ -70,15 +70,16 @@ if __name__ == "__main__":
   RUNNER.action.mapActions['DIRC'] = 'Geant4OpticalTrackerAction'
 
   # Use the optical photon efficiency stacking action
-  drich_lambda_values = [ # [nm]
+  nm = 1e-6  # dd4hep length unit
+  drich_lambda_values = [l * nm for l in [ # [nm]
     315, 325, 340, 350, 370, 400, 450, 500, 550, 600, 650, 700, 750, 800, 850, 900, 1000
-  ]
+  ]]
   drich_efficiency = [ # [%]
     0.00, 0.04, 0.10, 0.20, 0.30, 0.35, 0.40, 0.38, 0.35, 0.27, 0.20, 0.15, 0.12, 0.08, 0.06, 0.04, 0.00
   ]
-  pfrich_lambda_values = [ # [nm]
+  pfrich_lambda_values = [l * nm for l in [ # [nm]
     315, 325, 340, 350, 370, 400, 450, 500, 550, 600, 650, 700, 750, 800, 850, 900, 1000
-  ]
+  ]]
   pfrich_efficiency = [ # [%]
     0.00, 0.04, 0.10, 0.20, 0.30, 0.35, 0.40, 0.38, 0.35, 0.27, 0.20, 0.15, 0.12, 0.08, 0.06, 0.04, 0.00
   ]

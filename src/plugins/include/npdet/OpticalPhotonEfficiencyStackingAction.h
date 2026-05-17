@@ -70,15 +70,14 @@ namespace dd4hep {
           if (std::regex_match(lv->GetName().c_str(), m_logical_volume_regex)) {
             double mom = aTrack->GetMomentum().mag();
             double lambda = CLHEP::hbarc * CLHEP::twopi / mom;
-            double lambda_nm = lambda / CLHEP::nm;
             printout(VERBOSE, name(), "with mom = %f eV, lambda = %f nm",
               mom / CLHEP::eV, lambda / CLHEP::nm);
 
             m_total_photons++;
-            auto lambda_min = !m_interp_lambda_values.empty() ? m_interp_lambda_values.front() : m_lambda_min / CLHEP::nm;
-            auto lambda_max = !m_interp_lambda_values.empty() ? m_interp_lambda_values.back() : m_lambda_max / CLHEP::nm;
-            if (lambda_min < lambda_nm && lambda_nm < lambda_max) {
-              double efficiency = interpolate(lambda_nm);
+            auto lambda_min = !m_interp_lambda_values.empty() ? m_interp_lambda_values.front() : m_lambda_min;
+            auto lambda_max = !m_interp_lambda_values.empty() ? m_interp_lambda_values.back() : m_lambda_max;
+            if (lambda_min < lambda && lambda < lambda_max) {
+              double efficiency = interpolate(lambda);
               if (m_efficiency.size() == 0) {
                 // No efficiency specified, assume zero
                 efficiency = 0.;
@@ -104,7 +103,7 @@ namespace dd4hep {
                 return TrackClassification(fKill);
               }
             } else {
-              printout(VERBOSE, name(), "outside lambda range [%f,%f] nm", lambda_min, lambda_max);
+              printout(VERBOSE, name(), "outside lambda range [%f,%f] nm", lambda_min / CLHEP::nm, lambda_max / CLHEP::nm);
             }
           } else {
             printout(VERBOSE, name(), "not in volume %s", m_logical_volume.c_str());
@@ -123,30 +122,30 @@ namespace dd4hep {
           if (m_lambda_values.size() == m_efficiency.size()) {
             m_interp_lambda_values = m_lambda_values;
           } else {
-            auto lambda_min_nm = m_lambda_min / CLHEP::nm;
-            auto lambda_max_nm = m_lambda_max / CLHEP::nm;
+            auto lambda_min = m_lambda_min;
+            auto lambda_max = m_lambda_max;
             m_interp_lambda_values.reserve(m_efficiency.size());
-            auto lambda_step = (lambda_max_nm - lambda_min_nm) / (m_efficiency.size() - 1);
+            auto lambda_step = (lambda_max - lambda_min) / (m_efficiency.size() - 1);
             for (std::size_t i = 0; i < m_efficiency.size(); ++i) {
-              m_interp_lambda_values.push_back(lambda_min_nm + i * lambda_step);
+              m_interp_lambda_values.push_back(lambda_min + i * lambda_step);
             }
           }
         } else if (m_lambda_values.size() > 1) {
           m_interp_lambda_values = m_lambda_values;
         }
       }
-      double interpolate(double lambda_nm) const {
+      double interpolate(double lambda) const {
         if (m_efficiency.size() == 1) {
           return m_efficiency.front();
         }
         if (m_efficiency.size() < 2 || m_interp_lambda_values.size() < 2) {
           return 0.0;
         }
-        auto upper = std::upper_bound(m_interp_lambda_values.begin(), m_interp_lambda_values.end(), lambda_nm);
+        auto upper = std::upper_bound(m_interp_lambda_values.begin(), m_interp_lambda_values.end(), lambda);
         auto i = std::distance(m_interp_lambda_values.begin(), upper) - 1;
         double a_lambda = m_interp_lambda_values[i];
         double b_lambda = m_interp_lambda_values[i+1];
-        double t = (lambda_nm - a_lambda) / (b_lambda - a_lambda);
+        double t = (lambda - a_lambda) / (b_lambda - a_lambda);
         double a = m_efficiency[i];
         double b = m_efficiency[i+1];
         printout(VERBOSE, name(), "a = %f, b = %f, t = %f", a, b, t);
