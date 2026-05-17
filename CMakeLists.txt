@@ -22,6 +22,7 @@ endif()
 
 # Use GNU install dirs
 include(GNUInstallDirs)
+include(CTest)
 
 # Build type
 if (NOT CMAKE_BUILD_TYPE)
@@ -41,7 +42,6 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # Options
 
 set(USE_GEOCAD ON CACHE BOOL "build the geocad library. Requires opencascade")
-include(CTest)
 
 # ---------------------------------------------------------------------------
 # Load additional OS dependent settings
