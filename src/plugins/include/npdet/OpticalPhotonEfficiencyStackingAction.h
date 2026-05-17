@@ -46,8 +46,9 @@ namespace dd4hep {
       };
       /// Default destructor
       virtual ~OpticalPhotonEfficiencyStackingAction() {
-        printout(WARNING, name(), "Suppressed %zu of %zu photons in lv regex %s or region regex %s",
-          m_killed_photons, m_total_photons, m_logical_volume.c_str(), m_region.c_str());
+        double pct = m_total_photons > 0 ? 100.0 * m_killed_photons / m_total_photons : 0.0;
+        printout(WARNING, name(), "Suppressed %zu of %zu photons (%.1f%%) in lv regex %s or region regex %s",
+          m_killed_photons, m_total_photons, pct, m_logical_volume.c_str(), m_region.c_str());
         printout(DEBUG, name(), "lambda range: [%f,%f] nm",
           m_lambda_min / CLHEP::nm, m_lambda_max / CLHEP::nm);
         std::ostringstream oss_efficiency;
