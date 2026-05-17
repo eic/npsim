@@ -18,6 +18,10 @@
 #include "G4OpticalPhoton.hh"
 #include "G4Track.hh"
 #include <algorithm>
+#include <iterator>
+#include <mutex>
+#include <regex>
+#include <stdexcept>
 
 /// Namespace for the AIDA detector description toolkit
 namespace dd4hep {
@@ -32,7 +36,7 @@ namespace dd4hep {
       : Geant4StackingAction(c, n) {
         declareProperty("LambdaMin", m_lambda_min);
         declareProperty("LambdaMax", m_lambda_max);
-        declareProperty("Wavelengths", m_wavelengths);
+        declareProperty("LambdaValues", m_lambda_values);
         declareProperty("Efficiency", m_efficiency);
         declareProperty("LogicalVolume", m_logical_volume);
       };
@@ -54,6 +58,7 @@ namespace dd4hep {
       virtual void prepare(G4StackManager*) override { };
       /// Return TrackClassification with enum G4ClassificationOfNewTrack or NoTrackClassification
       virtual TrackClassification classifyNewTrack(G4StackManager*, const G4Track* aTrack) override {
+        std::call_once(m_init_once, [this]() { this->initialize(); });
         // Only apply to optical photons
         if (aTrack->GetDefinition() == G4OpticalPhoton::OpticalPhotonDefinition()) {
           auto* pv = aTrack->GetVolume();
@@ -61,57 +66,25 @@ namespace dd4hep {
           auto* lv = pv->GetLogicalVolume();
           printout(VERBOSE, name(), "photon in pv %s lv %s",
             pv->GetName().c_str(), lv->GetName().c_str());
-          // Only apply to specified logical volume
-          if (lv->GetName() == m_logical_volume) {
+          // Only apply to specified logical volume regex
+          if (std::regex_match(lv->GetName().c_str(), m_logical_volume_regex)) {
             double mom = aTrack->GetMomentum().mag();
             double lambda = CLHEP::hbarc * CLHEP::twopi / mom;
+            double lambda_nm = lambda / CLHEP::nm;
             printout(VERBOSE, name(), "with mom = %f eV, lambda = %f nm",
               mom / CLHEP::eV, lambda / CLHEP::nm);
 
             m_total_photons++;
-            if (m_lambda_min < lambda && lambda < m_lambda_max) {
-              double efficiency{0.};
+            auto lambda_min = !m_interp_lambda_values.empty() ? m_interp_lambda_values.front() : m_lambda_min / CLHEP::nm;
+            auto lambda_max = !m_interp_lambda_values.empty() ? m_interp_lambda_values.back() : m_lambda_max / CLHEP::nm;
+            if (lambda_min < lambda_nm && lambda_nm < lambda_max) {
+              double efficiency = interpolate(lambda_nm);
               if (m_efficiency.size() == 0) {
                 // No efficiency specified, assume zero
                 efficiency = 0.;
                 // which means kill
                 ++m_killed_photons;
                 return TrackClassification(fKill);
-
-              } else if (m_efficiency.size() == 1) {
-                // Single constant value over lambda range
-                efficiency = m_efficiency.front();
-
-              } else if (m_wavelengths.size() == m_efficiency.size() && m_wavelengths.size() > 1) {
-                // Linear interpolation on non-uniform wavelength grid
-                auto lambda_nm = lambda / CLHEP::nm;
-                if (lambda_nm <= m_wavelengths.front()) {
-                  efficiency = m_efficiency.front();
-                } else if (lambda_nm >= m_wavelengths.back()) {
-                  efficiency = m_efficiency.back();
-                } else {
-                  auto upper = std::upper_bound(m_wavelengths.begin(), m_wavelengths.end(), lambda_nm);
-                  auto i = std::distance(m_wavelengths.begin(), upper) - 1;
-                  double a_lambda = m_wavelengths[i];
-                  double b_lambda = m_wavelengths[i+1];
-                  double t = (lambda_nm - a_lambda) / (b_lambda - a_lambda);
-                  double a = m_efficiency[i];
-                  double b = m_efficiency[i+1];
-                  efficiency = a + t * (b - a);
-                  printout(VERBOSE, name(), "a = %f, b = %f, t = %f", a, b, t);
-                  printout(VERBOSE, name(), "efficiency %f", efficiency);
-                }
-              } else {
-                // Linear interpolation on lambda grid
-                double lambda_step = (m_lambda_max - m_lambda_min) / (m_efficiency.size() - 1);
-                double div = (lambda - m_lambda_min) / lambda_step;
-                auto i = std::llround(std::floor(div));
-                double t = div - i;
-                double a = m_efficiency[i];
-                double b = m_efficiency[i+1];
-                efficiency = a + t * (b - a);
-                printout(VERBOSE, name(), "a = %f, b = %f, t = %f", a, b, t);
-                printout(VERBOSE, name(), "efficiency %f", efficiency);
               }
 
               // Edge cases
@@ -131,7 +104,7 @@ namespace dd4hep {
                 return TrackClassification(fKill);
               }
             } else {
-              printout(VERBOSE, name(), "outside lambda range [%f,%f] nm", m_lambda_min / CLHEP::nm, m_lambda_max / CLHEP::nm);
+              printout(VERBOSE, name(), "outside lambda range [%f,%f] nm", lambda_min, lambda_max);
             }
           } else {
             printout(VERBOSE, name(), "not in volume %s", m_logical_volume.c_str());
@@ -140,10 +113,53 @@ namespace dd4hep {
         return TrackClassification();
       };
     private:
+      void initialize() {
+        try {
+          m_logical_volume_regex = std::regex(m_logical_volume);
+        } catch (const std::regex_error&) {
+          throw std::runtime_error("Invalid LogicalVolume regex");
+        }
+        if (m_efficiency.size() > 1) {
+          if (m_lambda_values.size() == m_efficiency.size()) {
+            m_interp_lambda_values = m_lambda_values;
+          } else {
+            auto lambda_min_nm = m_lambda_min / CLHEP::nm;
+            auto lambda_max_nm = m_lambda_max / CLHEP::nm;
+            m_interp_lambda_values.reserve(m_efficiency.size());
+            auto lambda_step = (lambda_max_nm - lambda_min_nm) / (m_efficiency.size() - 1);
+            for (std::size_t i = 0; i < m_efficiency.size(); ++i) {
+              m_interp_lambda_values.push_back(lambda_min_nm + i * lambda_step);
+            }
+          }
+        } else if (m_lambda_values.size() > 1) {
+          m_interp_lambda_values = m_lambda_values;
+        }
+      }
+      double interpolate(double lambda_nm) const {
+        if (m_efficiency.size() == 1) {
+          return m_efficiency.front();
+        }
+        if (m_efficiency.size() < 2 || m_interp_lambda_values.size() < 2) {
+          return 0.0;
+        }
+        auto upper = std::upper_bound(m_interp_lambda_values.begin(), m_interp_lambda_values.end(), lambda_nm);
+        auto i = std::distance(m_interp_lambda_values.begin(), upper) - 1;
+        double a_lambda = m_interp_lambda_values[i];
+        double b_lambda = m_interp_lambda_values[i+1];
+        double t = (lambda_nm - a_lambda) / (b_lambda - a_lambda);
+        double a = m_efficiency[i];
+        double b = m_efficiency[i+1];
+        printout(VERBOSE, name(), "a = %f, b = %f, t = %f", a, b, t);
+        printout(VERBOSE, name(), "efficiency %f", a + t * (b - a));
+        return a + t * (b - a);
+      }
       double m_lambda_min{0.}, m_lambda_max{0.};
-      std::vector<double> m_wavelengths;
+      std::vector<double> m_lambda_values;
+      std::vector<double> m_interp_lambda_values;
       std::vector<double> m_efficiency;
       std::string m_logical_volume;
+      std::regex m_logical_volume_regex{};
+      std::once_flag m_init_once{};
       std::size_t m_total_photons{0}, m_killed_photons{0};
     };
   }    // End namespace sim
