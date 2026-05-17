@@ -50,12 +50,19 @@ if(USE_ASAN)
   add_compile_options(-fsanitize=address -fno-omit-frame-pointer -g -O1)
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address")
   set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -fsanitize=address")
+  set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -fsanitize=address")
+  execute_process(
+    COMMAND ${CMAKE_CXX_COMPILER} -print-file-name=libasan.so
+    OUTPUT_VARIABLE PRELOAD_SANITIZER_LIB_ASAN
+    OUTPUT_STRIP_TRAILING_WHITESPACE)
+  list(PREPEND PRELOAD_SANITIZER_LIB ${PRELOAD_SANITIZER_LIB_ASAN})
 endif()
 
 if(USE_TSAN)
   add_compile_options(-fsanitize=thread -g -O1)
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=thread")
   set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -fsanitize=thread")
+  set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -fsanitize=thread")
 endif()
 
 if(USE_UBSAN)
@@ -65,9 +72,15 @@ if(USE_UBSAN)
       add_compile_options(-fsanitize=${sanitizer})
       set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=${sanitizer}")
       set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -fsanitize=${sanitizer}")
+      set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -fsanitize=${sanitizer}")
     endif()
   endforeach()
   add_compile_options(-g -O1)
+  execute_process(
+    COMMAND ${CMAKE_CXX_COMPILER} -print-file-name=libubsan.so
+    OUTPUT_VARIABLE PRELOAD_SANITIZER_LIB_UBSAN
+    OUTPUT_STRIP_TRAILING_WHITESPACE)
+  list(PREPEND PRELOAD_SANITIZER_LIB ${PRELOAD_SANITIZER_LIB_UBSAN})
 endif()
 
 # ---------------------------------------------------------------------------
@@ -90,6 +103,34 @@ endif()
 find_package(DD4hep 1.18 REQUIRED COMPONENTS DDCore DDG4)
 include(${DD4hep_DIR}/cmake/DD4hep.cmake)
 include(${DD4hep_DIR}/cmake/DD4hepBuild.cmake)
+
+function(dd4hep_generate_rootmap library)
+  if(APPLE)
+    set(ENV_VAR DYLD_LIBRARY_PATH)
+  else()
+    set(ENV_VAR LD_LIBRARY_PATH)
+  endif()
+  set(${ENV_VAR}_VALUE $<TARGET_FILE_DIR:${library}>:$<TARGET_FILE_DIR:DD4hep::DD4hepGaudiPluginMgr>:$ENV{${ENV_VAR}})
+
+  set(rootmapfile ${CMAKE_SHARED_MODULE_PREFIX}${library}.components)
+  string(JOIN ":" LD_PRELOAD ${PRELOAD_SANITIZER_LIB})
+
+  add_custom_command(OUTPUT ${rootmapfile}
+    DEPENDS ${library}
+    COMMAND ${ENV_VAR}=${${ENV_VAR}_VALUE} LD_PRELOAD=${LD_PRELOAD} $<TARGET_FILE:DD4hep::listcomponents> -o ${rootmapfile} $<TARGET_FILE_NAME:${library}>
+    WORKING_DIRECTORY ${LIBRARY_OUTPUT_PATH}
+    COMMAND_EXPAND_LISTS
+  )
+
+  add_custom_target(Components_${library} ALL DEPENDS ${rootmapfile})
+  set(install_destination "lib")
+  if(CMAKE_INSTALL_LIBDIR)
+    set(install_destination ${CMAKE_INSTALL_LIBDIR})
+  endif()
+  install(FILES $<TARGET_FILE_DIR:${library}>/${rootmapfile}
+    DESTINATION ${install_destination}
+  )
+endfunction()
 
 dd4hep_configure_output()
 dd4hep_set_compiler_flags()
