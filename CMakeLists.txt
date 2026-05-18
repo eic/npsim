@@ -77,7 +77,7 @@ find_package(fmt REQUIRED)
 #-----------------------------------------
 # add the library sub directories
 add_subdirectory(src/plugins)
-add_subdirectory(src/dd4pod)
+add_subdirectory(src/python)
 add_subdirectory(src/geocad)
 add_subdirectory(src/config)
 add_subdirectory(src/tools)

@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.12 FATAL_ERROR)
 
 configure_file(
-    python/npsim.in
+    npsim.in
     ${CMAKE_CURRENT_BINARY_DIR}/npsim
     )
 install(FILES
@@ -10,6 +10,6 @@ install(FILES
   DESTINATION bin
   )
 install(PROGRAMS
-  python/npsim.py
+  npsim.py
   DESTINATION bin
   )
