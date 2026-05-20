@@ -22,6 +22,9 @@ on:
         type: string
         default: /opt/detector/epic-main/bin/thisepic.sh
 
+permissions:
+  contents: read
+
 jobs:
   convert-to-step:
     runs-on: ubuntu-latest
