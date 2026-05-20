@@ -189,7 +189,7 @@ void TOCCToStep::AddChildLabel(TDF_Label mother, TDF_Label child, TopLoc_Locatio
 
 ////////////////////////////////////////////////////////////////////////////////
 
-TopLoc_Location TOCCToStep::CalcLocation (TGeoHMatrix matrix)
+TopLoc_Location TOCCToStep::CalcLocation (const TGeoHMatrix& matrix)
 {
    gp_Trsf TR,TR1;
    TopLoc_Location locA;
