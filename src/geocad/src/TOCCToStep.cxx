@@ -30,7 +30,6 @@ the OCCWriteStep(const char * fname ) method.
 #include "TGeoToOCC.h"
 
 #include "TGeoVolume.h"
-//#include "TString.h"
 #include "TClass.h"
 #include "TGeoManager.h"
 #include "TError.h"
@@ -42,6 +41,11 @@ the OCCWriteStep(const char * fname ) method.
 #include <Standard.hxx>
 #include <stdlib.h>
 #include <XCAFApp_Application.hxx>
+
+#include <map>
+#include <set>
+#include <string>
+#include <vector>
 
 using namespace std;
 
@@ -66,79 +70,161 @@ void TOCCToStep::OCCDocCreation()
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-/// Logical fTree creation.
 
-TDF_Label TOCCToStep::OCCShapeCreation(TGeoManager *m, double tgeo_length_unit_in_mm)
+/// Pre-collect the set of TGeoVolume* reachable from the named partial subtrees.
+/// Mirrors the skip logic in OCCPartialTreeCreation so only relevant volumes are
+/// returned.  O(N) single tree walk, no OCC operations.
+std::set<TGeoVolume*> TOCCToStep::CollectRelevantVolumes(
+    TGeoManager* m, const std::map<std::string, int>& part_name_levels)
 {
-   XCAFDoc_DocumentTool::SetLengthUnit(fDoc, tgeo_length_unit_in_mm, UnitsMethods_LengthUnit_Millimeter);
-   TDF_Label motherLabel;
-   TGeoVolume * currentVolume;
-   TGeoVolume * motherVol;
-   TGeoVolume * Top;
-   TString path;
-   Int_t level = 0;
-   TIter next(m->GetListOfVolumes());
-   fLabel = XCAFDoc_DocumentTool::ShapeTool(fDoc->Main())->NewShape();
-   if (m->GetTopVolume()->GetShape()->IsA()==TGeoCompositeShape::Class()) {
-     fShape = fRootShape.OCC_CompositeShape((TGeoCompositeShape*)m->GetTopVolume()->GetShape(), TGeoIdentity());
-   } else {
-     fShape = fRootShape.OCC_SimpleShape(m->GetTopVolume()->GetShape());
-   }
-   XCAFDoc_DocumentTool::ShapeTool(fDoc->Main())->SetShape(fLabel, fShape);
-   TDataStd_Name::Set(fLabel, m->GetTopVolume()->GetName());
-   XCAFDoc_DocumentTool::ShapeTool(fDoc->Main())->UpdateAssemblies();//fDoc->Main());
-   Top = m->GetTopVolume();
-   fTree[Top] = fLabel;
-   while ((currentVolume = (TGeoVolume *)next())) {
-      if (GetLabelOfVolume(currentVolume).IsNull()) {
-         if ((GetLabelOfVolume(currentVolume).IsNull())) {
-            if (currentVolume->GetShape()->IsA()==TGeoCompositeShape::Class()) {
-               fShape = fRootShape.OCC_CompositeShape((TGeoCompositeShape*)currentVolume->GetShape(), TGeoIdentity());
-            } else {
-               fShape = fRootShape.OCC_SimpleShape(currentVolume->GetShape());
-            }
-         }
-         TGeoNode *current;
-         TGeoIterator nextNode(m->GetTopVolume());
-         while ((current = nextNode())) {
-            if ((current->GetVolume() == currentVolume) && (GetLabelOfVolume(current->GetVolume()).IsNull())) {
-               level = nextNode.GetLevel();
-               nextNode.GetPath(path);
-               if (level == 1)
-                  motherVol = m->GetTopVolume();
-               else {
-                  TGeoNode * mother = nextNode.GetNode(--level);
-                  motherVol = mother->GetVolume();
-               }
-               motherLabel = GetLabelOfVolume(motherVol);
-               if (!motherLabel.IsNull()) {
-                  fLabel = TDF_TagSource::NewChild(motherLabel);
-                  break;
-               } else {
-                  TGeoNode * grandMother = nextNode.GetNode(level);
-                  motherVol = grandMother->GetVolume();
-                  TopoDS_Shape Mothershape;
-                  if (motherVol->GetShape()->IsA()==TGeoCompositeShape::Class()) {
-                     Mothershape = fRootShape.OCC_CompositeShape((TGeoCompositeShape*)motherVol->GetShape(), TGeoIdentity());
-                  } else {
-                     Mothershape = fRootShape.OCC_SimpleShape(motherVol->GetShape());
-                  }
-                  motherLabel = TDF_TagSource::NewChild(GetLabelOfVolume(Top));
-                  XCAFDoc_DocumentTool::ShapeTool(fDoc->Main())->SetShape(motherLabel, Mothershape);
-                  TDataStd_Name::Set(motherLabel, motherVol->GetName());
-                  XCAFDoc_DocumentTool::ShapeTool(fDoc->Main())->UpdateAssemblies();//(fDoc->Main());
-                  fTree[motherVol] = motherLabel;
-                  fLabel = TDF_TagSource::NewChild(motherLabel);
-                  break;
-               }
-            }
-         }
-         XCAFDoc_DocumentTool::ShapeTool(fDoc->Main())->SetShape(fLabel, fShape);
-         TDataStd_Name::Set(fLabel, currentVolume->GetName());
-         XCAFDoc_DocumentTool::ShapeTool(fDoc->Main())->UpdateAssemblies();//(fDoc->Main());
-         fTree[currentVolume] = fLabel;
+   std::set<TGeoVolume*> result;
+   result.insert(m->GetTopVolume());
+
+   std::map<TGeoVolume*, std::string> part_name_vols;
+   std::vector<TGeoVolume*> vols;
+   for (const auto& pl : part_name_levels) {
+      TGeoVolume* avol = m->GetVolume(pl.first.c_str());
+      if (avol) {
+         part_name_vols[avol] = pl.first;
+         vols.push_back(avol);
       }
    }
+
+   TGeoIterator nextNode(m->GetTopVolume());
+   TGeoNode*    currentNode      = nullptr;
+   TGeoVolume*  matched_vol      = nullptr;
+   bool         found_in_level_1 = false;
+
+   nextNode.SetType(0);
+   while ((currentNode = nextNode())) {
+      nextNode.SetType(0);
+      int level = nextNode.GetLevel();
+      if (level == 1) {
+         found_in_level_1 = false;
+         for (auto v : vols) {
+            if (v == currentNode->GetVolume()) {
+               matched_vol      = v;
+               found_in_level_1 = true;
+            }
+         }
+      }
+      if (!found_in_level_1) {
+         nextNode.SetType(1);
+         continue;
+      }
+      int max_level = part_name_levels.at(part_name_vols[matched_vol]);
+      if (level > max_level) continue;
+      result.insert(currentNode->GetVolume());
+   }
+   return result;
+}
+
+std::set<TGeoVolume*> TOCCToStep::CollectRelevantVolumes(
+    TGeoManager* m, const char* part_name, int max_level)
+{
+   std::map<std::string, int> pnl;
+   pnl[std::string(part_name)] = max_level;
+   return CollectRelevantVolumes(m, pnl);
+}
+
+/// Logical fTree creation.
+///
+/// Builds a label for every shape in the geometry (or for the subset given by
+/// volume_filter when doing a partial export).  A single O(N) tree walk builds
+/// the volume→mother map so that each volume's parent label can be looked up
+/// directly instead of re-walking the full tree for every volume.
+/// UpdateAssemblies() is deferred to the end of the method.
+TDF_Label TOCCToStep::OCCShapeCreation(TGeoManager *m, double tgeo_length_unit_in_mm,
+                                        const std::set<TGeoVolume*>& volume_filter)
+{
+   XCAFDoc_DocumentTool::SetLengthUnit(fDoc, tgeo_length_unit_in_mm, UnitsMethods_LengthUnit_Millimeter);
+
+   TGeoVolume* Top = m->GetTopVolume();
+
+   // Create label for the top volume
+   fLabel = XCAFDoc_DocumentTool::ShapeTool(fDoc->Main())->NewShape();
+   if (Top->GetShape()->IsA() == TGeoCompositeShape::Class()) {
+      fShape = fRootShape.OCC_CompositeShape((TGeoCompositeShape*)Top->GetShape(), TGeoIdentity());
+   } else {
+      fShape = fRootShape.OCC_SimpleShape(Top->GetShape());
+   }
+   XCAFDoc_DocumentTool::ShapeTool(fDoc->Main())->SetShape(fLabel, fShape);
+   TDataStd_Name::Set(fLabel, Top->GetName());
+   fTree[Top] = fLabel;
+
+   // Build a volume->mother map in a single O(N) pass.
+   // This replaces the O(V*N) pattern of launching a fresh TGeoIterator for
+   // every volume in the outer loop below.
+   std::map<TGeoVolume*, TGeoVolume*> motherMap;
+   {
+      TGeoIterator scan(Top);
+      TGeoNode*    snode = nullptr;
+      while ((snode = scan())) {
+         TGeoVolume* v = snode->GetVolume();
+         if (!motherMap.count(v)) {
+            int lvl     = scan.GetLevel();
+            motherMap[v] = (lvl == 1) ? Top : scan.GetNode(lvl - 1)->GetVolume();
+         }
+      }
+   }
+
+   // Determine the set of volumes to process.
+   // When a filter is provided (partial export) only those volumes are converted
+   // to OCC shapes, which avoids the expensive Boolean-operation path for the
+   // thousands of volumes that are not part of the requested sub-tree.
+   std::vector<TGeoVolume*> volumes_to_process;
+   if (!volume_filter.empty()) {
+      for (TGeoVolume* v : volume_filter) {
+         if (v != Top) volumes_to_process.push_back(v);
+      }
+   } else {
+      TIter next(m->GetListOfVolumes());
+      TGeoVolume* v = nullptr;
+      while ((v = (TGeoVolume*)next())) {
+         volumes_to_process.push_back(v);
+      }
+   }
+
+   TDF_Label motherLabel;
+   for (TGeoVolume* currentVolume : volumes_to_process) {
+      if (!GetLabelOfVolume(currentVolume).IsNull()) continue;
+
+      // Convert shape to OCC
+      if (currentVolume->GetShape()->IsA() == TGeoCompositeShape::Class()) {
+         fShape = fRootShape.OCC_CompositeShape((TGeoCompositeShape*)currentVolume->GetShape(), TGeoIdentity());
+      } else {
+         fShape = fRootShape.OCC_SimpleShape(currentVolume->GetShape());
+      }
+
+      // Look up the mother volume via the pre-built map
+      auto it = motherMap.find(currentVolume);
+      if (it == motherMap.end()) continue;  // volume unreachable from tree
+      TGeoVolume* motherVol = it->second;
+      motherLabel           = GetLabelOfVolume(motherVol);
+
+      if (!motherLabel.IsNull()) {
+         fLabel = TDF_TagSource::NewChild(motherLabel);
+      } else {
+         // Mother not yet labeled: create its label as a direct child of Top
+         TopoDS_Shape motherShape;
+         if (motherVol->GetShape()->IsA() == TGeoCompositeShape::Class()) {
+            motherShape = fRootShape.OCC_CompositeShape((TGeoCompositeShape*)motherVol->GetShape(), TGeoIdentity());
+         } else {
+            motherShape = fRootShape.OCC_SimpleShape(motherVol->GetShape());
+         }
+         motherLabel = TDF_TagSource::NewChild(GetLabelOfVolume(Top));
+         XCAFDoc_DocumentTool::ShapeTool(fDoc->Main())->SetShape(motherLabel, motherShape);
+         TDataStd_Name::Set(motherLabel, motherVol->GetName());
+         fTree[motherVol] = motherLabel;
+         fLabel           = TDF_TagSource::NewChild(motherLabel);
+      }
+
+      XCAFDoc_DocumentTool::ShapeTool(fDoc->Main())->SetShape(fLabel, fShape);
+      TDataStd_Name::Set(fLabel, currentVolume->GetName());
+      fTree[currentVolume] = fLabel;
+   }
+
+   XCAFDoc_DocumentTool::ShapeTool(fDoc->Main())->UpdateAssemblies();
    return fLabel;
 }
 

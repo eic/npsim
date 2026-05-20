@@ -24,6 +24,10 @@
 #include <TDF_Label.hxx>
 #include <TopoDS_Shape.hxx>
 
+#include <map>
+#include <set>
+#include <string>
+
 
 class TOCCToStep {
 
@@ -51,7 +55,10 @@ private:
 public:
    TOCCToStep();
    void      PrintAssembly();
-   TDF_Label OCCShapeCreation(TGeoManager *m, double tgeo_length_unit_in_mm = 1.);
+   std::set<TGeoVolume*> CollectRelevantVolumes(TGeoManager* m, const std::map<std::string,int>& part_name_levels);
+   std::set<TGeoVolume*> CollectRelevantVolumes(TGeoManager* m, const char* part_name, int max_level);
+   TDF_Label OCCShapeCreation(TGeoManager *m, double tgeo_length_unit_in_mm = 1.,
+                               const std::set<TGeoVolume*>& volume_filter = {});
    void      OCCTreeCreation(TGeoManager *m, int max_level = -1);
    bool      OCCPartialTreeCreation(TGeoManager *m, const char* node_name, int max_level = -1);
    bool      OCCPartialTreeCreation(TGeoManager *m, std::map<std::string,int> part_name_levels);
