@@ -19,6 +19,9 @@
 #include "TH2F.h"
 
 #include <chrono>
+#include <ctime>
+#include <map>
+#include <string>
 
 /// Namespace for the AIDA detector description toolkit
 namespace dd4hep {
@@ -35,22 +38,40 @@ namespace dd4hep {
       /// Default destructor
       virtual ~PerformanceProfileSteppingAction() {
         std::chrono::milliseconds total_duration = std::chrono::milliseconds::zero();
+        // Accumulate per-PDG totals
+        std::map<G4int, std::chrono::milliseconds> pdg_duration;
         for (auto& [track_id, duration] : m_duration) {
           if (std::chrono::abs(duration) > std::chrono::nanoseconds(10ms)) {
             auto p0 = m_prestep_position[track_id] / CLHEP::mm;
             auto p1 = m_poststep_position[track_id] / CLHEP::mm;
             auto E1 = m_pdg[track_id] == -22 ? m_poststep_energy[track_id] / CLHEP::eV
                                              : m_poststep_energy[track_id] / CLHEP::MeV;
-            printout(INFO, name(), "track %d (%d): %ld ms (%f %f %f mm -> %f %f %f mm, %f (M?)eV)", track_id,
+            printout(INFO, name(), "track %d (pdg=%d): %ld ms (%f %f %f mm -> %f %f %f mm, %f (M?)eV)", track_id,
                      m_pdg[track_id], std::chrono::duration_cast<std::chrono::milliseconds>(duration).count(), p0.x(),
                      p0.y(), p0.z(), p1.x(), p1.y(), p1.z(), E1);
           }
-          total_duration += std::chrono::duration_cast<std::chrono::milliseconds>(duration);
+          auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(duration);
+          total_duration += ms;
+          pdg_duration[m_pdg[track_id]] += ms;
         }
-        printout(INFO, name(), "total duration: %ld ms", total_duration);
-        TFile f("histos.root", "recreate");
+        // Print per-PDG summary
+        for (auto& [pdg, dur] : pdg_duration) {
+          printout(INFO, name(), "PDG %d total duration: %ld ms", pdg, dur.count());
+        }
+        printout(INFO, name(), "total duration: %ld ms", total_duration.count());
+        std::time_t t = std::time(nullptr);
+        char ts[32];
+        std::strftime(ts, sizeof(ts), "%Y%m%d_%H%M%S", std::localtime(&t));
+        std::string fname = std::string("histos_") + ts + ".root";
+        TFile f(fname.c_str(), "recreate");
         m_xy.Write();
         m_zr.Write();
+        for (auto& [pdg, hxy] : m_xy_pdg) {
+          hxy.Write();
+        }
+        for (auto& [pdg, hzr] : m_zr_pdg) {
+          hzr.Write();
+        }
         f.Close();
       };
       /// User stepping callback
@@ -77,6 +98,21 @@ namespace dd4hep {
           m_poststep_energy[track_id]   = poststep_energy;
           m_xy.Fill(poststep_position.x(), poststep_position.y(), step_duration.count());
           m_zr.Fill(poststep_position.z(), std::hypot(poststep_position.x(), poststep_position.y()), step_duration.count());
+          // Per-PDG histos: create on first encounter
+          auto hname_xy = "m_xy_pdg" + std::to_string(pdg);
+          auto hname_zr = "m_zr_pdg" + std::to_string(pdg);
+          if (m_xy_pdg.find(pdg) == m_xy_pdg.end()) {
+            m_xy_pdg.emplace(std::piecewise_construct, std::forward_as_tuple(pdg),
+                             std::forward_as_tuple(hname_xy.c_str(), hname_xy.c_str(),
+                                                   100, -3.*CLHEP::m, +3.*CLHEP::m,
+                                                   100, -3.*CLHEP::m, +3.*CLHEP::m));
+            m_zr_pdg.emplace(std::piecewise_construct, std::forward_as_tuple(pdg),
+                             std::forward_as_tuple(hname_zr.c_str(), hname_zr.c_str(),
+                                                   1000, -50.*CLHEP::m, +50.*CLHEP::m,
+                                                   100, 0., +3.*CLHEP::m));
+          }
+          m_xy_pdg.at(pdg).Fill(poststep_position.x(), poststep_position.y(), step_duration.count());
+          m_zr_pdg.at(pdg).Fill(poststep_position.z(), std::hypot(poststep_position.x(), poststep_position.y()), step_duration.count());
         } else {
           // New track
           if (track_id == 0) {
@@ -106,6 +142,8 @@ namespace dd4hep {
       std::chrono::time_point<std::chrono::steady_clock> m_previous_timepoint;
       TH2F m_xy{"m_xy", "xy", 100, -3.*CLHEP::m, +3.*CLHEP::m, 100, -3.*CLHEP::m, +3.*CLHEP::m};
       TH2F m_zr{"m_zr", "zr", 100, -4.5*CLHEP::m, +5.5*CLHEP::m, 100, 0., +3.*CLHEP::m};
+      std::map<G4int, TH2F> m_xy_pdg;
+      std::map<G4int, TH2F> m_zr_pdg;
     };
   } // End namespace sim
 } // End namespace dd4hep
