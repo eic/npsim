@@ -60,6 +60,7 @@ jobs:
             detectors[LFHCAL]='-l 2'
             detectors[OuterBarrelMPGDSubAssembly]='-l 4'
             # Export to one STEP file
+            set -o pipefail
             npdet_to_step $(for d in ${!detectors[@]} ; do echo part ${detectors[$d]} $d ; done) -o ${{matrix.detector_config}} $DETECTOR_PATH/${{matrix.detector_config}}.xml 2>&1 | sed '/TGeoMatrix::dtor/d'
             test -s ${{matrix.detector_config}}.stp
       - uses: actions/upload-artifact@v7
