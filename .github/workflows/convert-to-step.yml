@@ -47,7 +47,6 @@ jobs:
           platform-release: "${{ inputs.platform-release }}"
           setup: ${{ inputs.epic_setup_script }}
           run: |
-            export DETECTOR_CACHE=/opt/detector/epic-main/share/epic
             export PATH=$PWD/install/bin${PATH:+:$PATH}
             export LD_LIBRARY_PATH=$PWD/install/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}
             # For some reason npdet_to_step really wants a space in IFS
