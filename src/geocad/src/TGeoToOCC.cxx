@@ -268,7 +268,7 @@ TopoDS_Shape TGeoToOCC::OCC_Mesh(TGeoTessellated *tess)
    return Reverse(shape);
 }
 
-TopoDS_Shape TGeoToOCC::OCC_CompositeShape(TGeoCompositeShape *comp, TGeoHMatrix m)
+TopoDS_Shape TGeoToOCC::OCC_CompositeShape(TGeoCompositeShape *comp, const TGeoHMatrix& m)
 {
   using namespace std;
    Double_t const *t;
