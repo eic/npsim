@@ -290,8 +290,6 @@ TopoDS_Shape TGeoToOCC::OCC_CompositeShape(TGeoCompositeShape *comp, const TGeoH
    TGeoMatrix *leftMtx=boolNode->GetLeftMatrix();
    TGeoMatrix *rightMtx=boolNode->GetRightMatrix();
    TGeoHMatrix  leftGlobMatx=m*(*leftMtx);
-   if (gGeoManager) gGeoManager->GetListOfMatrices()->Remove(&leftGlobMatx);
-   leftGlobMatx.ResetBit(TGeoMatrix::kGeoRegistered);
    if(leftSName == "TGeoCompositeShape") {
       leftOCCShape=OCC_CompositeShape((TGeoCompositeShape*)leftShape, leftGlobMatx);
    } else {
@@ -313,8 +311,6 @@ TopoDS_Shape TGeoToOCC::OCC_CompositeShape(TGeoCompositeShape *comp, const TGeoH
       leftOCCShape = Translation.Shape();
    }
    TGeoHMatrix  rightGlobMatx=m*(*rightMtx);
-   if (gGeoManager) gGeoManager->GetListOfMatrices()->Remove(&rightGlobMatx);
-   rightGlobMatx.ResetBit(TGeoMatrix::kGeoRegistered);
    if(rightSName == "TGeoCompositeShape" ) {
       rightOCCShape=OCC_CompositeShape((TGeoCompositeShape*)rightShape, leftGlobMatx);
    } else {
