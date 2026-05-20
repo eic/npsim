@@ -141,7 +141,7 @@ namespace dd4hep {
       G4int                                              m_previous_track_id{0};
       std::chrono::time_point<std::chrono::steady_clock> m_previous_timepoint;
       TH2F m_xy{"m_xy", "xy", 100, -3.*CLHEP::m, +3.*CLHEP::m, 100, -3.*CLHEP::m, +3.*CLHEP::m};
-      TH2F m_zr{"m_zr", "zr", 100, -4.5*CLHEP::m, +5.5*CLHEP::m, 100, 0., +3.*CLHEP::m};
+      TH2F m_zr{"m_zr", "zr", 1000, -50.*CLHEP::m, +50.*CLHEP::m, 100, 0., +3.*CLHEP::m};
       std::map<G4int, TH2F> m_xy_pdg;
       std::map<G4int, TH2F> m_zr_pdg;
     };
