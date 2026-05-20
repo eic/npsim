@@ -6,6 +6,7 @@ endif()
 find_package(ROOT REQUIRED COMPONENTS Geom)
 find_package(OpenCASCADE REQUIRED)
 
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 ROOT_GENERATE_DICTIONARY(G__NPDetGeoCad
   TGeoToStep.h
