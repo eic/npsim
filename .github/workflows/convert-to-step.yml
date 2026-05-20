@@ -1,0 +1,66 @@
+name: Convert to STEP
+
+on:
+  workflow_call:
+    inputs:
+      detector_configs:
+        required: true
+        type: string
+      install_artifact_name:
+        required: true
+        type: string
+      organization:
+        required: false
+        type: string
+        default: eicweb
+      platform-release:
+        required: false
+        type: string
+        default: eic_xl:nightly
+      epic_setup_script:
+        required: false
+        type: string
+        default: /opt/detector/epic-main/bin/thisepic.sh
+
+jobs:
+  convert-to-step:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        detector_config: ${{fromJson(inputs.detector_configs)}}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/download-artifact@v8
+        with:
+          name: ${{ inputs.install_artifact_name }}
+          path: .
+      - name: Uncompress install artifact
+        run: tar -xaf install.tar.zst
+      - uses: cvmfs-contrib/github-action-cvmfs@v5
+      - uses: eic/run-cvmfs-osg-eic-shell@main
+        with:
+          organization: "${{ inputs.organization }}"
+          platform-release: "${{ inputs.platform-release }}"
+          setup: ${{ inputs.epic_setup_script }}
+          run: |
+            export DETECTOR_CACHE=/opt/detector/epic-main/share/epic
+            export PATH=$PWD/install/bin${PATH:+:$PATH}
+            export LD_LIBRARY_PATH=$PWD/install/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}
+            # For some reason npdet_to_step really wants a space in IFS
+            IFS=$' \n\t'
+            # First get all detectors (except world)
+            declare -A detectors
+            while read d ; do detectors[$d]='-l 3' ; done <<< $(npdet_to_step list $DETECTOR_PATH/${{matrix.detector_config}}.xml  | sed '/world/d;s/.*(vol: \(.*\)).*/\1/g')
+            # Then tweak the levels (default is 1)
+            detectors[EcalBarrelImaging]='-l 4'
+            detectors[HcalBarrel]='-l 1'
+            detectors[LFHCAL]='-l 2'
+            detectors[OuterBarrelMPGDSubAssembly]='-l 4'
+            # Export to one STEP file
+            npdet_to_step $(for d in ${!detectors[@]} ; do echo part ${detectors[$d]} $d ; done) -o ${{matrix.detector_config}} $DETECTOR_PATH/${{matrix.detector_config}}.xml 2>&1 | sed '/TGeoMatrix::dtor/d'
+            test -s ${{matrix.detector_config}}.stp
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ${{matrix.detector_config}}.stp
+          path: ${{matrix.detector_config}}.stp
+          if-no-files-found: error
