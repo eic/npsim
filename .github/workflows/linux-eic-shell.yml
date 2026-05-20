@@ -226,9 +226,9 @@ jobs:
     uses: ./.github/workflows/convert-to-step.yml
     with:
       detector_configs: '["epic_ip6"]'
-      install_artifact_name: install-g++-eic-shell-Release-${{ env.platform }}-${{ env.release }}
-      organization: "${{ env.organization }}"
-      platform-release: "${{ env.platform }}:${{ env.release }}"
+      install_artifact_name: install-g++-eic-shell-Release-${{ inputs.platform || 'eic_xl' }}-${{ inputs.release || 'nightly' }}
+      organization: "${{ inputs.organization || 'eicweb' }}"
+      platform-release: "${{ inputs.platform || 'eic_xl' }}:${{ inputs.release || 'nightly' }}"
 
   merge-npsim-capybara:
     runs-on: ubuntu-latest
