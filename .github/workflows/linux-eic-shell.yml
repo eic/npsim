@@ -225,7 +225,7 @@ jobs:
       - build
     uses: ./.github/workflows/convert-to-step.yml
     with:
-      detector_configs: '["epic_ip6"]'
+      detector_configs:'["epic_craterlake_no_bhcal","epic_imaging_only","epic_drich_only","epic_dirc_only","epic_craterlake_tracking_only","epic_ip6"]' 
       install_artifact_name: install-g++-eic-shell-Release-${{ inputs.platform || 'eic_xl' }}-${{ inputs.release || 'nightly' }}
       organization: "${{ inputs.organization || 'eicweb' }}"
       platform-release: "${{ inputs.platform || 'eic_xl' }}:${{ inputs.release || 'nightly' }}"
