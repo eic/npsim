@@ -45,18 +45,29 @@ namespace dd4hep {
           total_duration += std::chrono::duration_cast<std::chrono::milliseconds>(ns);
         }
         // Print per-PDG summary: stepping | tracking | remainder (tracking - stepping)
-        auto& tracking_dur = performanceProfileSharedData().tracking_duration;
-        auto& track_count = performanceProfileSharedData().track_count;
-        printout(WARNING, name(), "%-10s %15s %15s %15s %10s %15s", "PDG", "stepping_ms", "tracking_ms", "remainder_ms", "n_tracks", "rem_us/track");
+        auto& shared        = performanceProfileSharedData();
+        auto& tracking_dur  = shared.tracking_duration;
+        auto& track_count   = shared.track_count;
+        auto& begin_oh_dur  = shared.begin_overhead_duration;
+        auto& end_oh_dur    = shared.end_overhead_duration;
+        printout(WARNING, name(), "%-10s %15s %15s %15s %12s %12s %10s",
+                 "PDG", "stepping_ms", "tracking_ms", "remainder_ms", "begin_oh_ms", "end_oh_ms", "n_tracks");
         for (auto& [pdg, step_ns] : m_pdg_duration) {
-          auto step_ms = std::chrono::duration_cast<std::chrono::milliseconds>(step_ns);
-          auto tit = tracking_dur.find(pdg);
+          auto step_ms  = std::chrono::duration_cast<std::chrono::milliseconds>(step_ns);
+          auto tit      = tracking_dur.find(pdg);
           auto track_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
               tit != tracking_dur.end() ? tit->second : std::chrono::nanoseconds::zero());
           auto remainder_ms = track_ms - step_ms;
+          auto bit      = begin_oh_dur.find(pdg);
+          auto begin_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+              bit != begin_oh_dur.end() ? bit->second : std::chrono::nanoseconds::zero());
+          auto eit      = end_oh_dur.find(pdg);
+          auto end_ms   = std::chrono::duration_cast<std::chrono::milliseconds>(
+              eit != end_oh_dur.end() ? eit->second : std::chrono::nanoseconds::zero());
           auto n_tracks = track_count.count(pdg) ? track_count.at(pdg) : 0;
-          auto rem_us_per_track = n_tracks > 0 ? (remainder_ms.count() * 1000) / n_tracks : 0;
-          printout(WARNING, name(), "%-10d %15ld %15ld %15ld %10ld %15ld", pdg, step_ms.count(), track_ms.count(), remainder_ms.count(), n_tracks, rem_us_per_track);
+          printout(WARNING, name(), "%-10d %15ld %15ld %15ld %12ld %12ld %10ld",
+                   pdg, step_ms.count(), track_ms.count(), remainder_ms.count(),
+                   begin_ms.count(), end_ms.count(), n_tracks);
         }
         printout(WARNING, name(), "total duration: %ld ms", total_duration.count());
         std::time_t t = std::time(nullptr);
@@ -103,7 +114,9 @@ namespace dd4hep {
           // Current track
           m_duration[track_id] += step_duration;
           m_pdg_duration[pdg] += step_duration;
-          performanceProfileSharedData().stepping_duration_per_track[track_id] += step_duration;
+          auto& shared = performanceProfileSharedData();
+          shared.stepping_duration_per_track[track_id] += step_duration;
+          shared.last_step_time[track_id] = now;
           m_poststep_position[track_id] = poststep_position;
           m_poststep_energy[track_id]   = poststep_energy;
           m_xy.Fill(poststep_position.x(), poststep_position.y(), step_duration.count());
@@ -132,6 +145,8 @@ namespace dd4hep {
             m_prestep_position.clear();
             m_poststep_position.clear();
             m_poststep_energy.clear();
+            performanceProfileSharedData().first_step_time.clear();
+            performanceProfileSharedData().last_step_time.clear();
             performanceProfileSharedData().new_event_flag = false;
             printout(VERBOSE, name(), "new event");
           }
@@ -139,6 +154,9 @@ namespace dd4hep {
           m_pdg[track_id]              = pdg;
           m_duration[track_id]         = std::chrono::nanoseconds::zero();
           m_prestep_position[track_id] = prestep_position;
+          // Record first step entry time for begin-overhead calculation
+          performanceProfileSharedData().first_step_time[track_id] = now;
+          performanceProfileSharedData().last_step_time[track_id]  = now;
         }
 
         m_previous_timepoint = now;

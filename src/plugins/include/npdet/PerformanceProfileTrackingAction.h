@@ -39,12 +39,21 @@ namespace dd4hep {
     /// Shared state between tracking and stepping actions (per-PDG wall-clock accumulators).
     /// Populated by PerformanceProfileTrackingAction, read by PerformanceProfileSteppingAction.
     struct PerformanceProfileSharedData {
+      using time_point = std::chrono::time_point<std::chrono::steady_clock>;
       /// per-PDG total wall-clock time from begin(track) to end(track)
       std::unordered_map<G4int, std::chrono::nanoseconds> tracking_duration;
       /// per-PDG number of tracks seen by tracking action
       std::unordered_map<G4int, long> track_count;
       /// per-track stepping duration, written by stepping action, read+cleared by tracking action at end(track)
       std::unordered_map<G4int, std::chrono::nanoseconds> stepping_duration_per_track;
+      /// time of first UserSteppingAction call for each track (written by stepping action)
+      std::unordered_map<G4int, time_point> first_step_time;
+      /// time of last UserSteppingAction call for each track (written by stepping action, updated each step)
+      std::unordered_map<G4int, time_point> last_step_time;
+      /// per-PDG accumulated begin overhead (PreUserTrackingAction → first step)
+      std::unordered_map<G4int, std::chrono::nanoseconds> begin_overhead_duration;
+      /// per-PDG accumulated end overhead (last step → PostUserTrackingAction)
+      std::unordered_map<G4int, std::chrono::nanoseconds> end_overhead_duration;
       /// set true by event action at begin of each event; cleared by stepping action
       bool new_event_flag{false};
     };
@@ -75,7 +84,11 @@ namespace dd4hep {
         m_overhead_xy.Write();
         m_overhead_zr.Write();
         m_overhead_dist.Write();
+        m_begin_overhead_dist.Write();
+        m_end_overhead_dist.Write();
         for (auto& [pdg, h] : m_overhead_dist_pdg) h.Write();
+        for (auto& [pdg, h] : m_begin_overhead_dist_pdg) h.Write();
+        for (auto& [pdg, h] : m_end_overhead_dist_pdg) h.Write();
         f.Close();
       }
 
@@ -93,13 +106,15 @@ namespace dd4hep {
         auto track_id = track->GetTrackID();
         auto it = m_begin_time.find(track_id);
         if (it == m_begin_time.end()) return;
+        auto end_time = std::chrono::steady_clock::now();
         auto track_duration = std::chrono::duration_cast<std::chrono::nanoseconds>(
-            std::chrono::steady_clock::now() - it->second);
+            end_time - it->second);
         auto pdg = m_pdg[track_id];
         performanceProfileSharedData().tracking_duration[pdg] += track_duration;
 
         // Compute per-track overhead = tracking − stepping; fill spatial histo at track start position
-        auto& step_map = performanceProfileSharedData().stepping_duration_per_track;
+        auto& shared = performanceProfileSharedData();
+        auto& step_map = shared.stepping_duration_per_track;
         auto sit = step_map.find(track_id);
         auto step_ns = sit != step_map.end() ? sit->second : std::chrono::nanoseconds::zero();
         if (sit != step_map.end()) step_map.erase(sit);
@@ -110,6 +125,40 @@ namespace dd4hep {
         m_overhead_zr.Fill(pos.z(), std::hypot(pos.x(), pos.y()), overhead_ns.count());
         double overhead_us = overhead_ns.count() / 1000.0;
         m_overhead_dist.Fill(overhead_us);
+
+        // Split overhead into pre-first-step (begin) and post-last-step (end) components
+        auto fit = shared.first_step_time.find(track_id);
+        auto lit = shared.last_step_time.find(track_id);
+        if (fit != shared.first_step_time.end()) {
+          auto begin_overhead_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(
+              fit->second - it->second);
+          double begin_us = begin_overhead_ns.count() / 1000.0;
+          if (begin_us >= 0.) {
+            m_begin_overhead_dist.Fill(begin_us);
+            auto bhname = "m_begin_overhead_dist_pdg" + std::to_string(pdg);
+            m_begin_overhead_dist_pdg.try_emplace(pdg, bhname.c_str(),
+                                                  (bhname + ";overhead [#mus];tracks").c_str(),
+                                                  2000, 0., 200.);
+            m_begin_overhead_dist_pdg.at(pdg).Fill(begin_us);
+            shared.begin_overhead_duration[pdg] += begin_overhead_ns;
+          }
+          shared.first_step_time.erase(fit);
+        }
+        if (lit != shared.last_step_time.end()) {
+          auto end_overhead_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(
+              end_time - lit->second);
+          double end_us = end_overhead_ns.count() / 1000.0;
+          if (end_us >= 0.) {
+            m_end_overhead_dist.Fill(end_us);
+            auto ehname = "m_end_overhead_dist_pdg" + std::to_string(pdg);
+            m_end_overhead_dist_pdg.try_emplace(pdg, ehname.c_str(),
+                                                (ehname + ";overhead [#mus];tracks").c_str(),
+                                                2000, 0., 200.);
+            m_end_overhead_dist_pdg.at(pdg).Fill(end_us);
+            shared.end_overhead_duration[pdg] += end_overhead_ns;
+          }
+          shared.last_step_time.erase(lit);
+        }
         // Per-PDG overhead distribution: create on first encounter
         auto hname = "m_overhead_dist_pdg" + std::to_string(pdg);
         m_overhead_dist_pdg.try_emplace(pdg, hname.c_str(),
@@ -135,7 +184,17 @@ namespace dd4hep {
       // Per-track overhead distribution: x = overhead in µs, 2000 bins from 0–200 µs
       TH1F m_overhead_dist{"m_overhead_dist", "per-track overhead (#mus);overhead [#mus];tracks",
                             2000, 0., 200.};
+      // Pre-first-step overhead (begin): PreUserTrackingAction → first UserSteppingAction
+      TH1F m_begin_overhead_dist{"m_begin_overhead_dist",
+                                  "begin overhead (pre-first-step);overhead [#mus];tracks",
+                                  2000, 0., 200.};
+      // Post-last-step overhead (end): last UserSteppingAction → PostUserTrackingAction
+      TH1F m_end_overhead_dist{"m_end_overhead_dist",
+                                "end overhead (post-last-step);overhead [#mus];tracks",
+                                2000, 0., 200.};
       std::unordered_map<G4int, TH1F> m_overhead_dist_pdg;
+      std::unordered_map<G4int, TH1F> m_begin_overhead_dist_pdg;
+      std::unordered_map<G4int, TH1F> m_end_overhead_dist_pdg;
     };
 
     class PerformanceProfileEventAction : public Geant4EventAction {
