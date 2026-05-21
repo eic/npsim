@@ -8,7 +8,6 @@ Usage: plot_timing_profile.py <histos.root> [output_prefix]
 """
 
 import sys
-import os
 import ROOT
 import numpy as np
 import matplotlib
