@@ -62,7 +62,12 @@ namespace dd4hep {
       virtual ~PerformanceProfileTrackingAction() {
         std::time_t t = std::time(nullptr);
         char ts[32];
-        std::strftime(ts, sizeof(ts), "%Y%m%d_%H%M%S", std::localtime(&t));
+        std::tm tm_buf{};
+        if (localtime_r(&t, &tm_buf) != nullptr) {
+          std::strftime(ts, sizeof(ts), "%Y%m%d_%H%M%S", &tm_buf);
+        } else {
+          std::snprintf(ts, sizeof(ts), "unknown_time");
+        }
         auto suffix = std::chrono::duration_cast<std::chrono::milliseconds>(
             std::chrono::steady_clock::now().time_since_epoch()).count();
         std::string fname = std::string("histos_overhead_") + ts + "_" + std::to_string(suffix) + ".root";
