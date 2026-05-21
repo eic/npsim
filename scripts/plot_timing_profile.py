@@ -35,7 +35,6 @@ def analyze_hot_regions(input_file, output_prefix=None):
 
     # Get histograms
     m_zr = f.Get("m_zr")
-    m_xy = f.Get("m_xy")
 
     if not m_zr:
         print("Error: Could not find histogram m_zr in file")
