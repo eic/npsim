@@ -6,6 +6,8 @@ dd4hep_add_plugin(NPDetPlugins
     src/EICInteractionVertexSmear.cxx
     src/OpticalPhotonEfficiencyStackingAction.cxx
     src/PerformanceProfileSteppingAction.cxx
+    src/PerformanceProfileTrackingAction.cxx
+    src/PerformanceProfileEventAction.cxx
   INCLUDES $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   USES DD4hep::DDCore DD4hep::DDG4 ROOT::Core
 )

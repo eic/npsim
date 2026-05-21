@@ -9,6 +9,7 @@ Modified with standard EIC EPIC requirements.
 """
 from __future__ import absolute_import, unicode_literals
 import logging
+import os
 import sys
 
 from DDSim.DD4hepSimulation import DD4hepSimulation
@@ -25,6 +26,12 @@ if __name__ == "__main__":
   # This is done before updating the settings to workaround issue reported in
   # https://github.com/AIDASoft/DD4hep/pull/1376
   RUNNER.parseOptions()
+
+  # Allow overriding the global range cut via RANGE_CUT_MM env var (value in mm)
+  _range_cut_mm = os.environ.get('RANGE_CUT_MM', '')
+  if _range_cut_mm:
+    RUNNER.physics.rangecut = float(_range_cut_mm)
+    logger.info('RANGE_CUT_MM: setting physics.rangecut = %s mm', _range_cut_mm)
 
   # Ensure that Cerenkov and optical physics are always loaded
   def setupCerenkov(kernel):
@@ -130,8 +137,16 @@ if __name__ == "__main__":
     }
   ]
 
+  RUNNER.action.event = {
+    "name": "PerformanceProfileEventAction"
+  }
+
   RUNNER.action.step = {
     "name": "PerformanceProfileSteppingAction"
+  }
+
+  RUNNER.action.track = {
+    "name": "PerformanceProfileTrackingAction"
   }
 
   try:
