@@ -98,7 +98,8 @@ def analyze_hot_regions(input_file, output_prefix=None):
         ("Barrel Imaging and SciFi Cal",-2700, 1900,  826.77, 1217.61),
         ("Barrel HCal", -3196.25, 3196.25, 1838.5, 2700.3),
         ("Tracker / Beampipe", -1740, 1945, 0, 728.75),
-        ("Far Forward", 5500, 50000, 0, 1500),
+        ("Far Forward (Other)", 5500, 34000, 0, 1500),
+        ("Far Forward (Zero Degree Calorimeter)", 34000, 38000, 0, 1500),
     ]
 
     # Group by region
@@ -350,52 +351,99 @@ def analyze_hot_regions(input_file, output_prefix=None):
 
     # Heatmap: rows=particles+other, cols=regions+other regions, values=% of total sim time
     if present_pdgs:
-        pdg_colors = {11: '#4e79a7', -11: '#f28e2b', 22: '#59a14f', -22: '#e15759', 'other': '#bab0ac'}
         pdg_names  = {11: 'e-', -11: 'e+', 22: 'gamma', -22: 'opt. photon', 'other': 'other'}
-
         pdg_row_keys = ['other'] + present_pdgs
-        heatmap_data = np.zeros((len(pdg_row_keys), len(all_region_names_with_other)))
-        for ri, region_name in enumerate(all_region_names_with_other):
-            if region_name == "other regions":
-                region_total = other_regions_time
-            else:
-                region_total = combined_stats[region_name]['time'] if region_name in combined_stats else 0
-            accounted = 0
-            for pi, pdg in enumerate(present_pdgs):
-                t = pdg_region_stats[pdg]['regions'].get(region_name, {}).get('time', 0)
-                heatmap_data[pi + 1, ri] = 100 * t / total_time
-                accounted += t
-            heatmap_data[0, ri] = 100 * max(0, region_total - accounted) / total_time
 
-        row_labels = [pdg_names[p] for p in pdg_row_keys]
-        col_labels = all_region_names_with_other
+        far_forward_regions = {"Far Forward (Other)", "Far Forward (Zero Degree Calorimeter)"}
+        central_cols = [r for r in all_region_names_with_other if r not in far_forward_regions]
+        farfwd_cols  = [r for r in all_region_names_with_other if r in far_forward_regions]
 
-        fig, ax = plt.subplots(figsize=(max(10, 1.5 * len(col_labels)), max(4, 1.2 * len(row_labels))))
-        im = ax.imshow(heatmap_data, aspect='auto', cmap='YlOrRd')
+        def make_heatmap(col_labels, title, outfile):
+            data = np.zeros((len(pdg_row_keys), len(col_labels)))
+            group_time_ns = 0
+            for ri, region_name in enumerate(col_labels):
+                if region_name == "other regions":
+                    region_total = other_regions_time
+                else:
+                    region_total = combined_stats[region_name]['time'] if region_name in combined_stats else 0
+                group_time_ns += region_total
+                accounted = 0
+                for pi, pdg in enumerate(present_pdgs):
+                    t = pdg_region_stats[pdg]['regions'].get(region_name, {}).get('time', 0)
+                    data[pi + 1, ri] = t
+                    accounted += t
+                data[0, ri] = max(0, region_total - accounted)
 
-        ax.set_xticks(np.arange(len(col_labels)))
-        ax.set_yticks(np.arange(len(row_labels)))
-        ax.set_xticklabels(col_labels, rotation=25, ha='right', fontsize=14)
-        ax.set_yticklabels(row_labels, fontsize=14)
+            group_ms  = group_time_ns / 1e6
+            group_pct = 100 * group_time_ns / total_time
+            subtitle  = f'{group_ms:,.0f} ms  ({group_pct:.1f}% of total {total_time/1e6:,.0f} ms)'
+            # normalize to % of this zone's total
+            if group_time_ns > 0:
+                data = 100 * data / group_time_ns
 
-        for pi in range(len(row_labels)):
-            for ri in range(len(col_labels)):
-                v = heatmap_data[pi, ri]
-                if v > 0.05:
-                    textcolor = 'white' if v > heatmap_data.max() * 0.6 else 'black'
-                    ax.text(ri, pi, f'{v:.1f}%', ha='center', va='center',
-                            fontsize=12, color=textcolor, fontweight='bold')
+            row_labels = [pdg_names[p] for p in pdg_row_keys]
+            fig, ax = plt.subplots(figsize=(max(10, 1.5 * len(col_labels)), max(4, 1.2 * len(row_labels))))
+            im = ax.imshow(data, aspect='auto', cmap='YlOrRd')
+            ax.set_xticks(np.arange(len(col_labels)))
+            ax.set_yticks(np.arange(len(row_labels)))
+            ax.set_xticklabels(col_labels, rotation=25, ha='right', fontsize=14)
+            ax.set_yticklabels(row_labels, fontsize=14)
+            for pi in range(len(row_labels)):
+                for ri in range(len(col_labels)):
+                    v = data[pi, ri]
+                    if v > 0.05:
+                        textcolor = 'white' if v > data.max() * 0.6 else 'black'
+                        ax.text(ri, pi, f'{v:.1f}%', ha='center', va='center',
+                                fontsize=12, color=textcolor, fontweight='bold')
+            cbar = fig.colorbar(im, ax=ax, fraction=0.03, pad=0.02)
+            cbar.set_label('% of zone simulation time', fontsize=13)
+            cbar.ax.tick_params(labelsize=12)
+            ax.set_title(f'{title}\n{subtitle}', fontsize=14, fontweight='bold')
+            plt.tight_layout()
+            fig.savefig(outfile, dpi=150, bbox_inches='tight')
+            plt.close(fig)
+            print(f"Saved: {outfile}")
 
-        cbar = fig.colorbar(im, ax=ax, fraction=0.03, pad=0.02)
-        cbar.set_label('% of total simulation time', fontsize=13)
-        cbar.ax.tick_params(labelsize=12)
-        ax.set_title('Simulation time (% of total) by particle type and detector region',
-                     fontsize=14, fontweight='bold')
-        plt.tight_layout()
-        heatmap_file = f"{output_prefix}_heatmap.png"
-        fig.savefig(heatmap_file, dpi=150, bbox_inches='tight')
-        plt.close(fig)
-        print(f"Saved: {heatmap_file}")
+        central_time_ns = sum(
+            (other_regions_time if r == "other regions" else combined_stats.get(r, {}).get('time', 0))
+            for r in central_cols
+        )
+        farfwd_time_ns = sum(
+            (other_regions_time if r == "other regions" else combined_stats.get(r, {}).get('time', 0))
+            for r in farfwd_cols
+        )
+        other_time_ns = max(0, total_time - central_time_ns - farfwd_time_ns)
+
+        make_heatmap(
+            central_cols,
+            '% of Stepping Time in Central Detector',
+            f"{output_prefix}_heatmap_central.png"
+        )
+        if farfwd_cols:
+            make_heatmap(
+                farfwd_cols,
+                '% of Stepping Time in Far Forward Detectors',
+                f"{output_prefix}_heatmap_farfwd.png"
+            )
+
+        # central/farfwd totals include "other regions" — strip it out for clarity
+        central_boxes_ns = sum(
+            combined_stats[r]['time'] for r in central_cols
+            if r != "other regions" and r in combined_stats
+        )
+        farfwd_boxes_ns = sum(
+            combined_stats[r]['time'] for r in farfwd_cols
+            if r != "other regions" and r in combined_stats
+        )
+        other_ns = max(0, total_time - central_boxes_ns - farfwd_boxes_ns)
+
+        print()
+        print("=" * 60)
+        print(f"Combined Central:       {central_boxes_ns/1e6:>10,.1f} ms  ({100*central_boxes_ns/total_time:.1f}%)")
+        print(f"Combined Far Forward:   {farfwd_boxes_ns/1e6:>10,.1f} ms  ({100*farfwd_boxes_ns/total_time:.1f}%)")
+        print(f"Other (outside boxes):  {other_ns/1e6:>10,.1f} ms  ({100*other_ns/total_time:.1f}%)")
+        print(f"Total Stepping Time:    {total_time/1e6:>10,.1f} ms")
+        print("=" * 60)
         print()
 
     f.Close()
@@ -406,7 +454,7 @@ if __name__ == "__main__":
         print("Usage: plot_timing_profile.py <histos.root> [output_prefix]")
         sys.exit(1)
 
-    input_file = sys.argv[1]
+    input_file    = sys.argv[1]
     output_prefix = sys.argv[2] if len(sys.argv) > 2 else None
 
     sys.exit(analyze_hot_regions(input_file, output_prefix))
