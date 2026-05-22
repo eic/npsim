@@ -42,9 +42,11 @@ the OCCWriteStep(const char * fname ) method.
 #include <stdlib.h>
 #include <XCAFApp_Application.hxx>
 
+#include <algorithm>
 #include <map>
 #include <set>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 using namespace std;
@@ -113,6 +115,7 @@ std::set<TGeoVolume*> TOCCToStep::CollectRelevantVolumes(
          continue;
       }
       int max_level = part_name_levels.at(part_name_vols[matched_vol]);
+      if (max_level >= 0 && level == max_level) nextNode.SetType(1);  // don't descend past max_level
       if (level > max_level) continue;
       result.insert(currentNode->GetVolume());
    }
@@ -154,8 +157,9 @@ TDF_Label TOCCToStep::OCCShapeCreation(TGeoManager *m, double tgeo_length_unit_i
 
    // Build a volume->mother map in a single O(N) pass.
    // This replaces the O(V*N) pattern of launching a fresh TGeoIterator for
-   // every volume in the outer loop below.
-   std::map<TGeoVolume*, TGeoVolume*> motherMap;
+   // every volume in the outer loop below.  std::unordered_map gives O(1)
+   // average lookup by pointer value.
+   std::unordered_map<TGeoVolume*, TGeoVolume*> motherMap;
    {
       TGeoIterator scan(Top);
       TGeoNode*    snode = nullptr;
@@ -168,6 +172,22 @@ TDF_Label TOCCToStep::OCCShapeCreation(TGeoManager *m, double tgeo_length_unit_i
       }
    }
 
+   // When filtering, post-process the mother map so that every volume in the
+   // filter has a mother that is also in the filter (or is Top).  A full-tree
+   // scan may otherwise record a first-encountered mother that lies outside
+   // the selected sub-tree (e.g. a volume shared between multiple positions).
+   if (!volume_filter.empty()) {
+      for (TGeoVolume* v : volume_filter) {
+         if (v == Top) continue;
+         TGeoVolume* mom = motherMap.count(v) ? motherMap[v] : Top;
+         while (mom != Top && !volume_filter.count(mom)) {
+            auto it2 = motherMap.find(mom);
+            mom = (it2 != motherMap.end()) ? it2->second : Top;
+         }
+         motherMap[v] = mom;
+      }
+   }
+
    // Determine the set of volumes to process.
    // When a filter is provided (partial export) only those volumes are converted
    // to OCC shapes, which avoids the expensive Boolean-operation path for the
@@ -177,6 +197,12 @@ TDF_Label TOCCToStep::OCCShapeCreation(TGeoManager *m, double tgeo_length_unit_i
       for (TGeoVolume* v : volume_filter) {
          if (v != Top) volumes_to_process.push_back(v);
       }
+      // Sort by name for deterministic label/shape creation order independent
+      // of pointer values.
+      std::sort(volumes_to_process.begin(), volumes_to_process.end(),
+                [](TGeoVolume* a, TGeoVolume* b) {
+                   return std::string(a->GetName()) < std::string(b->GetName());
+                });
    } else {
       TIter next(m->GetListOfVolumes());
       TGeoVolume* v = nullptr;
