@@ -147,7 +147,7 @@ TDF_Label TOCCToStep::OCCShapeCreation(TGeoManager *m, double tgeo_length_unit_i
    // Create label for the top volume
    fLabel = XCAFDoc_DocumentTool::ShapeTool(fDoc->Main())->NewShape();
    if (Top->GetShape()->IsA() == TGeoCompositeShape::Class()) {
-      fShape = fRootShape.OCC_CompositeShape((TGeoCompositeShape*)Top->GetShape(), TGeoIdentity());
+      fShape = fRootShape.OCC_CompositeShape((TGeoCompositeShape*)Top->GetShape(), TGeoHMatrix());
    } else {
       fShape = fRootShape.OCC_SimpleShape(Top->GetShape());
    }
@@ -217,7 +217,7 @@ TDF_Label TOCCToStep::OCCShapeCreation(TGeoManager *m, double tgeo_length_unit_i
 
       // Convert shape to OCC
       if (currentVolume->GetShape()->IsA() == TGeoCompositeShape::Class()) {
-         fShape = fRootShape.OCC_CompositeShape((TGeoCompositeShape*)currentVolume->GetShape(), TGeoIdentity());
+         fShape = fRootShape.OCC_CompositeShape((TGeoCompositeShape*)currentVolume->GetShape(), TGeoHMatrix());
       } else {
          fShape = fRootShape.OCC_SimpleShape(currentVolume->GetShape());
       }
@@ -234,7 +234,7 @@ TDF_Label TOCCToStep::OCCShapeCreation(TGeoManager *m, double tgeo_length_unit_i
          // Mother not yet labeled: create its label as a direct child of Top
          TopoDS_Shape motherShape;
          if (motherVol->GetShape()->IsA() == TGeoCompositeShape::Class()) {
-            motherShape = fRootShape.OCC_CompositeShape((TGeoCompositeShape*)motherVol->GetShape(), TGeoIdentity());
+            motherShape = fRootShape.OCC_CompositeShape((TGeoCompositeShape*)motherVol->GetShape(), TGeoHMatrix());
          } else {
             motherShape = fRootShape.OCC_SimpleShape(motherVol->GetShape());
          }
