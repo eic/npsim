@@ -116,7 +116,7 @@ std::set<TGeoVolume*> TOCCToStep::CollectRelevantVolumes(
       }
       int max_level = part_name_levels.at(part_name_vols[matched_vol]);
       if (max_level >= 0 && level == max_level) nextNode.SetType(1);  // don't descend past max_level
-      if (level > max_level) continue;
+      if (max_level >= 0 && level > max_level) continue;
       result.insert(currentNode->GetVolume());
    }
    return result;
