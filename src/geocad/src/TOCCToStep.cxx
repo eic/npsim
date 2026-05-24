@@ -44,6 +44,7 @@ the OCCWriteStep(const char * fname ) method.
 
 #include <map>
 #include <set>
+#include <stack>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -158,24 +159,15 @@ TDF_Label TOCCToStep::OCCShapeCreation(TGeoManager *m, double tgeo_length_unit_i
    // This replaces the O(V*N) pattern of launching a fresh TGeoIterator for
    // every volume in the outer loop below.  std::unordered_map gives O(1)
    // average lookup by pointer value.
-   //
-   // When a filter is provided, volumes in the filter are also recorded in
-   // tree-traversal (topological) order during the same pass.  This guarantees
-   // that every parent volume is processed before its children in OCCShapeCreation,
-   // so GetLabelOfVolume(mother) is always non-null when needed.
    std::unordered_map<TGeoVolume*, TGeoVolume*> motherMap;
-   std::vector<TGeoVolume*> volumes_to_process;
    {
       TGeoIterator scan(Top);
       TGeoNode*    snode = nullptr;
       while ((snode = scan())) {
          TGeoVolume* v = snode->GetVolume();
          if (!motherMap.count(v)) {
-            int lvl     = scan.GetLevel();
+            int lvl      = scan.GetLevel();
             motherMap[v] = (lvl == 1) ? Top : scan.GetNode(lvl - 1)->GetVolume();
-            // Record filter volumes in first-encounter tree order (parent before child).
-            if (!volume_filter.empty() && volume_filter.count(v) && v != Top)
-               volumes_to_process.push_back(v);
          }
       }
    }
@@ -196,8 +188,34 @@ TDF_Label TOCCToStep::OCCShapeCreation(TGeoManager *m, double tgeo_length_unit_i
       }
    }
 
-   // For the full-geometry path (no filter), collect all volumes.
-   if (volume_filter.empty()) {
+   // Build volumes_to_process in topological (parent-before-child) order using
+   // the post-processed filter tree.  Building from volume_filter directly
+   // ensures every filter volume is included even if its first DFS encounter
+   // was outside the selected sub-tree.  A BFS/DFS of the post-processed
+   // parent→child relationships guarantees that each parent is processed
+   // (and thus labeled) before any of its children.
+   std::vector<TGeoVolume*> volumes_to_process;
+   if (!volume_filter.empty()) {
+      // Build parent→children adjacency for filter volumes.
+      std::unordered_map<TGeoVolume*, std::vector<TGeoVolume*>> filterChildren;
+      for (TGeoVolume* v : volume_filter) {
+         if (v == Top) continue;
+         filterChildren[motherMap.count(v) ? motherMap[v] : Top].push_back(v);
+      }
+      // Iterative pre-order DFS from Top over the filter tree.
+      std::stack<TGeoVolume*> stk;
+      stk.push(Top);
+      while (!stk.empty()) {
+         TGeoVolume* node = stk.top(); stk.pop();
+         if (node != Top) volumes_to_process.push_back(node);
+         auto it = filterChildren.find(node);
+         if (it != filterChildren.end()) {
+            // Push in reverse so that children are processed in original order.
+            for (auto rit = it->second.rbegin(); rit != it->second.rend(); ++rit)
+               stk.push(*rit);
+         }
+      }
+   } else {
       TIter next(m->GetListOfVolumes());
       TGeoVolume* v = nullptr;
       while ((v = (TGeoVolume*)next())) {
@@ -487,12 +505,16 @@ void TOCCToStep::FillOCCWithNode(TGeoManager* m, TGeoNode* currentNode, TGeoIter
       // Need to account for the missing daughters from those nodes skipped in level 1
       int skipped_this_level = 0; 
       if(i == 1 ) skipped_this_level = level1_skipped;
-      if ((XCAFDoc_DocumentTool::ShapeTool(fDoc->Main())->NbComponents(labelMother) < ndMother) && (!nd)) {
-
-        AddChildLabel(labelMother, fLabel, loc);
-      } else if ((XCAFDoc_DocumentTool::ShapeTool(fDoc->Main())->NbComponents(fLabel) == currentNode->GetNdaughters()) && 
-                 (XCAFDoc_DocumentTool::ShapeTool(fDoc->Main())->NbComponents(labelMother)+skipped_this_level  == motherNode->GetVolume()->GetIndex(currentNode))) {
-        AddChildLabel(labelMother, fLabel, loc);
+      // Guard against volumes whose labels were not created (e.g. volumes outside the
+      // selected filter that appear as ancestors in shared-placement geometries).
+      // Always advance currentNode/nd to keep the walk-up loop correct.
+      if (!labelMother.IsNull() && !fLabel.IsNull()) {
+        if ((XCAFDoc_DocumentTool::ShapeTool(fDoc->Main())->NbComponents(labelMother) < ndMother) && (!nd)) {
+          AddChildLabel(labelMother, fLabel, loc);
+        } else if ((XCAFDoc_DocumentTool::ShapeTool(fDoc->Main())->NbComponents(fLabel) == currentNode->GetNdaughters()) && 
+                   (XCAFDoc_DocumentTool::ShapeTool(fDoc->Main())->NbComponents(labelMother)+skipped_this_level  == motherNode->GetVolume()->GetIndex(currentNode))) {
+          AddChildLabel(labelMother, fLabel, loc);
+        }
       }
       currentNode = motherNode;
       fLabel      = labelMother; // again, why a data member?
