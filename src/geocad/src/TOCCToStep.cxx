@@ -484,12 +484,6 @@ void TOCCToStep::FillOCCWithNode(TGeoManager* m, TGeoNode* currentNode, TGeoIter
       // Why are we using a data member here?
       fLabel         = GetLabelOfVolume(currentNode->GetVolume());
       loc            = CalcLocation((*(currentNode->GetMatrix())));
-      // Skip if either label is null (volume not exported in partial geometry).
-      if (labelMother.IsNull() || fLabel.IsNull()) {
-        currentNode = motherNode;
-        nd          = currentNode->GetNdaughters();
-        continue;
-      }
       // Need to account for the missing daughters from those nodes skipped in level 1
       int skipped_this_level = 0; 
       if(i == 1 ) skipped_this_level = level1_skipped;
