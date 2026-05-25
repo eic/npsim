@@ -40,8 +40,8 @@ jobs:
           path: .
       - name: Uncompress install artifact
         run: tar -xaf install.tar.zst
-      - uses: cvmfs-contrib/github-action-cvmfs@v5
-      - uses: eic/run-cvmfs-osg-eic-shell@main
+      - uses: cvmfs-contrib/github-action-cvmfs@10197e000cc0add8e54ac4fb73d3ed44e2de72b4  # v5
+      - uses: eic/run-cvmfs-osg-eic-shell@3b80777ba49c2e6f802256753bbc11563ecf4636  # main
         with:
           organization: "${{ inputs.organization }}"
           platform-release: "${{ inputs.platform-release }}"
