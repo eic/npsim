@@ -22,6 +22,7 @@ endif()
 
 # Use GNU install dirs
 include(GNUInstallDirs)
+include(CTest)
 
 # Build type
 if (NOT CMAKE_BUILD_TYPE)
