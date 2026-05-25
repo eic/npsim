@@ -14,6 +14,7 @@
 // number of child instances per parent instance (the logical multiplicity).
 
 #include <cassert>
+#include <cstdint>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -58,7 +59,7 @@ struct dot_settings {
 // Unique node ID derived from pointer address
 static std::string dot_id(const TGeoVolume* vol) {
   std::ostringstream ss;
-  ss << "v" << reinterpret_cast<uintptr_t>(vol);
+  ss << "v" << reinterpret_cast<std::uintptr_t>(vol);
   return ss.str();
 }
 
@@ -278,6 +279,10 @@ int main(int argc, char* argv[]) {
   std::string title = fs::path(s.infile).stem().string();
 
   if (s.selected == dot_mode::part) {
+    if (s.part_name_levels.empty()) {
+      std::cerr << "Error: 'part' mode requires at least one volume name\n";
+      return 1;
+    }
     write_dot(out, geo, s.part_name_levels, -1, title);
   } else {
     // list mode: use default_level
