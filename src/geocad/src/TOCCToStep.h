@@ -50,7 +50,6 @@ private:
    void            AddChildLabel(TDF_Label mother, TDF_Label child, TopLoc_Location loc);
    TopLoc_Location CalcLocation(const TGeoHMatrix& matrix);
 
-   void FillOCCWithNode(TGeoManager* m, TGeoNode* currentNode, TGeoIterator& nextNode, int level, int max_level, int level1_skipped);
 
 public:
    TOCCToStep();
