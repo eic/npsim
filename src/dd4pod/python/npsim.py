@@ -44,9 +44,6 @@ if __name__ == "__main__":
     return None
   RUNNER.physics.setupUserPhysics(setupCerenkov)
 
-  # Define tracking region using tracking_volume defined in the parallel world of the geometry
-  RUNNER.part.userParticleHandler = "Geant4TVUserParticleHandler"
-
   # Disable warnings for unstable resonances with off-shell mass
   if hasattr(RUNNER.physics, "ESeverity"):
     RUNNER.physics.ESeverity = "IgnoreTheIssue"
