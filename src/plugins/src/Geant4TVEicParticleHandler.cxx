@@ -1,3 +1,4 @@
+    } else if (endZ < m_backwardZ && pmag2 < m_backwardMomentumMin * m_backwardMomentumMin) {
 //==========================================================================
 //  Geant4TVEicParticleHandler
 //--------------------------------------------------------------------------
