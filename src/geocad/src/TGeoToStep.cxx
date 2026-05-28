@@ -83,7 +83,8 @@ void TGeoToStep::CreatePartialGeometry(const char* part_name, int max_level, con
 {
    //ROOT CAD CONVERSION
    fCreate = new TOCCToStep();
-   fCreate->OCCShapeCreation(fGeometry, tgeo_length_unit_in_mm);
+   auto vol_filter = fCreate->CollectRelevantVolumes(fGeometry, part_name, max_level);
+   fCreate->OCCShapeCreation(fGeometry, tgeo_length_unit_in_mm, vol_filter);
    if( !(fCreate->OCCPartialTreeCreation(fGeometry, part_name, max_level)) ) {
    //  std::cout << " Part: " << part_name << ", max_level = " << max_level;
    //  std::cout << ", Found.\n";
@@ -101,7 +102,8 @@ void TGeoToStep::CreatePartialGeometry(std::map<std::string,int> part_name_level
 {
   //ROOT CAD CONVERSION
   fCreate = new TOCCToStep();
-  fCreate->OCCShapeCreation(fGeometry, tgeo_length_unit_in_mm);
+  auto vol_filter = fCreate->CollectRelevantVolumes(fGeometry, part_name_levels);
+  fCreate->OCCShapeCreation(fGeometry, tgeo_length_unit_in_mm, vol_filter);
   if( !(fCreate->OCCPartialTreeCreation(fGeometry, part_name_levels)) ) {
   //  std::cout << " At least one part found.\n";
   //} else {

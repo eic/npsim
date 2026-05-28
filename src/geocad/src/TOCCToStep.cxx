@@ -30,7 +30,6 @@ the OCCWriteStep(const char * fname ) method.
 #include "TGeoToOCC.h"
 
 #include "TGeoVolume.h"
-//#include "TString.h"
 #include "TClass.h"
 #include "TGeoManager.h"
 #include "TError.h"
@@ -42,6 +41,13 @@ the OCCWriteStep(const char * fname ) method.
 #include <Standard.hxx>
 #include <stdlib.h>
 #include <XCAFApp_Application.hxx>
+
+#include <map>
+#include <set>
+#include <stack>
+#include <string>
+#include <unordered_map>
+#include <vector>
 
 using namespace std;
 
@@ -66,79 +72,197 @@ void TOCCToStep::OCCDocCreation()
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-/// Logical fTree creation.
 
-TDF_Label TOCCToStep::OCCShapeCreation(TGeoManager *m, double tgeo_length_unit_in_mm)
+/// Pre-collect the set of TGeoVolume* reachable from the named partial subtrees.
+/// Mirrors the skip logic in OCCPartialTreeCreation so only relevant volumes are
+/// returned.  O(N) single tree walk, no OCC operations.
+std::set<TGeoVolume*> TOCCToStep::CollectRelevantVolumes(
+    TGeoManager* m, const std::map<std::string, int>& part_name_levels)
 {
-   XCAFDoc_DocumentTool::SetLengthUnit(fDoc, tgeo_length_unit_in_mm, UnitsMethods_LengthUnit_Millimeter);
-   TDF_Label motherLabel;
-   TGeoVolume * currentVolume;
-   TGeoVolume * motherVol;
-   TGeoVolume * Top;
-   TString path;
-   Int_t level = 0;
-   TIter next(m->GetListOfVolumes());
-   fLabel = XCAFDoc_DocumentTool::ShapeTool(fDoc->Main())->NewShape();
-   if (m->GetTopVolume()->GetShape()->IsA()==TGeoCompositeShape::Class()) {
-     fShape = fRootShape.OCC_CompositeShape((TGeoCompositeShape*)m->GetTopVolume()->GetShape(), TGeoHMatrix());
-   } else {
-     fShape = fRootShape.OCC_SimpleShape(m->GetTopVolume()->GetShape());
-   }
-   XCAFDoc_DocumentTool::ShapeTool(fDoc->Main())->SetShape(fLabel, fShape);
-   TDataStd_Name::Set(fLabel, m->GetTopVolume()->GetName());
-   XCAFDoc_DocumentTool::ShapeTool(fDoc->Main())->UpdateAssemblies();//fDoc->Main());
-   Top = m->GetTopVolume();
-   fTree[Top] = fLabel;
-   while ((currentVolume = (TGeoVolume *)next())) {
-      if (GetLabelOfVolume(currentVolume).IsNull()) {
-         if ((GetLabelOfVolume(currentVolume).IsNull())) {
-            if (currentVolume->GetShape()->IsA()==TGeoCompositeShape::Class()) {
-               fShape = fRootShape.OCC_CompositeShape((TGeoCompositeShape*)currentVolume->GetShape(), TGeoHMatrix());
-            } else {
-               fShape = fRootShape.OCC_SimpleShape(currentVolume->GetShape());
-            }
-         }
-         TGeoNode *current;
-         TGeoIterator nextNode(m->GetTopVolume());
-         while ((current = nextNode())) {
-            if ((current->GetVolume() == currentVolume) && (GetLabelOfVolume(current->GetVolume()).IsNull())) {
-               level = nextNode.GetLevel();
-               nextNode.GetPath(path);
-               if (level == 1)
-                  motherVol = m->GetTopVolume();
-               else {
-                  TGeoNode * mother = nextNode.GetNode(--level);
-                  motherVol = mother->GetVolume();
-               }
-               motherLabel = GetLabelOfVolume(motherVol);
-               if (!motherLabel.IsNull()) {
-                  fLabel = TDF_TagSource::NewChild(motherLabel);
-                  break;
-               } else {
-                  TGeoNode * grandMother = nextNode.GetNode(level);
-                  motherVol = grandMother->GetVolume();
-                  TopoDS_Shape Mothershape;
-                  if (motherVol->GetShape()->IsA()==TGeoCompositeShape::Class()) {
-                     Mothershape = fRootShape.OCC_CompositeShape((TGeoCompositeShape*)motherVol->GetShape(), TGeoHMatrix());
-                  } else {
-                     Mothershape = fRootShape.OCC_SimpleShape(motherVol->GetShape());
-                  }
-                  motherLabel = TDF_TagSource::NewChild(GetLabelOfVolume(Top));
-                  XCAFDoc_DocumentTool::ShapeTool(fDoc->Main())->SetShape(motherLabel, Mothershape);
-                  TDataStd_Name::Set(motherLabel, motherVol->GetName());
-                  XCAFDoc_DocumentTool::ShapeTool(fDoc->Main())->UpdateAssemblies();//(fDoc->Main());
-                  fTree[motherVol] = motherLabel;
-                  fLabel = TDF_TagSource::NewChild(motherLabel);
-                  break;
-               }
-            }
-         }
-         XCAFDoc_DocumentTool::ShapeTool(fDoc->Main())->SetShape(fLabel, fShape);
-         TDataStd_Name::Set(fLabel, currentVolume->GetName());
-         XCAFDoc_DocumentTool::ShapeTool(fDoc->Main())->UpdateAssemblies();//(fDoc->Main());
-         fTree[currentVolume] = fLabel;
+   std::set<TGeoVolume*> result;
+   result.insert(m->GetTopVolume());
+
+   std::map<TGeoVolume*, std::string> part_name_vols;
+   std::vector<TGeoVolume*> vols;
+   for (const auto& pl : part_name_levels) {
+      TGeoVolume* avol = m->GetVolume(pl.first.c_str());
+      if (avol) {
+         part_name_vols[avol] = pl.first;
+         vols.push_back(avol);
       }
    }
+
+   TGeoIterator nextNode(m->GetTopVolume());
+   TGeoNode*    currentNode      = nullptr;
+   TGeoVolume*  matched_vol      = nullptr;
+   bool         found_in_level_1 = false;
+
+   nextNode.SetType(0);
+   while ((currentNode = nextNode())) {
+      nextNode.SetType(0);
+      int level = nextNode.GetLevel();
+      if (level == 1) {
+         found_in_level_1 = false;
+         for (auto v : vols) {
+            if (v == currentNode->GetVolume()) {
+               matched_vol      = v;
+               found_in_level_1 = true;
+            }
+         }
+      }
+      if (!found_in_level_1) {
+         nextNode.Skip();  // skip subtree; correctly pops up to next sibling at any level
+         continue;
+      }
+      int max_level = part_name_levels.at(part_name_vols[matched_vol]);
+      if (max_level >= 0 && level > max_level) { nextNode.Skip(); continue; }
+      result.insert(currentNode->GetVolume());
+      if (max_level >= 0 && level == max_level) nextNode.Skip();  // skip children
+   }
+   return result;
+}
+
+std::set<TGeoVolume*> TOCCToStep::CollectRelevantVolumes(
+    TGeoManager* m, const char* part_name, int max_level)
+{
+   std::map<std::string, int> pnl;
+   pnl[std::string(part_name)] = max_level;
+   return CollectRelevantVolumes(m, pnl);
+}
+
+/// Logical fTree creation.
+///
+/// Builds a label for every shape in the geometry (or for the subset given by
+/// volume_filter when doing a partial export).  A single O(N) tree walk builds
+/// the volume→mother map so that each volume's parent label can be looked up
+/// directly instead of re-walking the full tree for every volume.
+/// UpdateAssemblies() is deferred to the end of the method.
+TDF_Label TOCCToStep::OCCShapeCreation(TGeoManager *m, double tgeo_length_unit_in_mm,
+                                        const std::set<TGeoVolume*>& volume_filter)
+{
+   XCAFDoc_DocumentTool::SetLengthUnit(fDoc, tgeo_length_unit_in_mm, UnitsMethods_LengthUnit_Millimeter);
+
+   TGeoVolume* Top = m->GetTopVolume();
+
+   // Create label for the top volume
+   fLabel = XCAFDoc_DocumentTool::ShapeTool(fDoc->Main())->NewShape();
+   if (Top->GetShape()->IsA() == TGeoCompositeShape::Class()) {
+      fShape = fRootShape.OCC_CompositeShape((TGeoCompositeShape*)Top->GetShape(), TGeoHMatrix());
+   } else {
+      fShape = fRootShape.OCC_SimpleShape(Top->GetShape());
+   }
+   XCAFDoc_DocumentTool::ShapeTool(fDoc->Main())->SetShape(fLabel, fShape);
+   TDataStd_Name::Set(fLabel, Top->GetName());
+   fTree[Top] = fLabel;
+
+   // Build a volume->mother map in a single O(N) pass.
+   // This replaces the O(V*N) pattern of launching a fresh TGeoIterator for
+   // every volume in the outer loop below.  std::unordered_map gives O(1)
+   // average lookup by pointer value.
+   std::unordered_map<TGeoVolume*, TGeoVolume*> motherMap;
+   {
+      TGeoIterator scan(Top);
+      TGeoNode*    snode = nullptr;
+      while ((snode = scan())) {
+         TGeoVolume* v = snode->GetVolume();
+         if (!motherMap.count(v)) {
+            int lvl      = scan.GetLevel();
+            motherMap[v] = (lvl == 1) ? Top : scan.GetNode(lvl - 1)->GetVolume();
+         }
+      }
+   }
+
+   // When filtering, post-process the mother map so that every volume in the
+   // filter has a mother that is also in the filter (or is Top).  A full-tree
+   // scan may otherwise record a first-encountered mother that lies outside
+   // the selected sub-tree (e.g. a volume shared between multiple positions).
+   if (!volume_filter.empty()) {
+      for (TGeoVolume* v : volume_filter) {
+         if (v == Top) continue;
+         TGeoVolume* mom = motherMap.count(v) ? motherMap[v] : Top;
+         while (mom != Top && !volume_filter.count(mom)) {
+            auto it2 = motherMap.find(mom);
+            mom = (it2 != motherMap.end()) ? it2->second : Top;
+         }
+         motherMap[v] = mom;
+      }
+   }
+
+   // Build volumes_to_process in topological (parent-before-child) order using
+   // the post-processed filter tree.  Building from volume_filter directly
+   // ensures every filter volume is included even if its first DFS encounter
+   // was outside the selected sub-tree.  A BFS/DFS of the post-processed
+   // parent→child relationships guarantees that each parent is processed
+   // (and thus labeled) before any of its children.
+   std::vector<TGeoVolume*> volumes_to_process;
+   if (!volume_filter.empty()) {
+      // Build parent→children adjacency for filter volumes.
+      std::unordered_map<TGeoVolume*, std::vector<TGeoVolume*>> filterChildren;
+      for (TGeoVolume* v : volume_filter) {
+         if (v == Top) continue;
+         filterChildren[motherMap.count(v) ? motherMap[v] : Top].push_back(v);
+      }
+      // Iterative pre-order DFS from Top over the filter tree.
+      std::stack<TGeoVolume*> stk;
+      stk.push(Top);
+      while (!stk.empty()) {
+         TGeoVolume* node = stk.top(); stk.pop();
+         if (node != Top) volumes_to_process.push_back(node);
+         auto it = filterChildren.find(node);
+         if (it != filterChildren.end()) {
+            // Push in reverse so that children are processed in original order.
+            for (auto rit = it->second.rbegin(); rit != it->second.rend(); ++rit)
+               stk.push(*rit);
+         }
+      }
+   } else {
+      TIter next(m->GetListOfVolumes());
+      TGeoVolume* v = nullptr;
+      while ((v = (TGeoVolume*)next())) {
+         volumes_to_process.push_back(v);
+      }
+   }
+
+   TDF_Label motherLabel;
+   for (TGeoVolume* currentVolume : volumes_to_process) {
+      if (!GetLabelOfVolume(currentVolume).IsNull()) continue;
+
+      // Convert shape to OCC
+      if (currentVolume->GetShape()->IsA() == TGeoCompositeShape::Class()) {
+         fShape = fRootShape.OCC_CompositeShape((TGeoCompositeShape*)currentVolume->GetShape(), TGeoHMatrix());
+      } else {
+         fShape = fRootShape.OCC_SimpleShape(currentVolume->GetShape());
+      }
+
+      // Look up the mother volume via the pre-built map
+      auto it = motherMap.find(currentVolume);
+      if (it == motherMap.end()) continue;  // volume unreachable from tree
+      TGeoVolume* motherVol = it->second;
+      motherLabel           = GetLabelOfVolume(motherVol);
+
+      if (!motherLabel.IsNull()) {
+         fLabel = TDF_TagSource::NewChild(motherLabel);
+      } else {
+         // Mother not yet labeled: create its label as a direct child of Top
+         TopoDS_Shape motherShape;
+         if (motherVol->GetShape()->IsA() == TGeoCompositeShape::Class()) {
+            motherShape = fRootShape.OCC_CompositeShape((TGeoCompositeShape*)motherVol->GetShape(), TGeoHMatrix());
+         } else {
+            motherShape = fRootShape.OCC_SimpleShape(motherVol->GetShape());
+         }
+         motherLabel = TDF_TagSource::NewChild(GetLabelOfVolume(Top));
+         XCAFDoc_DocumentTool::ShapeTool(fDoc->Main())->SetShape(motherLabel, motherShape);
+         TDataStd_Name::Set(motherLabel, motherVol->GetName());
+         fTree[motherVol] = motherLabel;
+         fLabel           = TDF_TagSource::NewChild(motherLabel);
+      }
+
+      XCAFDoc_DocumentTool::ShapeTool(fDoc->Main())->SetShape(fLabel, fShape);
+      TDataStd_Name::Set(fLabel, currentVolume->GetName());
+      fTree[currentVolume] = fLabel;
+   }
+
+   XCAFDoc_DocumentTool::ShapeTool(fDoc->Main())->UpdateAssemblies();
    return fLabel;
 }
 
@@ -259,36 +383,44 @@ void TOCCToStep::OCCTreeCreation(TGeoManager * m, int max_level)
 
 bool TOCCToStep::OCCPartialTreeCreation(TGeoManager * m, const char* node_name, int max_level)
 {
+   auto         volume           = m->GetVolume(node_name);
+   if (!volume) return false;
+
    TGeoIterator nextNode(m->GetTopVolume());
-   std::string  search_n         = node_name;
    bool         found_once       = false;
    bool         found_in_level_1 = false;
-   auto         volume           = m->GetVolume(node_name);
-   int          level1_skipped   = 0;
-   TGeoNode*    currentNode      = 0;
+   TGeoNode*    currentNode      = nullptr;
+   // processed_nodes deduplicates child→parent links for shared volumes:
+   // each TGeoNode (unique placement) is added to its parent exactly once,
+   // even when the same TGeoVolume is placed multiple times.
+   std::set<TGeoNode*> processed_nodes;
 
    nextNode.SetType(0);
    while ((currentNode = nextNode())) {
-     nextNode.SetType(0);
-     int level = nextNode.GetLevel();
-     if( level > max_level ){
-       continue;
+      nextNode.SetType(0);
+      int level = nextNode.GetLevel();
+
+      if (level == 1) {
+         found_in_level_1 = (currentNode->GetVolume() == volume);
+         if (found_in_level_1) found_once = true;
+      }
+     if (!found_in_level_1) {
+        nextNode.Skip();  // correctly pops up to next sibling at any level
+        continue;
      }
-     if(level == 1) {
-       found_in_level_1 = false;
-       if( volume == currentNode->GetVolume() ) {
-         found_in_level_1 = true;
-         found_once = true;
-       }
+     if (max_level >= 0 && level > max_level) { nextNode.Skip(); continue; }
+
+     if (processed_nodes.count(currentNode)) { nextNode.Skip(); continue; }
+     processed_nodes.insert(currentNode);
+
+     TGeoNode* motherNode  = (level == 1) ? m->GetTopNode() : nextNode.GetNode(level - 1);
+     TDF_Label motherLabel = GetLabelOfVolume(motherNode->GetVolume());
+     TDF_Label childLabel  = GetLabelOfVolume(currentNode->GetVolume());
+     if (!motherLabel.IsNull() && !childLabel.IsNull()) {
+        TopLoc_Location loc = CalcLocation(*(currentNode->GetMatrix()));
+        AddChildLabel(motherLabel, childLabel, loc);
      }
-     if(!found_in_level_1) {
-       if(level == 1) {
-         level1_skipped++;
-       }
-       nextNode.SetType(1);
-       continue;
-     }
-     FillOCCWithNode(m, currentNode, nextNode, level, max_level, level1_skipped);
+     if (max_level >= 0 && level == max_level) nextNode.Skip();  // skip children after processing
    }
    return found_once;
 }
@@ -298,101 +430,57 @@ bool TOCCToStep::OCCPartialTreeCreation(TGeoManager * m, std::map<std::string,in
 {
    bool         found_once       = false;
    bool         found_in_level_1 = false;
-   int          level1_skipped   = 0;
 
    std::map<TGeoVolume*,std::string> part_name_vols;
    std::vector<TGeoVolume*>  vols;
 
    for(const auto& pl : part_name_levels) {
-     TGeoVolume* avol     = m->GetVolume(pl.first.c_str());
-     part_name_vols[avol] = pl.first;
-     vols.push_back(avol);
+      TGeoVolume* avol     = m->GetVolume(pl.first.c_str());
+      part_name_vols[avol] = pl.first;
+      vols.push_back(avol);
    }
 
    TGeoIterator nextNode(m->GetTopVolume());
    TGeoNode*    currentNode      = nullptr;
    TGeoVolume*  matched_vol      = nullptr;
+   // processed_nodes deduplicates child→parent links for shared volumes.
+   std::set<TGeoNode*> processed_nodes;
 
    nextNode.SetType(0);
    while ((currentNode = nextNode())) {
-     nextNode.SetType(0);
-     int level = nextNode.GetLevel();
+      nextNode.SetType(0);
+      int level = nextNode.GetLevel();
 
-     // Currently we only isolate level 1 node/volumes.
-     // In the future this could be generalized.
-     if(level == 1) {
-       found_in_level_1 = false;
-       for(auto v: vols) {
-         if( v == currentNode->GetVolume() ) {
-           // could there be more than one?
-           matched_vol = v;
-           found_in_level_1 = true;
-           found_once = true;
+      if (level == 1) {
+         found_in_level_1 = false;
+         for (auto v : vols) {
+            if (v == currentNode->GetVolume()) {
+               matched_vol      = v;
+               found_in_level_1 = true;
+               found_once       = true;
+            }
          }
-       }
-     }
-     if(!found_in_level_1) {
-       if(level == 1) {
-         level1_skipped++;
-       }
-       // switch the iterator type to go directly to sibling nodes  
-       nextNode.SetType(1);
-       continue;
-     }
-     int max_level = part_name_levels[ part_name_vols[matched_vol]];
-     if( level > max_level  ){
-       continue;
-     }
+      }
+      if (!found_in_level_1) {
+         nextNode.Skip();  // correctly pops up to next sibling at any level
+         continue;
+      }
+      int cur_max_level = part_name_levels[part_name_vols[matched_vol]];
+      if (cur_max_level >= 0 && level > cur_max_level) { nextNode.Skip(); continue; }
 
-     FillOCCWithNode(m, currentNode, nextNode, level, max_level, level1_skipped);
+      if (processed_nodes.count(currentNode)) { nextNode.Skip(); continue; }
+      processed_nodes.insert(currentNode);
+
+      TGeoNode* motherNode  = (level == 1) ? m->GetTopNode() : nextNode.GetNode(level - 1);
+      TDF_Label motherLabel = GetLabelOfVolume(motherNode->GetVolume());
+      TDF_Label childLabel  = GetLabelOfVolume(currentNode->GetVolume());
+      if (!motherLabel.IsNull() && !childLabel.IsNull()) {
+         TopLoc_Location loc = CalcLocation(*(currentNode->GetMatrix()));
+         AddChildLabel(motherLabel, childLabel, loc);
+      }
+      if (cur_max_level >= 0 && level == cur_max_level) nextNode.Skip();  // skip children after processing
    }
    return found_once;
-}
-    //______________________________________________________________________________
-
-
-void TOCCToStep::FillOCCWithNode(TGeoManager* m, TGeoNode* currentNode, TGeoIterator& nextNode, int level, int max_level, int level1_skipped)
-{
-  // This loop looks for nodes which are the end of line (ancestrally) then navigates
-  // back up the family tree.  As it does so, the OCC tree is constructed. 
-  // It is not clear why it must be done this way, but it could be an idiosyncracy
-  // in OCC (which I am not too familar with at the moment).
-  int nd = currentNode->GetNdaughters();
-  if(level == max_level) {
-    nd = 0;
-  }
-  if( nd == 0 ) {
-    int level_start = std::min(level,max_level);
-    for (int i = level_start; i > 0; i--) {
-      TGeoNode* motherNode = 0;
-      TDF_Label labelMother;
-      TopLoc_Location loc;
-
-      if (i == 1) {
-        motherNode = m->GetTopNode();
-      } else {
-        motherNode = nextNode.GetNode(i-1);
-      }
-      labelMother    = GetLabelOfVolume(motherNode->GetVolume());
-      Int_t ndMother = motherNode->GetNdaughters();
-      // Why are we using a data member here?
-      fLabel         = GetLabelOfVolume(currentNode->GetVolume());
-      loc            = CalcLocation((*(currentNode->GetMatrix())));
-      // Need to account for the missing daughters from those nodes skipped in level 1
-      int skipped_this_level = 0; 
-      if(i == 1 ) skipped_this_level = level1_skipped;
-      if ((XCAFDoc_DocumentTool::ShapeTool(fDoc->Main())->NbComponents(labelMother) < ndMother) && (!nd)) {
-
-        AddChildLabel(labelMother, fLabel, loc);
-      } else if ((XCAFDoc_DocumentTool::ShapeTool(fDoc->Main())->NbComponents(fLabel) == currentNode->GetNdaughters()) && 
-                 (XCAFDoc_DocumentTool::ShapeTool(fDoc->Main())->NbComponents(labelMother)+skipped_this_level  == motherNode->GetVolume()->GetIndex(currentNode))) {
-        AddChildLabel(labelMother, fLabel, loc);
-      }
-      currentNode = motherNode;
-      fLabel      = labelMother; // again, why a data member?
-      nd          = currentNode->GetNdaughters();
-    }
-  }
 }
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -404,5 +492,4 @@ void TOCCToStep::PrintAssembly()
    XCAFDoc_DocumentTool::ShapeTool(fDoc->Main())->Dump(std::cout);
 #endif
 }
-
 
