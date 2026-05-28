@@ -41,6 +41,17 @@ if __name__ == "__main__":
     ph.VerboseLevel = 0
     ph.enableUI()
     seq.adopt(ph)
+    # Disable optical processes that have no material property tables defined in
+    # the EIC epic detector description. These processes always return DBL_MAX
+    # (infinite mean free path) and waste GPIL time on every optical photon step.
+    #   OpMieHG:  no material defines MIEHG* properties
+    #   OpWLS:    no material defines WLSABSLENGTH
+    #   OpWLS2:   no material defines WLS2ABSLENGTH
+    # OpRayleigh is kept because aerogel in dRICH/pfRICH defines RAYLEIGH tables.
+    import cppyy
+    params = cppyy.gbl.G4OpticalParameters.Instance()
+    for proc_name in ("OpMieHG", "OpWLS", "OpWLS2"):
+      params.SetProcessActivation(proc_name, False)
     return None
   RUNNER.physics.setupUserPhysics(setupCerenkov)
 
