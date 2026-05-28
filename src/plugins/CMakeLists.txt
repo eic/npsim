@@ -5,7 +5,7 @@ dd4hep_add_plugin(NPDetPlugins
     src/EICInteractionVertexBoost.cxx
     src/EICInteractionVertexSmear.cxx
     src/OpticalPhotonEfficiencyStackingAction.cxx
-    src/Geant4TVEicParticleHandler.cpp
+        src/Geant4TVEicParticleHandler.cxx
   INCLUDES $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   USES DD4hep::DDCore DD4hep::DDG4
 )
