@@ -48,7 +48,10 @@ if __name__ == "__main__":
     #   OpWLS:    no material defines WLSABSLENGTH
     #   OpWLS2:   no material defines WLS2ABSLENGTH
     # OpRayleigh is kept because aerogel in dRICH/pfRICH defines RAYLEIGH tables.
+    # G4OpticalParameters lives in libG4processes_core; load it explicitly so
+    # cppyy can see the class before the Geant4 run manager is initialized.
     import cppyy
+    cppyy.load_library("G4processes_core")
     params = cppyy.gbl.G4OpticalParameters.Instance()
     for proc_name in ("OpMieHG", "OpWLS", "OpWLS2"):
       params.SetProcessActivation(proc_name, False)
