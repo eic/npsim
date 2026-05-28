@@ -41,6 +41,21 @@ if __name__ == "__main__":
     ph.VerboseLevel = 0
     ph.enableUI()
     seq.adopt(ph)
+    # Disable optical processes that have no material property tables defined in
+    # the EIC epic detector description. These processes always return DBL_MAX
+    # (infinite mean free path) and waste GPIL time on every optical photon step.
+    #   OpMieHG:  no material defines MIEHG* properties
+    #   OpWLS:    no material defines WLSABSLENGTH
+    #   OpWLS2:   no material defines WLS2ABSLENGTH
+    # OpRayleigh is kept because aerogel in dRICH/pfRICH defines RAYLEIGH tables.
+    # NOTE: DDG4's Geant4OpticalPhotonPhysics::constructProcesses() must honor
+    # G4OpticalParameters activation flags for these commands to take effect.
+    # See eic/DD4hep PR #1 (optical-honor-process-activation).
+    RUNNER.ui.commandsConfigure += [
+      "/process/optical/processActivation OpMieHG false",
+      "/process/optical/processActivation OpWLS false",
+      "/process/optical/processActivation OpWLS2 false",
+    ]
     return None
   RUNNER.physics.setupUserPhysics(setupCerenkov)
 
