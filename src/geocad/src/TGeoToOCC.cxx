@@ -47,6 +47,7 @@ A log file is created in `/tmp/TGeoCad.log`
 
 #include "TGeoToOCC.h"
 #include <fstream>
+#include <memory>
 
 
 //Cascade
@@ -182,9 +183,9 @@ TopoDS_Shape TGeoToOCC::OCC_SimpleShape(TGeoShape *TG_Shape)
    } else if(TG_Shape->IsA()==TGeoPgon::Class()) {
       TGeoPgon* TG_Pgon=(TGeoPgon*)TG_Shape;
       Int_t numpoints=TG_Pgon->GetNmeshVertices();
-      Double_t *p = new Double_t[3*numpoints];
-      TG_Pgon->SetPoints(p);
-      return OCC_Pgon(TG_Pgon->GetNsegments(),TG_Pgon->GetNz(),p,TG_Pgon->GetPhi1(),TG_Pgon->GetDphi(),numpoints*3);
+      std::unique_ptr<Double_t[]> p(new Double_t[3*numpoints]);
+      TG_Pgon->SetPoints(p.get());
+      return OCC_Pgon(TG_Pgon->GetNsegments(),TG_Pgon->GetNz(),p.get(),TG_Pgon->GetPhi1(),TG_Pgon->GetDphi(),numpoints*3);
    } else if(TG_Shape->IsA()==TGeoHype::Class()) {
       TGeoHype* TG_Hype=(TGeoHype*)TG_Shape;
       return OCC_Hype(TG_Hype->GetRmin(), TG_Hype->GetRmax(), TG_Hype->GetStIn(), TG_Hype->GetStOut(),TG_Hype->GetDz());
@@ -268,7 +269,7 @@ TopoDS_Shape TGeoToOCC::OCC_Mesh(TGeoTessellated *tess)
    return Reverse(shape);
 }
 
-TopoDS_Shape TGeoToOCC::OCC_CompositeShape(TGeoCompositeShape *comp, TGeoHMatrix m)
+TopoDS_Shape TGeoToOCC::OCC_CompositeShape(TGeoCompositeShape *comp, const TGeoHMatrix& m)
 {
   using namespace std;
    Double_t const *t;
