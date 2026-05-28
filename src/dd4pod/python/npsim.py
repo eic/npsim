@@ -48,14 +48,18 @@ if __name__ == "__main__":
     #   OpWLS:    no material defines WLSABSLENGTH
     #   OpWLS2:   no material defines WLS2ABSLENGTH
     # OpRayleigh is kept because aerogel in dRICH/pfRICH defines RAYLEIGH tables.
-    # NOTE: DDG4's Geant4OpticalPhotonPhysics::constructProcesses() must honor
-    # G4OpticalParameters activation flags for these commands to take effect.
-    # See eic/DD4hep PR #1 (optical-honor-process-activation).
-    RUNNER.ui.commandsConfigure += [
-      "/process/optical/processActivation OpMieHG false",
-      "/process/optical/processActivation OpWLS false",
-      "/process/optical/processActivation OpWLS2 false",
-    ]
+    # G4OpticalParameters lives in libG4processes_core and is not part of any
+    # ROOT dictionary, so we must load the library and include the header explicitly
+    # before cppyy can resolve the class.
+    import cppyy
+    import os
+    _g4inc = os.path.join(os.environ.get("GEANT4_DIR", "/opt/local"), "include", "Geant4")
+    cppyy.load_library("G4processes_core")
+    cppyy.add_include_path(_g4inc)
+    cppyy.include("G4OpticalParameters.hh")
+    params = cppyy.gbl.G4OpticalParameters.Instance()
+    for proc_name in ("OpMieHG", "OpWLS", "OpWLS2"):
+      params.SetProcessActivation(proc_name, False)
     return None
   RUNNER.physics.setupUserPhysics(setupCerenkov)
 
