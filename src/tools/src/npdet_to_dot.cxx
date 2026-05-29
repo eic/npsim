@@ -106,6 +106,16 @@ void write_dot(std::ostream& out, TGeoManager* geo,
   bool        found_in_level_1 = !part_mode;
   std::string matched_part;
 
+  // If the world volume itself is among the requested parts, all level-1
+  // children fall within that subtree.
+  std::string world_name_match;
+  for (auto& [name, _] : part_name_levels) {
+    if (std::string(world->GetName()) == name) {
+      world_name_match = name;
+      break;
+    }
+  }
+
   TGeoIterator it(world);
   TGeoNode*    currentNode = nullptr;
   it.SetType(0);
@@ -124,6 +134,11 @@ void write_dot(std::ostream& out, TGeoManager* geo,
           matched_part     = name;
           break;
         }
+      }
+      // If the world volume itself was requested, every level-1 child qualifies.
+      if (!found_in_level_1 && !world_name_match.empty()) {
+        found_in_level_1 = true;
+        matched_part     = world_name_match;
       }
     }
     if (!found_in_level_1) { it.Skip(); continue; }
