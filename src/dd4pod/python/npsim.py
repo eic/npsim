@@ -11,6 +11,7 @@ from __future__ import absolute_import, unicode_literals
 import logging
 import sys
 
+from DDG4 import MeV, GeV, cm, mm, m
 from DDSim.DD4hepSimulation import DD4hepSimulation
 
 
