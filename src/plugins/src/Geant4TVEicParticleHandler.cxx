@@ -5,8 +5,8 @@
 //  plugin "Geant4TVEicParticleHandler".
 //
 //  It runs the standard DD4hep tracking-volume filter — verbatim from
-//  Geant4TVUserParticleHandler / Geant4UserParticleHandlerHelper (author:
-//  M.Frank, CERN) — and then layers an additional EIC-specific cut on top:
+//  Geant4TVUserParticleHandler / Geant4UserParticleHandlerHelper
+//  — and then layers an additional EIC-specific cut on top:
 //
 //    Drop low-|p| particles that ended in the far forward or far backward
 //    Z regions, unless they are primaries, KEEP_ALWAYS, or contributed to
@@ -17,8 +17,7 @@
 //    ForwardRegionZ, BackwardRegionZ, ForwardMomentumMin,
 //    BackwardMomentumMin, KeepCaloHitParticles.
 //
-//  See npsim/src/plugins/doc/Geant4TVEicParticleHandler.md for the full
-//  user-facing description, default values, and steering examples.
+//  See Geant4TVEicParticleHandler.md for the full description.
 //
 //  The helpers `setReason` / `setSimulatorStatus` are inlined from
 //  DD4hep's DDG4/plugins/Geant4UserParticleHandlerHelper.{h,cpp}, because
@@ -37,59 +36,41 @@
 #include <CLHEP/Units/SystemOfUnits.h>
 
 #include <array>
-#include <exception>
 
-/// Namespace for the AIDA detector description toolkit
+
 namespace npdet::sim {
 
   /// EIC user particle handler: tracking-volume filter plus a regional
   /// forward/backward low-|p| cut.
   /**
    *  TV stands for TrackingVolume. The handler first runs the standard
-   *  DD4hep tracking-volume filtering (identical to Geant4TVUserParticleHandler:
-   *  rejects particles created outside the `tracking_volume` defined in the
-   *  detector description), then applies an EIC-specific regional cut that
-   *  drops low-momentum particles ending in the far forward / far backward
-   *  Z dead zones — subject to "must-keep" guards for primaries,
-   *  KEEP_ALWAYS, tracker hits, and (optionally) calorimeter hits.
-   *
-   *  Thresholds and the calo policy are exposed as plugin properties; see
-   *  the constructor and the companion .md doc for the list and defaults.
+   *  DD4hep tracking-volume filtering, then applies an EIC-specific regional cuts
    */
   class Geant4TVEicParticleHandler : public dd4hep::sim::Geant4UserParticleHandler {
     dd4hep::Volume m_trackingVolume;
 
-    /// EIC forward/backward low-momentum rejection cuts (configurable
-    /// properties, all in DD4hep units). Particles ending at
-    ///   endZ >  m_forwardZ  with |p| < m_forwardMomentumMin   OR
-    ///   endZ <  m_backwardZ with |p| < m_backwardMomentumMin
-    /// are dropped (p.reason = 0), subject to the must-keep guards in end().
-    /// Defaults match the legacy tracker_region_zmax / tracker_region_zmin
-    /// constants from epic/compact/tracking_region.xml.
     double m_forwardZ{335 * dd4hep::cm};               ///< +Z dead-zone boundary (positive)
     double m_backwardZ{-175 * dd4hep::cm};             ///< -Z dead-zone boundary (negative)
     double m_forwardMomentumMin{100 * dd4hep::MeV};    ///< |p| threshold in +Z dead zone
     double m_backwardMomentumMin{100 * dd4hep::MeV};   ///< |p| threshold in -Z dead zone
 
-    /// If true, particles carrying G4PARTICLE_CREATED_CALORIMETER_HIT are
-    /// shielded from the forward/backward |p| cut (preserves full calo
-    /// shower MC truth at the cost of much larger MCParticles collections).
-    /// Default false — upstream policy is that calo hits don't save you,
-    /// and keeping shower secondaries is what blows up event size.
+    /// If true, particles carrying G4PARTICLE_CREATED_CALORIMETER_HIT are saved
+    /// (preserves full calo shower MC truth at the cost of much larger MCParticles collections).
+    /// Default false — upstream policy
     bool m_keepCaloHitParticles{false};
 
   public:
-    /// Standard constructor
-    Geant4TVEicParticleHandler(dd4hep::sim::Geant4Context* context, const std::string& nam);
+
+    Geant4TVEicParticleHandler(dd4hep::sim::Geant4Context* ctxt, const std::string& nam);
 
     /// Default destructor
-    virtual ~Geant4TVEicParticleHandler() {}
+    ~Geant4TVEicParticleHandler() override = default;
 
     /// Post-track action callback
-    virtual void end(const G4Track* track, Particle& particle) override;
+    void end(const G4Track* track, Particle& particle) override;
 
     /// Post-event action callback (overload to avoid -Woverloaded-virtual)
-    virtual void end(const G4Event* event) override;
+    void end(const G4Event* event) override;
   };
 
   // ------------------------------------------------------------------
@@ -213,13 +194,11 @@ namespace npdet::sim {
     if (reason.isSet(dd4hep::sim::G4PARTICLE_CREATED_TRACKER_HIT)) return;
     if (m_keepCaloHitParticles && reason.isSet(dd4hep::sim::G4PARTICLE_CREATED_CALORIMETER_HIT)) return;
 
-    const double pmag2 = (p.psx * p.psx + p.psy * p.psy + p.psz * p.psz)
-                         * (MeVCLHEPtoDD4hep * MeVCLHEPtoDD4hep);
+    const double pmag2 = (p.psx * p.psx + p.psy * p.psy + p.psz * p.psz) * (MeVCLHEPtoDD4hep * MeVCLHEPtoDD4hep);
     const double endZ  = p.vez * mmCLHEPtoDD4hep;
 
-    if (endZ > m_forwardZ  && pmag2 < m_forwardMomentumMin  * m_forwardMomentumMin) {
-      p.reason = 0;
-    } else if (endZ < m_backwardZ && pmag2 < m_backwardMomentumMin * m_backwardMomentumMin) {
+    if ((endZ > m_forwardZ  && pmag2 < m_forwardMomentumMin * m_forwardMomentumMin) ||
+        (endZ < m_backwardZ && pmag2 < m_backwardMomentumMin * m_backwardMomentumMin)) {
       p.reason = 0;
     }
   }
