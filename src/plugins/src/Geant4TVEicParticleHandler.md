@@ -52,8 +52,7 @@ Equivalent npsim/ddsim command-line flag:
 ```
 
 The handler requires `tracking_volume` to be defined in the loaded detector
-description (epic provides it via `tracking_region.xml`); the constructor
-will fail otherwise.
+description (epic provides it via `tracking_region.xml`).
 
 ## Plugin properties
 
@@ -61,21 +60,16 @@ All thresholds are expressed in DD4hep units (cm, GeV). When set from
 Python use the unit symbols (`MeV`, `mm`, `m`) so the values are
 unit-correct regardless of host unit system.
 
-| Property               | Type   | Default      | Units    | Meaning                                                              |
-|------------------------|--------|--------------|----------|----------------------------------------------------------------------|
-| `ForwardRegionZ`       | double | `+335 * cm`  | length   | Particles ending at `endZ > ForwardRegionZ` are subject to the forward cut. Should be a positive Z. |
-| `BackwardRegionZ`      | double | `-175 * cm`  | length   | Particles ending at `endZ < BackwardRegionZ` are subject to the backward cut. Should be a negative Z. |
-| `ForwardMomentumMin`   | double | `100 * MeV`  | momentum | Minimum \|p\| to survive in the forward dead zone                    |
-| `BackwardMomentumMin`  | double | `100 * MeV`  | momentum | Minimum \|p\| to survive in the backward dead zone                   |
-| `KeepCaloHitParticles` | bool   | `false`      | —        | When true, shield particles that produced a calorimeter hit from the regional cut |
-| `OutputLevel`          | int    | inherited    | —        | DD4hep `PrintLevel` (`VERBOSE=1 … ALWAYS=7`); inherited from `Geant4Action` |
+| Property               | Type   | Units    | Meaning                                                                       |
+|------------------------|--------|----------|-------------------------------------------------------------------------------|
+| `ForwardRegionZ`       | double | length   | Particles ending at `endZ > ForwardRegionZ` are subject to the forward cut.   |
+| `BackwardRegionZ`      | double | length   | Particles ending at `endZ < BackwardRegionZ` are subject to the backward cut. |
+| `ForwardMomentumMin`   | double | momentum | Minimum \|p\| to be saved in the forward region                               |
+| `BackwardMomentumMin`  | double | momentum | Minimum \|p\| to be saved in the backward region                              |
+| `KeepCaloHitParticles` | bool   | —        | When true, unconditionally save particles that produced a calorimeter hit     |
+| `OutputLevel`          | int    | —        | DD4hep `PrintLevel` (`VERBOSE=1 … ALWAYS=7`); inherited from `Geant4Action`   |
 
-The defaults for `ForwardRegionZ` and `BackwardRegionZ` are the legacy
-`tracker_region_zmax` (`+EcalEndcapP_zmin = +335 cm`) and
-`tracker_region_zmin` (`-EcalEndcapN_zmin = -175 cm`) constants from
-`epic/compact/tracking_region.xml`. The boundaries are **signed Z values**,
-not magnitudes: the backward bound is itself negative, and the comparison
-is `endZ < BackwardRegionZ`.
+The boundaries are **signed Z values**.
 
 ## How the regional cut decides
 
@@ -89,9 +83,8 @@ particle (`p.reason != 0`) in this order:
    (B0, Roman pots, off-momentum trackers) — all of which sit inside the
    tracking-volume extrusion.
 4. `G4PARTICLE_CREATED_CALORIMETER_HIT` set **and** `KeepCaloHitParticles`
-   is true → keep. See "Calo policy" below.
-5. Otherwise: compute `endZ = p.vez` and `|p|` (both converted to DD4hep
-   units explicitly via `/CLHEP::unit * dd4hep::unit`) and apply
+   is true → keep. 
+5. Otherwise: compute `endZ` and `|p|` and apply
    - if `endZ > ForwardRegionZ`  and `|p| < ForwardMomentumMin`  → `p.reason = 0`
    - else if `endZ < BackwardRegionZ` and `|p| < BackwardMomentumMin` → `p.reason = 0`
      (with `BackwardRegionZ` itself negative)
@@ -110,9 +103,7 @@ written; only the truth link is degraded).
 
 This handler exposes the choice as the `KeepCaloHitParticles` property:
 
-- `KeepCaloHitParticles = False` (default) — match upstream policy. Calo
-  shower secondaries in the dead zones get dropped by the regional cut.
-  Smaller `MCParticles` collections.
+- `KeepCaloHitParticles = False` (default) — match upstream policy.
 - `KeepCaloHitParticles = True` — protect any particle with the
   `G4PARTICLE_CREATED_CALORIMETER_HIT` bit. Use for analyses that need
   full ZDC / B0ECal / forward calo MC truth (e.g. Lambda → n+π⁰ where
@@ -120,37 +111,3 @@ This handler exposes the choice as the `KeepCaloHitParticles` property:
 
 The default is `false` deliberately — calorimeter showers are one of the
 main contributors to large `MCParticles` collections in EIC simulations.
-
-## Units
-
-`Geant4Particle` stores vertex coordinates and momenta in CLHEP/Geant4
-units (mm, MeV). DD4hep uses (cm, GeV). The handler bridges the two
-explicitly:
-
-```cpp
-constexpr double mmCLHEPtoDD4hep  = dd4hep::mm  / CLHEP::mm;   // 0.1
-constexpr double MeVCLHEPtoDD4hep = dd4hep::MeV / CLHEP::MeV;  // 1e-3
-```
-
-— "strip the Geant4 unit, then re-apply the DD4hep one". All comparisons
-against the configurable thresholds happen in DD4hep units.
-
-## Relationship to other ddsim particle-handling options
-
-| Option                          | Default                          | Interaction                                                                 |
-|---------------------------------|----------------------------------|-----------------------------------------------------------------------------|
-| `SIM.part.keepAllParticles`     | `False`                          | If `True`, overrides everything — this handler's drops are ignored          |
-| `SIM.part.saveProcesses`        | `["Decay"]`                      | Which creator processes get the `KEEP_PROCESS` flag (orthogonal)            |
-| `SIM.part.minimalKineticEnergy` | `1 MeV`                          | Global KE threshold (sets `ABOVE_ENERGY_THRESHOLD` bit). Operates everywhere |
-| `SIM.part.userParticleHandler`  | `Geant4TCUserParticleHandler`    | Pick this handler here                                                       |
-
-The regional `*MomentumMin` cuts are *additional* and apply only in the
-forward/backward Z regions; they do not replace `minimalKineticEnergy`.
-
-## See also
-
-- `epic/compact/tracking_region.xml` — defines `tracking_volume`
-- `DD4hep/DDG4/plugins/Geant4TVUserParticleHandler.cpp` — upstream handler
-- `DD4hep/DDG4/plugins/Geant4UserParticleHandlerHelper.cpp` — upstream
-  `setReason` / `setSimulatorStatus` logic (inlined verbatim into this plugin)
-- `DD4hep/DDG4/include/DDG4/Geant4Particle.h` — `G4PARTICLE_*` reason bits
