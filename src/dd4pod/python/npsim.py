@@ -11,7 +11,6 @@ from __future__ import absolute_import, unicode_literals
 import logging
 import sys
 
-from DDG4 import MeV, cm, m
 from DDSim.DD4hepSimulation import DD4hepSimulation
 
 
@@ -47,14 +46,6 @@ if __name__ == "__main__":
 
   # Geant4TVEicParticleHandler
   RUNNER.part.userParticleHandler = "Geant4TVEicParticleHandler"
-
-  SIM.part.userParticleHandlerOptions = {
-    "ForwardRegionZ":       335 * cm,     # +Z dead-zone boundary (positive)
-    "BackwardRegionZ":     -175 * cm,     # -Z dead-zone boundary (negative)
-    "ForwardMomentumMin":   100 * MeV,    # |p| cut in +Z dead zone
-    "BackwardMomentumMin":  100 * MeV,    # |p| cut in -Z dead zone
-    "KeepCaloHitParticles": False,        # see "Calo policy" in Geant4TVEicParticleHandler.md
-  }
 
   # Disable warnings for unstable resonances with off-shell mass
   if hasattr(RUNNER.physics, "ESeverity"):

@@ -28,7 +28,11 @@ once per simulated track at end-of-track. It performs two passes:
 In a Python steering file:
 
 ```python
-from DDG4 import MeV, GeV, cm, mm, m
+# Values are passed as string expressions so DD4hep's expression parser
+# evaluates them in DD4hep's unit system (cm, GeV). Do NOT import
+# `MeV`/`cm`/... from `g4units` and multiply — g4units uses CLHEP
+# values (mm=1, MeV=1) which differ from DD4hep's, and the property
+# bridge does not convert them.
 
 SIM.part.userParticleHandler = "Geant4TVEicParticleHandler"
 
@@ -37,13 +41,20 @@ SIM.part.userParticleHandler = "Geant4TVEicParticleHandler"
 # tracker_region_zmax / tracker_region_zmin constants in
 # epic/compact/tracking_region.xml.
 SIM.part.userParticleHandlerOptions = {
-    "ForwardRegionZ":       335 * cm,     # +Z dead-zone boundary (positive)
-    "BackwardRegionZ":     -175 * cm,     # -Z dead-zone boundary (negative)
-    "ForwardMomentumMin":   100 * MeV,    # |p| cut in +Z dead zone
-    "BackwardMomentumMin":  100 * MeV,    # |p| cut in -Z dead zone
+    "ForwardRegionZ":       "335*cm",     # +Z dead-zone boundary (positive)
+    "BackwardRegionZ":     "-175*cm",     # -Z dead-zone boundary (negative)
+    "ForwardMomentumMin":   "100*MeV",    # |p| cut in +Z dead zone
+    "BackwardMomentumMin":  "100*MeV",    # |p| cut in -Z dead zone
     "KeepCaloHitParticles": False,        # see "Calo policy" below
 }
 ```
+
+> **Note** — `npsim/src/dd4pod/python/npsim.py` does not enable this handler
+> via the ddsim allow-list (which is hard-coded to `Geant4TCUserParticleHandler`
+> / `Geant4TVUserParticleHandler` only). Instead, `npsim.py` rebinds
+> `RUNNER.part.setupUserParticleHandler` with a small helper that creates
+> the action and sets the EIC properties directly. See `npsim.py` for the
+> exact wiring; you typically don't need to touch it.
 
 Equivalent npsim/ddsim command-line flag:
 
@@ -56,9 +67,11 @@ description (epic provides it via `tracking_region.xml`).
 
 ## Plugin properties
 
-All thresholds are expressed in DD4hep units (cm, GeV). When set from
-Python use the unit symbols (`MeV`, `mm`, `m`) so the values are
-unit-correct regardless of host unit system.
+All thresholds are expressed in DD4hep units (cm, GeV). Pass values as
+**string expressions** (e.g. `"335*cm"`, `"100*MeV"`) so DD4hep's
+expression parser evaluates them in its own unit system. Do not use
+`g4units` imports — those carry CLHEP values (`mm=1`, `MeV=1`) and will
+produce wrong numbers when assigned to plugin properties.
 
 | Property               | Type   | Units    | Meaning                                                                       |
 |------------------------|--------|----------|-------------------------------------------------------------------------------|
