@@ -45,7 +45,7 @@ if __name__ == "__main__":
   RUNNER.physics.setupUserPhysics(setupCerenkov)
 
   # Geant4TVEicParticleHandler
-  RUNNER.part.userParticleHandler = "Geant4TVUserParticleHandler"
+  RUNNER.part.userParticleHandler = "Geant4TVEicParticleHandler"
 
   SIM.part.userParticleHandlerOptions = {
     "ForwardRegionZ":       335 * cm,     # +Z dead-zone boundary (positive)
