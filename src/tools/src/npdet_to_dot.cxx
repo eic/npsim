@@ -217,7 +217,7 @@ dot_settings cmdline_settings(int argc, char* argv[]) {
         if (!s.level_set) s.part_level = s.default_level;
         s.part_name_levels[p] = s.part_level;
         s.level_set = false;
-      }) % "Volume name (must be child of world)"
+      }) % "Volume name (must be child of world, or the world volume itself)"
     )
   );
 
