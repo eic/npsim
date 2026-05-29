@@ -10,6 +10,9 @@
 //   lightgreen  - placed 10-99 times
 //   skyblue     - placed 100+ times
 //
+// Assembly volumes (TGeoVolumeAssembly) are drawn with a dashed border to
+// distinguish them from regular encapsulating volumes.
+//
 // Edges connect parent to child logical volume and are labelled with the
 // number of child instances per parent instance (the logical multiplicity).
 
@@ -157,9 +160,12 @@ void write_dot(std::ostream& out, TGeoManager* geo,
     std::string color = placement_color(count);
     std::string label = dot_escape(vol->GetName());
     if (count > 1) label += "\\n(" + std::to_string(count) + "x)";  // x for multiplicity
+    // Assembly volumes get a dashed border to visually distinguish them
+    std::string style = vol->IsAssembly() ? "filled,dashed" : "filled";
     out << "  " << dot_id(vol)
         << " [label=\"" << label << "\""
         << ", fillcolor=\"" << color << "\""
+        << ", style=\"" << style << "\""
         << "];\n";
   }
   out << "\n";
