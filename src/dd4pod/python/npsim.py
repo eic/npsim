@@ -71,7 +71,9 @@ if __name__ == "__main__":
 
   _PH.setupUserParticleHandler = _setupUserParticleHandler
 
-  RUNNER.part.userParticleHandler = "Geant4TVEicParticleHandler"
+  # To allow users set different handlers (other that default at least)
+  if RUNNER.part.userParticleHandler == "Geant4TCUserParticleHandler":
+    RUNNER.part.userParticleHandler = "Geant4TVEicParticleHandler"
 
   # Disable warnings for unstable resonances with off-shell mass
   if hasattr(RUNNER.physics, "ESeverity"):
