@@ -40,7 +40,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # ---------------------------------------------------------------------------
 # Options
 
-set(USE_GEOCAD ON CACHE BOOL "build the geocad library. Requires opencascade")
+option(USE_GEOCAD "build the geocad library. Requires opencascade" ON)
 
 # ---------------------------------------------------------------------------
 # Load additional OS dependent settings

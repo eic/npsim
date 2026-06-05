@@ -122,6 +122,24 @@ else()
 endif()
 
 # ------------------------------------
+# npdet_to_dot
+# ------------------------------------
+set(exe_name npdet_to_dot)
+add_executable(${exe_name} src/${exe_name}.cxx)
+target_include_directories(${exe_name}
+  PRIVATE include)
+target_compile_features(${exe_name}
+  PUBLIC cxx_std_17
+  PUBLIC cxx_auto_type
+  PUBLIC cxx_trailing_return_types
+  PRIVATE cxx_variadic_templates)
+target_link_libraries(${exe_name}
+  PUBLIC DD4hep::DDCore ROOT::Core ROOT::Geom)
+install(TARGETS ${exe_name}
+  EXPORT NPDetTargets
+  RUNTIME DESTINATION bin)
+
+# ------------------------------------
 # npdet_info
 # ------------------------------------
 set(exe_name npdet_info)

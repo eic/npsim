@@ -57,7 +57,7 @@ public:
    TGeoToOCC();
    virtual ~TGeoToOCC();
    TopoDS_Shape OCC_SimpleShape(TGeoShape *TG_Shape);
-   TopoDS_Shape OCC_CompositeShape(TGeoCompositeShape *cs, TGeoHMatrix matrix);
+   TopoDS_Shape OCC_CompositeShape(TGeoCompositeShape *cs, const TGeoHMatrix& matrix);
    TopoDS_Shape Reverse(TopoDS_Shape Shape);
 
 };
