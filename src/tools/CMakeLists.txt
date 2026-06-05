@@ -22,7 +22,7 @@ add_executable(${exe_name} src/${exe_name}.cxx src/settings.cxx)
 target_include_directories(${exe_name}
   PRIVATE include )
 target_compile_features(${exe_name}
-  PUBLIC cxx_std_17
+  PUBLIC cxx_std_20
   PUBLIC cxx_auto_type
   PUBLIC cxx_trailing_return_types
   PRIVATE cxx_variadic_templates )
@@ -46,7 +46,7 @@ if(TARGET GeoCad)
     PUBLIC cxx_auto_type
     PUBLIC cxx_trailing_return_types
     PRIVATE cxx_variadic_templates
-    PRIVATE cxx_std_17)
+    PRIVATE cxx_std_20)
   target_link_libraries(${exe_name}
     PUBLIC DD4hep::DDCore ROOT::Core GeoCad)
   install(TARGETS ${exe_name}
@@ -65,7 +65,7 @@ if(TARGET ROOT::Eve)
   target_include_directories(${exe_name}
     PRIVATE include )
   target_compile_features(${exe_name}
-    PUBLIC cxx_std_17
+    PUBLIC cxx_std_20
     PUBLIC cxx_auto_type
     PUBLIC cxx_trailing_return_types
     PRIVATE cxx_variadic_templates
@@ -87,7 +87,7 @@ add_executable(${exe_name} src/${exe_name}.cxx src/settings.cxx)
 target_include_directories(${exe_name}
   PRIVATE include )
 target_compile_features(${exe_name}
-  PUBLIC cxx_std_17
+  PUBLIC cxx_std_20
   PUBLIC cxx_auto_type
   PUBLIC cxx_trailing_return_types
   PRIVATE cxx_variadic_templates
@@ -110,7 +110,7 @@ if(TARGET ROOT::RHTTP)
     PUBLIC cxx_auto_type
     PUBLIC cxx_trailing_return_types
     PRIVATE cxx_variadic_templates
-    PUBLIC cxx_std_17
+    PUBLIC cxx_std_20
     )
   target_link_libraries(${exe_name}
     PUBLIC DD4hep::DDCore ROOT::Core ROOT::RHTTP ROOT::Net fmt::fmt spdlog::spdlog)
@@ -150,7 +150,7 @@ target_compile_features(${exe_name}
   PUBLIC cxx_auto_type
   PUBLIC cxx_trailing_return_types
   PRIVATE cxx_variadic_templates
-  PUBLIC cxx_std_17)
+  PUBLIC cxx_std_20)
 target_link_libraries(${exe_name}
   PUBLIC DD4hep::DDCore ROOT::Core ROOT::Hist ROOT::GenVector fmt::fmt)
 install(TARGETS ${exe_name}
