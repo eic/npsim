@@ -29,7 +29,13 @@ if __name__ == "__main__":
   def setupHepEm(kernel):
     from DDG4 import PhysicsList
     seq = kernel.physicsList()
-    hepem = PhysicsList(kernel, 'Geant4HepEmTrackingPhysics/HepEmPhysics')
+    try:
+      hepem = PhysicsList(kernel, 'Geant4HepEmTrackingPhysics/HepEmPhysics')
+    except Exception as e:
+      raise RuntimeError(
+        "Geant4HepEmTrackingPhysics plugin is not available. Build DD4hep with "
+        "DD4HEP_USE_G4HEPEM=ON and ensure DDG4HepEm is on LD_LIBRARY_PATH."
+      ) from e
     hepem.WoodcockRegions = ['EcalBarrelScFiLayerRegion']
     hepem.enableUI()
     seq.adopt(hepem)
