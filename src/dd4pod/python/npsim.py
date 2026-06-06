@@ -25,6 +25,16 @@ if __name__ == "__main__":
   # https://github.com/AIDASoft/DD4hep/pull/1376
   RUNNER.parseOptions()
 
+  # Ensure that G4HepEm vectorized EM physics is always loaded
+  def setupHepEm(kernel):
+    from DDG4 import PhysicsList
+    seq = kernel.physicsList()
+    hepem = PhysicsList(kernel, 'Geant4HepEmTrackingPhysics/HepEmPhysics')
+    hepem.WoodcockRegions = ['EcalBarrelScFiLayerRegion']
+    hepem.enableUI()
+    seq.adopt(hepem)
+  RUNNER.physics.setupUserPhysics(setupHepEm)
+
   # Ensure that Cerenkov and optical physics are always loaded
   def setupCerenkov(kernel):
     from DDG4 import PhysicsList
