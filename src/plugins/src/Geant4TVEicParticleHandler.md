@@ -4,10 +4,6 @@ EIC-specific user particle handler. It is a drop-in replacement for DD4hep's
 `Geant4TVUserParticleHandler` that adds a **forward/backward low-momentum cut** 
 on top of the standard tracking-volume MC-truth filtering.
 
-**Plugin factory name:** `Geant4TVEicParticleHandler`
-**Header / class namespace:** `npdet::sim::Geant4TVEicParticleHandler`
-(also aliased as `dd4hep::sim::Geant4TVEicParticleHandler` for compatibility)
-
 ## What it does
 
 The handler inherits from `dd4hep::sim::Geant4UserParticleHandler` and runs
