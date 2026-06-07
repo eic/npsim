@@ -20,7 +20,7 @@ once per simulated track at end-of-track. It performs two passes:
 
 ## Enabling the handler
 
-In a Python steering file:
+In npsim's command line options:
 
 ```
 --part.userParticleHandler=Geant4TVEicParticleHandler
