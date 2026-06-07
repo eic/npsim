@@ -142,6 +142,11 @@ namespace npdet::sim {
   Geant4TVEicParticleHandler::Geant4TVEicParticleHandler(dd4hep::sim::Geant4Context* ctxt, const std::string& nam)
       : Geant4UserParticleHandler(ctxt, nam) {
     m_trackingVolume = ctxt->kernel().detectorDescription().trackingVolume();
+    if (!m_trackingVolume.isValid()) {
+      except("Geant4TVEicParticleHandler requested but no tracking_volume defined in the XML. "
+             "ePIC users: consider running with a more recent version of the ePIC geometry "
+             "or setting --part.userParticleHandler=Geant4TCUserParticleHandler");
+    }
 
     declareProperty("ForwardRegionZ", m_forwardZ);
     declareProperty("ForwardMomentumMin", m_forwardMomentumMin);
