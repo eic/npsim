@@ -44,7 +44,7 @@ namespace npdet::sim {
   /// forward/backward low-|p| cut.
   /**
    *  TV stands for TrackingVolume. The handler first runs the standard
-   *  DD4hep tracking-volume filtering, then applies an EIC-specific regional cuts
+   *  DD4hep tracking-volume filtering, then applies EIC-specific regional cuts
    */
   class Geant4TVEicParticleHandler : public dd4hep::sim::Geant4UserParticleHandler {
     dd4hep::Volume m_trackingVolume;
