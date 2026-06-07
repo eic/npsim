@@ -44,6 +44,37 @@ if __name__ == "__main__":
     return None
   RUNNER.physics.setupUserPhysics(setupCerenkov)
 
+  # Use the EIC tracking-volume particle handler.
+  from DDSim.Helper.ParticleHandler import ParticleHandler as _PH
+
+  _orig_setupUserParticleHandler = _PH.setupUserParticleHandler
+
+  def _setupUserParticleHandler(self, part, kernel, DDG4):
+    if self.userParticleHandler == "Geant4TVEicParticleHandler":
+
+      handler = DDG4.Action(kernel, "Geant4TVEicParticleHandler/UserParticleHandler")
+
+      logger.info(" *** Geant4TVEicParticleHandler enabled ***")
+      logger.info("    ForwardRegionZ        = %s", handler.ForwardRegionZ)
+      logger.info("    BackwardRegionZ       = %s", handler.BackwardRegionZ)
+      logger.info("    ForwardMomentumMin    = %s", handler.ForwardMomentumMin)
+      logger.info("    BackwardMomentumMin   = %s", handler.BackwardMomentumMin)
+      logger.info("    KeepCaloHitParticles  = %s", handler.KeepCaloHitParticles)
+      logger.info(" ******************************************")
+
+      part.adopt(handler)
+      return
+
+    # Anything else (including "" and the stock TC/TV names) falls
+    # through to the original DDSim implementation.
+    _orig_setupUserParticleHandler(self, part, kernel, DDG4)
+
+  _PH.setupUserParticleHandler = _setupUserParticleHandler
+
+  # To allow users set different handlers (other that default at least)
+  if RUNNER.part.userParticleHandler == "Geant4TCUserParticleHandler":
+    RUNNER.part.userParticleHandler = "Geant4TVEicParticleHandler"
+
   # Disable warnings for unstable resonances with off-shell mass
   if hasattr(RUNNER.physics, "ESeverity"):
     RUNNER.physics.ESeverity = "IgnoreTheIssue"
