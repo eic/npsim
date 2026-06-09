@@ -20,6 +20,8 @@ if __name__ == "__main__":
 
   RUNNER = DD4hepSimulation()
 
+  RUNNER.part.userParticleHandler = "Geant4TVEicParticleHandler"
+
   # Parse remaining options (command line and steering file override above)
   # This is done before updating the settings to workaround issue reported in
   # https://github.com/AIDASoft/DD4hep/pull/1376
@@ -70,10 +72,6 @@ if __name__ == "__main__":
     _orig_setupUserParticleHandler(self, part, kernel, DDG4)
 
   _PH.setupUserParticleHandler = _setupUserParticleHandler
-
-  # To allow users set different handlers (other that default at least)
-  if RUNNER.part.userParticleHandler == "Geant4TCUserParticleHandler":
-    RUNNER.part.userParticleHandler = "Geant4TVEicParticleHandler"
 
   # Disable warnings for unstable resonances with off-shell mass
   if hasattr(RUNNER.physics, "ESeverity"):
