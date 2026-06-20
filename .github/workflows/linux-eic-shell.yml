@@ -55,7 +55,7 @@ jobs:
         CXX: [g++, clang++]
         CMAKE_BUILD_TYPE: [Release]
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: cvmfs-contrib/github-action-cvmfs@v5
       - name: Build and install
         uses: eic/run-cvmfs-osg-eic-shell@main
@@ -84,7 +84,7 @@ jobs:
         particle: [pi, e]
         detector_config: [epic_craterlake]
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: actions/download-artifact@v8
         with:
           name: install-g++-eic-shell-Release-${{ env.platform }}-${{ env.release }}
@@ -159,7 +159,7 @@ jobs:
           - beam: 5x41
             minq2: 1000
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: actions/download-artifact@v8
         with:
           name: install-g++-eic-shell-Release-${{ env.platform }}-${{ env.release }}
