@@ -33,7 +33,7 @@ jobs:
       matrix:
         detector_config: ${{fromJson(inputs.detector_configs)}}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: actions/download-artifact@v8
         with:
           name: ${{ inputs.install_artifact_name }}
