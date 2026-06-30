@@ -136,11 +136,17 @@ namespace dd4hep {
       static void update_regex_cache(const std::string& expression, std::string& cached_expression,
                                      std::optional<std::regex>& regex) {
         if (expression.empty()) {
-          cached_expression.clear();
-          regex.reset();
-        } else if (!regex || expression != cached_expression) {
           cached_expression = expression;
-          regex.emplace(expression);
+          regex.reset();
+        } else if (expression != cached_expression) {
+          try {
+            regex.emplace(expression, std::regex_constants::ECMAScript | std::regex_constants::optimize);
+            cached_expression = expression;
+          } catch (const std::regex_error& e) {
+            cached_expression = expression;
+            regex.reset();
+            printout(ERROR, "OpticalPhotonEfficiencyStackingAction", "Invalid regex '%s': %s", expression.c_str(), e.what());
+          }
         }
       }
 
