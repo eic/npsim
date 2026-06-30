@@ -123,7 +123,7 @@ jobs:
           path: ref/
           name: sim_${{ matrix.particle }}_1GeV_20GeV_${{ matrix.detector_config }}.edm4hep.root
           workflow: .github/workflows/linux-eic-shell.yml
-          workflow_conclusion: ""
+          workflow_conclusion: "completed"
           if_no_artifact_found: warn
       - name: Compare to previous artifacts
         uses: eic/run-cvmfs-osg-eic-shell@main
@@ -197,7 +197,7 @@ jobs:
           path: ref/
           name: sim_dis_${{ matrix.beam }}_minQ2=${{ matrix.minq2 }}_${{ matrix.detector_config }}.edm4hep.root
           workflow: .github/workflows/linux-eic-shell.yml
-          workflow_conclusion: ""
+          workflow_conclusion: "completed"
           if_no_artifact_found: warn
       - name: Compare to previous artifacts
         uses: eic/run-cvmfs-osg-eic-shell@main
