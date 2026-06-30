@@ -65,7 +65,7 @@ namespace dd4hep {
           auto* lv = pv->GetLogicalVolume();
           auto* region = lv->GetRegion();
           const auto& volume_name = lv->GetName();
-          const auto region_name = region == nullptr ? std::string{} : region->GetName();
+          const auto region_name = region == nullptr ? G4String{} : region->GetName();
           update_regex_cache(m_logical_volume, m_cached_logical_volume, m_logical_volume_regex);
           update_regex_cache(m_region, m_cached_region, m_region_regex);
           printout(VERBOSE, name(), "photon in pv %s lv %s",
