@@ -15,8 +15,12 @@
 
 #include "DDG4/Geant4Random.h"
 #include "DDG4/Geant4StackingAction.h"
+#include "G4LogicalVolume.hh"
 #include "G4OpticalPhoton.hh"
+#include "G4Region.hh"
 #include "G4Track.hh"
+
+#include <regex>
 
 /// Namespace for the AIDA detector description toolkit
 namespace dd4hep {
@@ -33,11 +37,12 @@ namespace dd4hep {
         declareProperty("LambdaMax", m_lambda_max);
         declareProperty("Efficiency", m_efficiency);
         declareProperty("LogicalVolume", m_logical_volume);
+        declareProperty("Region", m_region);
       };
       /// Default destructor
       virtual ~OpticalPhotonEfficiencyStackingAction() {
-        printout(DEBUG, name(), "Suppressed %d of %d photons in lv %s",
-          m_killed_photons, m_total_photons, m_logical_volume.c_str());
+        printout(DEBUG, name(), "Suppressed %d of %d photons in lv regex %s or region regex %s",
+          m_killed_photons, m_total_photons, m_logical_volume.c_str(), m_region.c_str());
         printout(DEBUG, name(), "lambda range: [%f,%f] nm",
           m_lambda_min / CLHEP::nm, m_lambda_max / CLHEP::nm);
         std::ostringstream oss_efficiency;
@@ -57,10 +62,15 @@ namespace dd4hep {
           auto* pv = aTrack->GetVolume();
           if (pv == nullptr) return TrackClassification();
           auto* lv = pv->GetLogicalVolume();
+          auto* region = lv->GetRegion();
+          const auto& volume_name = lv->GetName();
+          const auto region_name = region == nullptr ? std::string{} : region->GetName();
           printout(VERBOSE, name(), "photon in pv %s lv %s",
             pv->GetName().c_str(), lv->GetName().c_str());
-          // Only apply to specified logical volume
-          if (lv->GetName() == m_logical_volume) {
+          // Apply to matching logical volume or region regex
+          const bool volume_matches = matches_regex(volume_name, m_logical_volume);
+          const bool region_matches = matches_regex(region_name, m_region);
+          if (volume_matches || region_matches) {
             double mom = aTrack->GetMomentum().mag();
             double lambda = CLHEP::hbarc * CLHEP::twopi / mom;
             printout(VERBOSE, name(), "with mom = %f eV, lambda = %f nm",
@@ -113,15 +123,20 @@ namespace dd4hep {
               printout(VERBOSE, name(), "outside lambda range [%f,%f] nm", m_lambda_min / CLHEP::nm, m_lambda_max / CLHEP::nm);
             }
           } else {
-            printout(VERBOSE, name(), "not in volume %s", m_logical_volume.c_str());
+            printout(VERBOSE, name(), "no QE match for lv %s against %s or region %s against %s",
+              volume_name.c_str(), m_logical_volume.c_str(), region_name.c_str(), m_region.c_str());
           }
         }
         return TrackClassification();
       };
     private:
+      static bool matches_regex(const std::string& value, const std::string& expression) {
+        return !expression.empty() && std::regex_search(value, std::regex(expression));
+      }
+
       double m_lambda_min{0.}, m_lambda_max{0.};
       std::vector<double> m_efficiency;
-      std::string m_logical_volume;
+      std::string m_logical_volume, m_region;
       std::size_t m_total_photons{0}, m_killed_photons{0};
     };
   }    // End namespace sim
