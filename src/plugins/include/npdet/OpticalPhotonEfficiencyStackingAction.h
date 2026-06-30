@@ -15,8 +15,13 @@
 
 #include "DDG4/Geant4Random.h"
 #include "DDG4/Geant4StackingAction.h"
+#include "G4LogicalVolume.hh"
 #include "G4OpticalPhoton.hh"
+#include "G4Region.hh"
 #include "G4Track.hh"
+
+#include <optional>
+#include <regex>
 
 /// Namespace for the AIDA detector description toolkit
 namespace dd4hep {
@@ -33,11 +38,12 @@ namespace dd4hep {
         declareProperty("LambdaMax", m_lambda_max);
         declareProperty("Efficiency", m_efficiency);
         declareProperty("LogicalVolume", m_logical_volume);
+        declareProperty("Region", m_region);
       };
       /// Default destructor
       virtual ~OpticalPhotonEfficiencyStackingAction() {
-        printout(DEBUG, name(), "Suppressed %d of %d photons in lv %s",
-          m_killed_photons, m_total_photons, m_logical_volume.c_str());
+        printout(DEBUG, name(), "Suppressed %d of %d photons in lv regex %s or region regex %s",
+          m_killed_photons, m_total_photons, m_logical_volume.c_str(), m_region.c_str());
         printout(DEBUG, name(), "lambda range: [%f,%f] nm",
           m_lambda_min / CLHEP::nm, m_lambda_max / CLHEP::nm);
         std::ostringstream oss_efficiency;
@@ -57,10 +63,17 @@ namespace dd4hep {
           auto* pv = aTrack->GetVolume();
           if (pv == nullptr) return TrackClassification();
           auto* lv = pv->GetLogicalVolume();
+          auto* region = lv->GetRegion();
+          const auto& volume_name = lv->GetName();
+          const auto region_name = region == nullptr ? G4String{} : region->GetName();
+          update_regex_cache(m_logical_volume, m_cached_logical_volume, m_logical_volume_regex);
+          update_regex_cache(m_region, m_cached_region, m_region_regex);
           printout(VERBOSE, name(), "photon in pv %s lv %s",
             pv->GetName().c_str(), lv->GetName().c_str());
-          // Only apply to specified logical volume
-          if (lv->GetName() == m_logical_volume) {
+          // Apply to matching logical volume or region regex
+          const bool volume_matches = m_logical_volume_regex && std::regex_search(volume_name, *m_logical_volume_regex);
+          const bool region_matches = m_region_regex && std::regex_search(region_name, *m_region_regex);
+          if (volume_matches || region_matches) {
             double mom = aTrack->GetMomentum().mag();
             double lambda = CLHEP::hbarc * CLHEP::twopi / mom;
             printout(VERBOSE, name(), "with mom = %f eV, lambda = %f nm",
@@ -113,15 +126,35 @@ namespace dd4hep {
               printout(VERBOSE, name(), "outside lambda range [%f,%f] nm", m_lambda_min / CLHEP::nm, m_lambda_max / CLHEP::nm);
             }
           } else {
-            printout(VERBOSE, name(), "not in volume %s", m_logical_volume.c_str());
+            printout(VERBOSE, name(), "no QE match for lv %s against %s or region %s against %s",
+              volume_name.c_str(), m_logical_volume.c_str(), region_name.c_str(), m_region.c_str());
           }
         }
         return TrackClassification();
       };
     private:
+      static void update_regex_cache(const std::string& expression, std::string& cached_expression,
+                                     std::optional<std::regex>& regex) {
+        if (expression.empty()) {
+          cached_expression = expression;
+          regex.reset();
+        } else if (expression != cached_expression) {
+          try {
+            regex.emplace(expression, std::regex_constants::ECMAScript | std::regex_constants::optimize);
+            cached_expression = expression;
+          } catch (const std::regex_error& e) {
+            cached_expression = expression;
+            regex.reset();
+            printout(ERROR, "OpticalPhotonEfficiencyStackingAction", "Invalid regex '%s': %s", expression.c_str(), e.what());
+          }
+        }
+      }
+
       double m_lambda_min{0.}, m_lambda_max{0.};
       std::vector<double> m_efficiency;
-      std::string m_logical_volume;
+      std::string m_logical_volume, m_region;
+      std::string m_cached_logical_volume, m_cached_region;
+      std::optional<std::regex> m_logical_volume_regex, m_region_regex;
       std::size_t m_total_photons{0}, m_killed_photons{0};
     };
   }    // End namespace sim
