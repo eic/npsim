@@ -20,6 +20,7 @@
 #include "G4Region.hh"
 #include "G4Track.hh"
 
+#include <optional>
 #include <regex>
 
 /// Namespace for the AIDA detector description toolkit
@@ -65,11 +66,13 @@ namespace dd4hep {
           auto* region = lv->GetRegion();
           const auto& volume_name = lv->GetName();
           const auto region_name = region == nullptr ? std::string{} : region->GetName();
+          update_regex_cache(m_logical_volume, m_cached_logical_volume, m_logical_volume_regex);
+          update_regex_cache(m_region, m_cached_region, m_region_regex);
           printout(VERBOSE, name(), "photon in pv %s lv %s",
             pv->GetName().c_str(), lv->GetName().c_str());
           // Apply to matching logical volume or region regex
-          const bool volume_matches = matches_regex(volume_name, m_logical_volume);
-          const bool region_matches = matches_regex(region_name, m_region);
+          const bool volume_matches = m_logical_volume_regex && std::regex_search(volume_name, *m_logical_volume_regex);
+          const bool region_matches = m_region_regex && std::regex_search(region_name, *m_region_regex);
           if (volume_matches || region_matches) {
             double mom = aTrack->GetMomentum().mag();
             double lambda = CLHEP::hbarc * CLHEP::twopi / mom;
@@ -130,13 +133,22 @@ namespace dd4hep {
         return TrackClassification();
       };
     private:
-      static bool matches_regex(const std::string& value, const std::string& expression) {
-        return !expression.empty() && std::regex_search(value, std::regex(expression));
+      static void update_regex_cache(const std::string& expression, std::string& cached_expression,
+                                     std::optional<std::regex>& regex) {
+        if (expression.empty()) {
+          cached_expression.clear();
+          regex.reset();
+        } else if (!regex || expression != cached_expression) {
+          cached_expression = expression;
+          regex.emplace(expression);
+        }
       }
 
       double m_lambda_min{0.}, m_lambda_max{0.};
       std::vector<double> m_efficiency;
       std::string m_logical_volume, m_region;
+      std::string m_cached_logical_volume, m_cached_region;
+      std::optional<std::regex> m_logical_volume_regex, m_region_regex;
       std::size_t m_total_photons{0}, m_killed_photons{0};
     };
   }    // End namespace sim
