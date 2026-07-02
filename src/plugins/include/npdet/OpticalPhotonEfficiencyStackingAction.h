@@ -20,6 +20,7 @@
 #include "G4Region.hh"
 #include "G4Track.hh"
 
+#include <map>
 #include <optional>
 #include <regex>
 
