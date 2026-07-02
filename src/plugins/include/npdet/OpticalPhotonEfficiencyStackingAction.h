@@ -42,8 +42,11 @@ namespace dd4hep {
       };
       /// Default destructor
       virtual ~OpticalPhotonEfficiencyStackingAction() {
-        printout(DEBUG, name(), "Suppressed %d of %d photons in lv regex %s or region regex %s",
+        printout(INFO, name(), "Suppressed %d of %d photons in lv regex %s or region regex %s",
           m_killed_photons, m_total_photons, m_logical_volume.c_str(), m_region.c_str());
+        for (const auto& [lv, count] : m_unsuppressed_photons) {
+          printout(INFO, name(), "Unsuppressed photons in lv %s: %zu", lv.c_str(), count);
+        }
         printout(DEBUG, name(), "lambda range: [%f,%f] nm",
           m_lambda_min / CLHEP::nm, m_lambda_max / CLHEP::nm);
         std::ostringstream oss_efficiency;
@@ -126,6 +129,7 @@ namespace dd4hep {
               printout(VERBOSE, name(), "outside lambda range [%f,%f] nm", m_lambda_min / CLHEP::nm, m_lambda_max / CLHEP::nm);
             }
           } else {
+            m_unsuppressed_photons[volume_name]++;
             printout(VERBOSE, name(), "no QE match for lv %s against %s or region %s against %s",
               volume_name.c_str(), m_logical_volume.c_str(), region_name.c_str(), m_region.c_str());
           }
@@ -156,6 +160,7 @@ namespace dd4hep {
       std::string m_cached_logical_volume, m_cached_region;
       std::optional<std::regex> m_logical_volume_regex, m_region_regex;
       std::size_t m_total_photons{0}, m_killed_photons{0};
+      std::map<std::string, std::size_t> m_unsuppressed_photons;
     };
   }    // End namespace sim
 }      // End namespace dd4hep
