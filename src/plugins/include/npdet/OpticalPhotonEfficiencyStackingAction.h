@@ -42,7 +42,7 @@ namespace dd4hep {
       };
       /// Default destructor
       virtual ~OpticalPhotonEfficiencyStackingAction() {
-        printout(INFO, name(), "Suppressed %d of %d photons in lv regex %s or region regex %s",
+        printout(INFO, name(), "Suppressed %zu of %zu photons in lv regex %s or region regex %s",
           m_killed_photons, m_total_photons, m_logical_volume.c_str(), m_region.c_str());
         for (const auto& [lv, count] : m_unsuppressed_photons) {
           printout(INFO, name(), "Unsuppressed photons in lv %s: %zu", lv.c_str(), count);
