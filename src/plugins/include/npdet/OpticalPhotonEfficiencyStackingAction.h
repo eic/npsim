@@ -19,7 +19,10 @@
 #include "G4OpticalPhoton.hh"
 #include "G4Region.hh"
 #include "G4Track.hh"
-
+#include <algorithm>
+#include <cmath>
+#include <iterator>
+#include <mutex>
 #include <optional>
 #include <regex>
 
@@ -36,14 +39,16 @@ namespace dd4hep {
       : Geant4StackingAction(c, n) {
         declareProperty("LambdaMin", m_lambda_min);
         declareProperty("LambdaMax", m_lambda_max);
+        declareProperty("LambdaValues", m_lambda_values);
         declareProperty("Efficiency", m_efficiency);
         declareProperty("LogicalVolume", m_logical_volume);
         declareProperty("Region", m_region);
       };
       /// Default destructor
       virtual ~OpticalPhotonEfficiencyStackingAction() {
-        printout(DEBUG, name(), "Suppressed %d of %d photons in lv regex %s or region regex %s",
-          m_killed_photons, m_total_photons, m_logical_volume.c_str(), m_region.c_str());
+        double pct = m_total_photons > 0 ? 100.0 * m_killed_photons / m_total_photons : 0.0;
+        printout(WARNING, name(), "Suppressed %zu of %zu photons (%.1f%%) in lv regex %s or region regex %s",
+          m_killed_photons, m_total_photons, pct, m_logical_volume.c_str(), m_region.c_str());
         printout(DEBUG, name(), "lambda range: [%f,%f] nm",
           m_lambda_min / CLHEP::nm, m_lambda_max / CLHEP::nm);
         std::ostringstream oss_efficiency;
@@ -58,6 +63,7 @@ namespace dd4hep {
       virtual void prepare(G4StackManager*) override { };
       /// Return TrackClassification with enum G4ClassificationOfNewTrack or NoTrackClassification
       virtual TrackClassification classifyNewTrack(G4StackManager*, const G4Track* aTrack) override {
+        std::call_once(m_init_once, [this]() { this->initialize(); });
         // Only apply to optical photons
         if (aTrack->GetDefinition() == G4OpticalPhoton::OpticalPhotonDefinition()) {
           auto* pv = aTrack->GetVolume();
@@ -80,32 +86,10 @@ namespace dd4hep {
               mom / CLHEP::eV, lambda / CLHEP::nm);
 
             m_total_photons++;
-            if (m_lambda_min < lambda && lambda < m_lambda_max) {
-              double efficiency{0.};
-              if (m_efficiency.size() == 0) {
-                // No efficiency specified, assume zero
-                efficiency = 0.;
-                // which means kill
-                ++m_killed_photons;
-                return TrackClassification(fKill);
-
-              } else if (m_efficiency.size() == 1) {
-                // Single constant value over lambda range
-                efficiency = m_efficiency.front();
-
-              } else {
-                // Linear interpolation on lambda grid
-                double lambda_step = (m_lambda_max - m_lambda_min) / (m_efficiency.size() - 1);
-                double div = (lambda - m_lambda_min) / lambda_step;
-                auto i = std::llround(std::floor(div));
-                double t = div - i;
-                double a = m_efficiency[i];
-                double b = m_efficiency[i+1];
-                efficiency = a + t * (b - a);
-                printout(VERBOSE, name(), "a = %f, b = %f, t = %f", a, b, t);
-                printout(VERBOSE, name(), "efficiency %f", efficiency);
-              }
-
+            auto lambda_min = !m_interp_lambda_values.empty() ? m_interp_lambda_values.front() : m_lambda_min;
+            auto lambda_max = !m_interp_lambda_values.empty() ? m_interp_lambda_values.back() : m_lambda_max;
+            if (lambda_min < lambda && lambda < lambda_max) {
+              double efficiency = interpolate(lambda);
               // Edge cases
               if (efficiency == 0.0) {
                 ++m_killed_photons;
@@ -123,7 +107,10 @@ namespace dd4hep {
                 return TrackClassification(fKill);
               }
             } else {
-              printout(VERBOSE, name(), "outside lambda range [%f,%f] nm", m_lambda_min / CLHEP::nm, m_lambda_max / CLHEP::nm);
+              // Outside the QE-specified wavelength range: efficiency is 0
+              printout(VERBOSE, name(), "outside lambda range [%f,%f] nm", lambda_min / CLHEP::nm, lambda_max / CLHEP::nm);
+              ++m_killed_photons;
+              return TrackClassification(fKill);
             }
           } else {
             printout(VERBOSE, name(), "no QE match for lv %s against %s or region %s against %s",
@@ -150,11 +137,55 @@ namespace dd4hep {
         }
       }
 
+      void initialize() {
+        m_interp_lambda_values.clear();
+        if (m_efficiency.size() > 1) {
+          if (m_lambda_values.size() == m_efficiency.size()) {
+            m_interp_lambda_values = m_lambda_values;
+          } else {
+            auto lambda_min = m_lambda_min;
+            auto lambda_max = m_lambda_max;
+            m_interp_lambda_values.reserve(m_efficiency.size());
+            auto lambda_step = (lambda_max - lambda_min) / (m_efficiency.size() - 1);
+            for (std::size_t i = 0; i < m_efficiency.size(); ++i) {
+              m_interp_lambda_values.push_back(lambda_min + i * lambda_step);
+            }
+          }
+        } else if (m_lambda_values.size() > 1) {
+          m_interp_lambda_values = m_lambda_values;
+        }
+      }
+      inline double interpolate(double lambda) const {
+        if (m_efficiency.size() == 1) {
+          return m_efficiency.front();
+        }
+        if (m_efficiency.size() < 2 || m_interp_lambda_values.size() < 2) {
+          return 0.0;
+        }
+        auto upper = std::upper_bound(m_interp_lambda_values.begin(), m_interp_lambda_values.end(), lambda);
+        auto i = std::distance(m_interp_lambda_values.begin(), upper) - 1;
+        double a_lambda = m_interp_lambda_values[i];
+        double b_lambda = m_interp_lambda_values[i+1];
+        double t = (lambda - a_lambda) / (b_lambda - a_lambda);
+        double a = m_efficiency[i];
+        double b = m_efficiency[i+1];
+        printout(VERBOSE, name(), "a = %f, b = %f, t = %f", a, b, t);
+#if defined(__cpp_lib_interpolate) && __cpp_lib_interpolate >= 201902L
+        double efficiency = std::lerp(a, b, t);
+#else
+        double efficiency = a + t * (b - a);
+#endif
+        printout(VERBOSE, name(), "efficiency %f", efficiency);
+        return efficiency;
+      }
       double m_lambda_min{0.}, m_lambda_max{0.};
+      std::vector<double> m_lambda_values;
+      std::vector<double> m_interp_lambda_values;
       std::vector<double> m_efficiency;
       std::string m_logical_volume, m_region;
       std::string m_cached_logical_volume, m_cached_region;
       std::optional<std::regex> m_logical_volume_regex, m_region_regex;
+      std::once_flag m_init_once{};
       std::size_t m_total_photons{0}, m_killed_photons{0};
     };
   }    // End namespace sim
