@@ -33,9 +33,17 @@
 #include <DDG4/Geant4Particle.h>
 #include <DDG4/Geant4UserParticleHandler.h>
 
+#include <G4LogicalVolume.hh>
+#include <G4OpticalPhoton.hh>
+#include <G4Region.hh>
+#include <G4Track.hh>
+#include <G4VPhysicalVolume.hh>
+
 #include <CLHEP/Units/SystemOfUnits.h>
 
 #include <array>
+#include <optional>
+#include <regex>
 
 
 namespace npdet::sim {
@@ -58,6 +66,18 @@ namespace npdet::sim {
     /// (preserves full calo shower MC truth at the cost of much larger MCParticles collections).
     /// Default false — upstream policy
     bool m_keepCaloHitParticles{false};
+
+    /// Regexes over end-of-track G4Region / logical-volume names for which
+    /// hit-producing optical photons should NOT be kept in MCParticles.
+    /// Default empty (keep everything); set from npsim.py.
+    std::string m_dropOpticalPhotonRegion{};
+    std::string m_dropOpticalPhotonLogicalVolume{};
+
+    // Cached compiled regexes
+    std::string m_cachedDropOpticalPhotonRegion;
+    std::string m_cachedDropOpticalPhotonLogicalVolume;
+    std::optional<std::regex> m_dropOpticalPhotonRegionRegex;
+    std::optional<std::regex> m_dropOpticalPhotonLogicalVolumeRegex;
 
   public:
 
@@ -89,15 +109,8 @@ namespace npdet::sim {
       if (reason.isSet(G4PARTICLE_PRIMARY)) {
         // do nothing
         return;
-      } else if (starts_in_trk_vol && !reason.isSet(G4PARTICLE_ABOVE_ENERGY_THRESHOLD)
-                 && !reason.isSet(G4PARTICLE_CREATED_HIT)) {
-        // created in tracking volume, below energy cut, and produced no hit.
-        // NOTE: the corresponding upstream DD4hep helper drops the particle here
-        // unconditionally on low energy, which removes e.g. optical photons that
-        // hit the (d/pf)RICH photosensors (~eV energies, below any Geant4 kinetic
-        // energy cut). We keep those by also requiring that no hit was produced,
-        // matching Geant4ParticleHandler::defaultDropParticle() behavior when no
-        // TV user handler is installed.
+      } else if (starts_in_trk_vol && !reason.isSet(G4PARTICLE_ABOVE_ENERGY_THRESHOLD)) {
+        // created in tracking volume but below energy cut
         p.reason = 0;
         return;
       }
@@ -160,6 +173,28 @@ namespace npdet::sim {
     declareProperty("BackwardRegionZ", m_backwardZ);
     declareProperty("BackwardMomentumMin", m_backwardMomentumMin);
     declareProperty("KeepCaloHitParticles", m_keepCaloHitParticles);
+    declareProperty("DropOpticalPhotonRegion", m_dropOpticalPhotonRegion);
+    declareProperty("DropOpticalPhotonLogicalVolume", m_dropOpticalPhotonLogicalVolume);
+  }
+
+  namespace {
+    void update_regex_cache(const std::string& expression, std::string& cached_expression,
+                            std::optional<std::regex>& regex) {
+      if (expression.empty()) {
+        cached_expression = expression;
+        regex.reset();
+      } else if (expression != cached_expression) {
+        try {
+          regex.emplace(expression, std::regex_constants::ECMAScript | std::regex_constants::optimize);
+          cached_expression = expression;
+        } catch (const std::regex_error& e) {
+          cached_expression = expression;
+          regex.reset();
+          printout(dd4hep::ERROR, "Geant4TVEicParticleHandler", "Invalid regex '%s': %s",
+                   expression.c_str(), e.what());
+        }
+      }
+    }
   }
 
   /// Post-track action callback.
@@ -170,7 +205,49 @@ namespace npdet::sim {
   ///      description.
   ///   2. EIC regional cut: drop low-|p| particles ending in the far
   ///      forward/backward Z regions, after the must-keep guards.
-  void Geant4TVEicParticleHandler::end(const G4Track* /* track */, Particle& p) {
+  void Geant4TVEicParticleHandler::end(const G4Track* track, Particle& p) {
+    // Keep hit-producing optical photons in MCParticles — setReason() below
+    // would otherwise drop them as sub-threshold in-tracker tracks, which
+    // also breaks the hit → MCParticle link for (d/pf)RICH photocathode hits.
+    // Exception: optical photons whose end volume/region matches a configured
+    // drop-regex fall through to the standard filter (their hit links are
+    // re-parented to the charged Cherenkov emitter by recombineParents()).
+    if (track && track->GetDefinition() == G4OpticalPhoton::OpticalPhotonDefinition()) {
+      dd4hep::detail::ReferenceBitMask<int> reason(p.reason);
+      if (reason.isSet(dd4hep::sim::G4PARTICLE_CREATED_HIT)) {
+        update_regex_cache(m_dropOpticalPhotonRegion,
+                           m_cachedDropOpticalPhotonRegion,
+                           m_dropOpticalPhotonRegionRegex);
+        update_regex_cache(m_dropOpticalPhotonLogicalVolume,
+                           m_cachedDropOpticalPhotonLogicalVolume,
+                           m_dropOpticalPhotonLogicalVolumeRegex);
+
+        bool drop = false;
+        if (auto* pv = track->GetVolume()) {
+          if (auto* lv = pv->GetLogicalVolume()) {
+            if (m_dropOpticalPhotonLogicalVolumeRegex &&
+                std::regex_search(std::string(lv->GetName()),
+                                  *m_dropOpticalPhotonLogicalVolumeRegex)) {
+              drop = true;
+            }
+            if (!drop && m_dropOpticalPhotonRegionRegex) {
+              if (auto* region = lv->GetRegion()) {
+                if (std::regex_search(std::string(region->GetName()),
+                                      *m_dropOpticalPhotonRegionRegex)) {
+                  drop = true;
+                }
+              }
+            }
+          }
+        }
+
+        if (!drop) {
+          return;   // keep this optical photon in MCParticles
+        }
+        // else: fall through to the standard filter, which will zero p.reason.
+      }
+    }
+
     // Geant4Particle fields are stored in CLHEP/Geant4 units (mm, MeV).
     // We compare against properties that arrive from ddsim Python steering
     // already expressed in DD4hep units (cm, GeV). The explicit bridge is:

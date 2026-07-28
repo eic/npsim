@@ -56,12 +56,18 @@ if __name__ == "__main__":
 
       handler = DDG4.Action(kernel, "Geant4TVEicParticleHandler/UserParticleHandler")
 
+      # Drop hpDIRC per-photon MC-truth; hit links get re-parented to the charged
+      # Cherenkov emitter. dRICH / pfRICH per-photon truth is retained.
+      handler.DropOpticalPhotonRegion = "DIRCRegion"
+
       logger.info(" *** Geant4TVEicParticleHandler enabled ***")
-      logger.info("    ForwardRegionZ        = %s", handler.ForwardRegionZ)
-      logger.info("    BackwardRegionZ       = %s", handler.BackwardRegionZ)
-      logger.info("    ForwardMomentumMin    = %s", handler.ForwardMomentumMin)
-      logger.info("    BackwardMomentumMin   = %s", handler.BackwardMomentumMin)
-      logger.info("    KeepCaloHitParticles  = %s", handler.KeepCaloHitParticles)
+      logger.info("    ForwardRegionZ                = %s", handler.ForwardRegionZ)
+      logger.info("    BackwardRegionZ               = %s", handler.BackwardRegionZ)
+      logger.info("    ForwardMomentumMin            = %s", handler.ForwardMomentumMin)
+      logger.info("    BackwardMomentumMin           = %s", handler.BackwardMomentumMin)
+      logger.info("    KeepCaloHitParticles          = %s", handler.KeepCaloHitParticles)
+      logger.info("    DropOpticalPhotonRegion       = %s", handler.DropOpticalPhotonRegion)
+      logger.info("    DropOpticalPhotonLogicalVolume= %s", handler.DropOpticalPhotonLogicalVolume)
       logger.info(" ******************************************")
 
       part.adopt(handler)
