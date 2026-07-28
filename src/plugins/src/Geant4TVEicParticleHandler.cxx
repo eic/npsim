@@ -89,8 +89,15 @@ namespace npdet::sim {
       if (reason.isSet(G4PARTICLE_PRIMARY)) {
         // do nothing
         return;
-      } else if (starts_in_trk_vol && !reason.isSet(G4PARTICLE_ABOVE_ENERGY_THRESHOLD)) {
-        // created in tracking volume but below energy cut
+      } else if (starts_in_trk_vol && !reason.isSet(G4PARTICLE_ABOVE_ENERGY_THRESHOLD)
+                 && !reason.isSet(G4PARTICLE_CREATED_HIT)) {
+        // created in tracking volume, below energy cut, and produced no hit.
+        // NOTE: the corresponding upstream DD4hep helper drops the particle here
+        // unconditionally on low energy, which removes e.g. optical photons that
+        // hit the (d/pf)RICH photosensors (~eV energies, below any Geant4 kinetic
+        // energy cut). We keep those by also requiring that no hit was produced,
+        // matching Geant4ParticleHandler::defaultDropParticle() behavior when no
+        // TV user handler is installed.
         p.reason = 0;
         return;
       }
