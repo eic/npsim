@@ -237,6 +237,10 @@ jobs:
       install_artifact_name: install-g++-eic-shell-Release-${{ inputs.platform || 'eic_xl' }}-${{ inputs.release || 'nightly' }}
       organization: "${{ inputs.organization || 'eicweb' }}"
       platform-release: "${{ inputs.platform || 'eic_xl' }}:${{ inputs.release || 'nightly' }}"
+      lsan_options: ${{ env.LSAN_OPTIONS }}
+      asan_options: ${{ env.ASAN_OPTIONS }}
+      ubsan_options: ${{ env.UBSAN_OPTIONS }}
+      tsan_options: ${{ env.TSAN_OPTIONS }}
 
   convert-to-dot:
     needs:
@@ -247,6 +251,10 @@ jobs:
       install_artifact_name: install-g++-eic-shell-Release-${{ inputs.platform || 'eic_xl' }}-${{ inputs.release || 'nightly' }}
       organization: "${{ inputs.organization || 'eicweb' }}"
       platform-release: "${{ inputs.platform || 'eic_xl' }}:${{ inputs.release || 'nightly' }}"
+      lsan_options: ${{ env.LSAN_OPTIONS }}
+      asan_options: ${{ env.ASAN_OPTIONS }}
+      ubsan_options: ${{ env.UBSAN_OPTIONS }}
+      tsan_options: ${{ env.TSAN_OPTIONS }}
 
   merge-npsim-capybara:
     runs-on: ubuntu-latest
