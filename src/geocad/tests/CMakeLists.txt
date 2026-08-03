@@ -7,9 +7,6 @@ set_target_properties(${geocad_unit_test} PROPERTIES
   BUILD_RPATH "$<TARGET_FILE_DIR:GeoCad>"
 )
 add_test(NAME ${geocad_unit_test} COMMAND ${geocad_unit_test})
-set_tests_properties(${geocad_unit_test} PROPERTIES
-  ENVIRONMENT "LD_LIBRARY_PATH=$<TARGET_FILE_DIR:GeoCad>:$ENV{LD_LIBRARY_PATH}"
-)
 
 set(geocad_integration_test npdet_geocad_integration_create_step)
 add_executable(${geocad_integration_test} integration_create_step.cxx)
@@ -22,7 +19,4 @@ set_target_properties(${geocad_integration_test} PROPERTIES
 add_test(
   NAME ${geocad_integration_test}
   COMMAND ${geocad_integration_test} ${CMAKE_CURRENT_BINARY_DIR}/npdet_geocad_test_geometry.stp
-)
-set_tests_properties(${geocad_integration_test} PROPERTIES
-  ENVIRONMENT "LD_LIBRARY_PATH=$<TARGET_FILE_DIR:GeoCad>:$ENV{LD_LIBRARY_PATH}"
 )
