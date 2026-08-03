@@ -24,19 +24,19 @@ on:
       lsan_options:
         required: false
         type: string
-        default: suppressions=${{ github.workspace }}/.github/lsan.supp
+        default: suppressions=.github/lsan.supp
       asan_options:
         required: false
         type: string
-        default: suppressions=${{ github.workspace }}/.github/asan.supp:malloc_context_size=20:detect_leaks=1:verify_asan_link_order=0:detect_stack_use_after_return=1:detect_odr_violation=1:new_delete_type_mismatch=0:intercept_tls_get_addr=0
+        default: suppressions=.github/asan.supp:malloc_context_size=20:detect_leaks=1:verify_asan_link_order=0:detect_stack_use_after_return=1:detect_odr_violation=1:new_delete_type_mismatch=0:intercept_tls_get_addr=0
       ubsan_options:
         required: false
         type: string
-        default: suppressions=${{ github.workspace }}/.github/ubsan.supp:print_stacktrace=1:silence_unsigned_overflow=1:report_error_type=1
+        default: suppressions=.github/ubsan.supp:print_stacktrace=1:silence_unsigned_overflow=1:report_error_type=1
       tsan_options:
         required: false
         type: string
-        default: suppressions=${{ github.workspace }}/.github/tsan.supp
+        default: suppressions=.github/tsan.supp
 
 permissions:
   contents: read
