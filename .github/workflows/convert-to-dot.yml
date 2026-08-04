@@ -68,6 +68,11 @@ jobs:
           platform-release: "${{ inputs.platform-release }}"
           setup: ${{ inputs.epic_setup_script }}
           run: |
+            for option_var in LSAN_OPTIONS ASAN_OPTIONS UBSAN_OPTIONS TSAN_OPTIONS ; do
+              option_value="${!option_var}"
+              option_value="${option_value/suppressions=.github/suppressions=${GITHUB_WORKSPACE}/.github}"
+              export "${option_var}=${option_value}"
+            done
             export PATH=$PWD/install/bin${PATH:+:$PATH}
             export LD_LIBRARY_PATH=$PWD/install/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}
             npdet_to_dot list -d 3 -o ${{matrix.detector_config}} $DETECTOR_PATH/${{matrix.detector_config}}.xml
