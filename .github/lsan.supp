@@ -5,3 +5,4 @@ leak:libCling.so
 leak:libCore.so
 leak:TCollection_AsciiString::reallocate
 leak:TPrsStd_DriverTable::Get
+leak:Standard::Allocate
