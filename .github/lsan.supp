@@ -3,3 +3,5 @@ leak:dd4hep::DetElementObject::clone
 leak:dd4hep::VisAttr::VisAttr
 leak:libCling.so
 leak:libCore.so
+leak:TCollection_AsciiString::reallocate
+leak:TPrsStd_DriverTable::Get
