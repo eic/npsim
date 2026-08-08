@@ -10,6 +10,9 @@
 //   lightgreen  - placed 10-99 times
 //   skyblue     - placed 100+ times
 //
+// Assembly volumes (TGeoVolumeAssembly) are drawn with a dashed border to
+// distinguish them from regular encapsulating volumes.
+//
 // Edges connect parent to child logical volume and are labelled with the
 // number of child instances per parent instance (the logical multiplicity).
 
@@ -106,6 +109,11 @@ void write_dot(std::ostream& out, TGeoManager* geo,
   bool        found_in_level_1 = !part_mode;
   std::string matched_part;
 
+  // If the world volume itself is among the requested parts, all level-1
+  // children fall within that subtree.
+  auto world_it = part_name_levels.find(world->GetName());
+  std::string world_name_match = (world_it != part_name_levels.end()) ? world_it->first : "";
+
   TGeoIterator it(world);
   TGeoNode*    currentNode = nullptr;
   it.SetType(0);
@@ -124,6 +132,11 @@ void write_dot(std::ostream& out, TGeoManager* geo,
           matched_part     = name;
           break;
         }
+      }
+      // If the world volume itself was requested, every level-1 child qualifies.
+      if (!found_in_level_1 && !world_name_match.empty()) {
+        found_in_level_1 = true;
+        matched_part     = world_name_match;
       }
     }
     if (!found_in_level_1) { it.Skip(); continue; }
@@ -157,9 +170,12 @@ void write_dot(std::ostream& out, TGeoManager* geo,
     std::string color = placement_color(count);
     std::string label = dot_escape(vol->GetName());
     if (count > 1) label += "\\n(" + std::to_string(count) + "x)";  // x for multiplicity
+    // Assembly volumes get a dashed border to visually distinguish them
+    std::string style = vol->IsAssembly() ? "filled,dashed" : "filled";
     out << "  " << dot_id(vol)
         << " [label=\"" << label << "\""
         << ", fillcolor=\"" << color << "\""
+        << ", style=\"" << style << "\""
         << "];\n";
   }
   out << "\n";
@@ -207,7 +223,7 @@ dot_settings cmdline_settings(int argc, char* argv[]) {
         if (!s.level_set) s.part_level = s.default_level;
         s.part_name_levels[p] = s.part_level;
         s.level_set = false;
-      }) % "Volume name (must be child of world)"
+      }) % "Volume name (must be child of world, or the world volume itself)"
     )
   );
 

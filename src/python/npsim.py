@@ -20,6 +20,8 @@ if __name__ == "__main__":
 
   RUNNER = DD4hepSimulation()
 
+  RUNNER.part.userParticleHandler = "Geant4TVEicParticleHandler"
+
   # Parse remaining options (command line and steering file override above)
   # This is done before updating the settings to workaround issue reported in
   # https://github.com/AIDASoft/DD4hep/pull/1376
@@ -59,6 +61,33 @@ if __name__ == "__main__":
     return None
   RUNNER.physics.setupUserPhysics(setupCerenkov)
 
+  # Use the EIC tracking-volume particle handler.
+  from DDSim.Helper.ParticleHandler import ParticleHandler as _PH
+
+  _orig_setupUserParticleHandler = _PH.setupUserParticleHandler
+
+  def _setupUserParticleHandler(self, part, kernel, DDG4):
+    if self.userParticleHandler == "Geant4TVEicParticleHandler":
+
+      handler = DDG4.Action(kernel, "Geant4TVEicParticleHandler/UserParticleHandler")
+
+      logger.info(" *** Geant4TVEicParticleHandler enabled ***")
+      logger.info("    ForwardRegionZ        = %s", handler.ForwardRegionZ)
+      logger.info("    BackwardRegionZ       = %s", handler.BackwardRegionZ)
+      logger.info("    ForwardMomentumMin    = %s", handler.ForwardMomentumMin)
+      logger.info("    BackwardMomentumMin   = %s", handler.BackwardMomentumMin)
+      logger.info("    KeepCaloHitParticles  = %s", handler.KeepCaloHitParticles)
+      logger.info(" ******************************************")
+
+      part.adopt(handler)
+      return
+
+    # Anything else (including "" and the stock TC/TV names) falls
+    # through to the original DDSim implementation.
+    _orig_setupUserParticleHandler(self, part, kernel, DDG4)
+
+  _PH.setupUserParticleHandler = _setupUserParticleHandler
+
   # Disable warnings for unstable resonances with off-shell mass
   if hasattr(RUNNER.physics, "ESeverity"):
     RUNNER.physics.ESeverity = "IgnoreTheIssue"
@@ -88,7 +117,8 @@ if __name__ == "__main__":
       "parameter": {
         "LambdaMin": "180*nm",
         "LambdaMax": "678*nm",
-        "LogicalVolume": "bar_vol",
+        "Region": "DIRCRegion",
+        "LogicalVolume": r"(bar_vol|glue_vol|lens_layer\d_vol|prism_vol|mcp_vol|Envelope_box_vol|Envelope_trap_vol)",
         "Efficiency": [e/100. for e in [
           0,    0,    14.0, 14.8, 14.5, 14.9, 14.4, 14.2, 13.9, 14.6, 15.2, 15.7, 16.4, 16.9, 17.5,
           17.7, 18.1, 18.8, 19.3, 19.8, 20.6, 21.4, 22.4, 23.1, 23.6, 24.1, 24.2, 24.6, 24.8, 25.2,

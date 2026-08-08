@@ -1,0 +1,5 @@
+leak:dd4hep::DetElement::DetElement
+leak:dd4hep::DetElementObject::clone
+leak:dd4hep::VisAttr::VisAttr
+leak:libCling.so
+leak:libCore.so
