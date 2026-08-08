@@ -39,7 +39,7 @@ install(TARGETS ${exe_name}
 # npdet_to_step needs the (formerly part of ROOT) GeoCad library
 if(TARGET GeoCad)
   set(exe_name npdet_to_step)
-  add_executable(${exe_name} src/${exe_name}.cxx src/settings.cxx)
+  add_executable(${exe_name} src/${exe_name}.cxx src/settings.cxx src/npdet_to_step_cli.cxx)
   target_include_directories(${exe_name}
     PRIVATE include )
   target_compile_features(${exe_name}
@@ -97,6 +97,10 @@ target_link_libraries(${exe_name}
 install(TARGETS ${exe_name}
   EXPORT NPDetTargets
   RUNTIME DESTINATION bin )
+
+if(BUILD_TESTING)
+  add_subdirectory(tests)
+endif()
 
 # ------------------------------------
 # dd_web_display
