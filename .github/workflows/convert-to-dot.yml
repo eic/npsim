@@ -21,6 +21,22 @@ on:
         required: false
         type: string
         default: /opt/detector/epic-main/bin/thisepic.sh
+      lsan_options:
+        required: false
+        type: string
+        default: suppressions=.github/lsan.supp
+      asan_options:
+        required: false
+        type: string
+        default: suppressions=.github/asan.supp:malloc_context_size=20:detect_leaks=1:verify_asan_link_order=0:detect_stack_use_after_return=1:detect_odr_violation=1:new_delete_type_mismatch=0:intercept_tls_get_addr=0
+      ubsan_options:
+        required: false
+        type: string
+        default: suppressions=.github/ubsan.supp:print_stacktrace=1:silence_unsigned_overflow=1:report_error_type=1
+      tsan_options:
+        required: false
+        type: string
+        default: suppressions=.github/tsan.supp
 
 permissions:
   contents: read
@@ -42,11 +58,21 @@ jobs:
         run: tar -xaf install.tar.zst
       - uses: cvmfs-contrib/github-action-cvmfs@10197e000cc0add8e54ac4fb73d3ed44e2de72b4  # v5
       - uses: eic/run-cvmfs-osg-eic-shell@7a90477d48c1affe69ce8d4b8a3cb1d945c2a7c2  # main
+        env:
+          LSAN_OPTIONS: ${{ inputs.lsan_options }}
+          ASAN_OPTIONS: ${{ inputs.asan_options }}
+          UBSAN_OPTIONS: ${{ inputs.ubsan_options }}
+          TSAN_OPTIONS: ${{ inputs.tsan_options }}
         with:
           organization: "${{ inputs.organization }}"
           platform-release: "${{ inputs.platform-release }}"
           setup: ${{ inputs.epic_setup_script }}
           run: |
+            for option_var in LSAN_OPTIONS ASAN_OPTIONS UBSAN_OPTIONS TSAN_OPTIONS ; do
+              option_value="${!option_var}"
+              option_value="${option_value/suppressions=.github/suppressions=${GITHUB_WORKSPACE}/.github}"
+              export "${option_var}=${option_value}"
+            done
             export PATH=$PWD/install/bin${PATH:+:$PATH}
             export LD_LIBRARY_PATH=$PWD/install/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}
             npdet_to_dot list -d 3 -o ${{matrix.detector_config}} $DETECTOR_PATH/${{matrix.detector_config}}.xml
