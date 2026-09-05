@@ -14,6 +14,7 @@
 /// Framework include files
 #include <DD4hep/Plugins.h>
 #include <DDG4/Geant4Action.h>
+#include <DDG4/Geant4Data.h>
 #include <DDG4/Geant4SensDetAction.h>
 #include <DDG4/Geant4FastSimSpot.h>
 
@@ -110,6 +111,15 @@ namespace dd4hep {
       /// Called during setup after setDetector(); create and initialise sub-actions here.
       virtual void defineCollections() override {
         if (m_entries_initialised) return;
+
+        // Register the single shared hit collection once on this parent action.
+        // Sub-actions are NOT allowed to call defineCollections() themselves —
+        // doing so would append additional entries to m_collections and give each
+        // sub-action a different collection ID, causing hits to land in unregistered
+        // secondary collections.  With m_collectionID left at its default (0), all
+        // sub-actions call collection(0) and write to this shared collection.
+        defineCollection<Geant4Tracker::Hit>(m_readout.name());
+
         if (!m_properties_json.empty()) {
           try {
             auto j = nlohmann::json::parse(m_properties_json);
@@ -151,13 +161,14 @@ namespace dd4hep {
                       }
                     }
                   }
-                  // Share the same Geant4ActionSD so collections are registered together
+                  // Share the parent's Geant4ActionSD so sub-actions can call
+                  // collection(0) and mark(track) via sequence().  Do NOT call
+                  // act->defineCollections(): that would register additional
+                  // collections and break the shared-collection contract.
                   act->setDetector(&detector());
-                  act->defineCollections();
                   entry.action = act;
                 }
-              }
-              if (!val.is_array() || val.empty()) {
+              } else {
                 printout(ERROR, name().c_str(),
                          "Malformed Properties entry for volume '%s': "
                          "expected [\"Type/Instance\", {params}], got '%s'. "
