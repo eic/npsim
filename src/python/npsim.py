@@ -109,7 +109,6 @@ if __name__ == "__main__":
     {
       'OpticalVolume': 'mcp_vol',
       'TrackerVolume': 'bar_vol',
-      'CollectSingleDeposits': False,
     }
   )
 

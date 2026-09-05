@@ -48,8 +48,9 @@ namespace dd4hep {
      *
      * \param string OpticalVolume  Regex matching logical volume names for optical detection (default "mcp_vol")
      * \param string TrackerVolume  Regex matching logical volume names for charged-particle tracking (default "bar_vol")
-     * \param bool   CollectSingleDeposits  When true, write one hit per step in tracker volumes (default false)
-     * \param int    HitPositionCombination  Position strategy for tracker hits:
+     *  \param bool   OpticalCollectSingleDeposits  When true, write one hit per step in optical volumes (default true — optical tracker always records per step)
+     *  \param bool   TrackerCollectSingleDeposits  When true, write one hit per step in tracker volumes (default false)
+     *  \param int    HitPositionCombination  Position strategy for tracker hits:
      *               1=energy-weighted, 2=midpoint (default), 3=pre-point, 4=post-point
      *
      * @}
@@ -88,8 +89,11 @@ namespace dd4hep {
       // ---- Configurable properties ----
       std::string m_optical_volume { "mcp_vol" };
       std::string m_tracker_volume { "bar_vol" };
-      bool        m_single_deposit_mode  { false };
-      int         m_hit_position_type    { POSITION_MIDDLE };
+      /// Optical volumes always record one hit per step; this flag is present for
+      /// symmetry and future use but has no effect on the current implementation.
+      bool        m_optical_single_deposit { true  };
+      bool        m_tracker_single_deposit { false };
+      int         m_hit_position_type      { POSITION_MIDDLE };
 
       // ---- Compiled regex cache ----
       mutable std::string               m_cached_optical_volume;
@@ -396,7 +400,7 @@ namespace dd4hep {
           } else if (thisSD == postSD && (preSD != postSD || prePV != postPV)) {
             sensitive->error("+++ OpticalTrackerCombined: unexpected volume transition");
             extractHit(post_inside);
-          } else if (m_single_deposit_mode) {
+          } else if (m_tracker_single_deposit) {
             extractHit(post_inside);
           }
           return true;
@@ -413,10 +417,11 @@ namespace dd4hep {
 
     template <>
     void Geant4SensitiveAction<OpticalTrackerCombined>::initialize() {
-      declareProperty("OpticalVolume",        m_userData.m_optical_volume);
-      declareProperty("TrackerVolume",        m_userData.m_tracker_volume);
-      declareProperty("CollectSingleDeposits",m_userData.m_single_deposit_mode);
-      declareProperty("HitPositionCombination", m_userData.m_hit_position_type);
+      declareProperty("OpticalVolume",              m_userData.m_optical_volume);
+      declareProperty("TrackerVolume",              m_userData.m_tracker_volume);
+      declareProperty("OpticalCollectSingleDeposits", m_userData.m_optical_single_deposit);
+      declareProperty("TrackerCollectSingleDeposits", m_userData.m_tracker_single_deposit);
+      declareProperty("HitPositionCombination",     m_userData.m_hit_position_type);
       m_userData.e_cut      = m_sensitive.energyCutoff();
       m_userData.sensitive  = this;
     }
