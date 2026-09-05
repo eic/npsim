@@ -88,12 +88,30 @@ if __name__ == "__main__":
   # This could probably be a substring
   RUNNER.filter.mapDetFilter['DRICH'] = 'opticalphotons'
   RUNNER.filter.mapDetFilter['PFRICH'] = 'opticalphotons'
-  RUNNER.filter.mapDetFilter['DIRC'] = 'opticalphotons'
+  # Use combined meta-action and meta-filter for DIRC:
+  # OpticalTrackerCombinedFilter allows optical photons through for mcp_vol and
+  # all particles through for bar_vol.
+  # OpticalTrackerCombinedAction handles optical photon absorption in mcp_vol and
+  # charged-particle tracking in bar_vol within a single sensitive detector.
+  RUNNER.filter.mapDetFilter['DIRC'] = (
+    'OpticalTrackerCombinedFilter',
+    {
+      'OpticalVolume': 'mcp_vol',
+      'TrackerVolume': 'bar_vol',
+    }
+  )
 
-  # Use the optical tracker for the dRICH, pfRICH and hpDIRC
+  # Use the optical tracker for the dRICH and pfRICH
   RUNNER.action.mapActions['DRICH'] = 'Geant4OpticalTrackerAction'
   RUNNER.action.mapActions['PFRICH'] = 'Geant4OpticalTrackerAction'
-  RUNNER.action.mapActions['DIRC'] = 'Geant4OpticalTrackerAction'
+  RUNNER.action.mapActions['DIRC'] = (
+    'OpticalTrackerCombinedAction',
+    {
+      'OpticalVolume': 'mcp_vol',
+      'TrackerVolume': 'bar_vol',
+      'CollectSingleDeposits': False,
+    }
+  )
 
   # Use the optical photon efficiency stacking action for hpDIRC
   RUNNER.action.stack = [
