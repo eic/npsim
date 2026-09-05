@@ -141,6 +141,13 @@ namespace dd4hep {
                   entry.action = act;
                 }
               }
+              if (!val.is_array() || val.empty()) {
+                printout(ERROR, name().c_str(),
+                         "Malformed Properties entry for volume '%s': "
+                         "expected [\"Type/Instance\", {params}], got '%s'. "
+                         "Steps in this volume will be dropped.",
+                         vol.c_str(), val.dump().c_str());
+              }
               m_entries.push_back(std::move(entry));
             }
           } catch (const nlohmann::json::exception& e) {

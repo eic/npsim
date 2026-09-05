@@ -70,7 +70,8 @@ namespace dd4hep {
 
       struct VolumeEntry {
         std::string               pattern;
-        Geant4Filter*             filter { nullptr };
+        Geant4Filter*             filter    { nullptr };
+        bool                      configured{ false };   ///< true when a plugin spec was present
         std::optional<std::regex> compiled_regex;
 
         bool matches(const std::string& lv_name) const {
@@ -111,6 +112,7 @@ namespace dd4hep {
               // Value is a JSON array: ["TypeName/Instance", {"key": "val", ...}]
               // The second element (params dict) is optional.
               if (val.is_array() && !val.empty()) {
+                entry.configured = true;   // plugin spec was present
                 const auto tn = TypeName::split(val[0].get<std::string>());
                 auto* act = PluginService::Create<Geant4Action*>(
                     tn.first, const_cast<Geant4Context*>(context()), tn.second);
@@ -160,8 +162,15 @@ namespace dd4hep {
 
         for (const auto& entry : m_entries) {
           if (!entry.matches(lv_name)) continue;
-          // No filter was created (missing "name" key): accept all
-          if (!entry.filter) return true;
+          if (!entry.filter) {
+            // Fail closed: a configured entry whose plugin failed to create
+            // should not silently accept all particles.
+            if (entry.configured)
+              printout(ERROR, name().c_str(),
+                       "Filter for volume '%s' was not created; rejecting step",
+                       entry.pattern.c_str());
+            return !entry.configured; // unconfigured → accept all; misconfigured → reject
+          }
           return (*entry.filter)(step);
         }
         return true; // unmatched volume
@@ -175,7 +184,13 @@ namespace dd4hep {
 
         for (const auto& entry : m_entries) {
           if (!entry.matches(lv_name)) continue;
-          if (!entry.filter) return true;
+          if (!entry.filter) {
+            if (entry.configured)
+              printout(ERROR, name().c_str(),
+                       "Filter for volume '%s' was not created; rejecting spot",
+                       entry.pattern.c_str());
+            return !entry.configured;
+          }
           return (*entry.filter)(spot);
         }
         return true;
