@@ -40,15 +40,20 @@ namespace dd4hep {
      *
      * \brief Particle filter companion to OpticalTrackerCombinedAction.
      *
-     *  Uses the same \c Properties JSON property as OpticalTrackerCombinedAction
-     *  to determine how to filter each step:
-     *  - Volumes with \c "Action": "Geant4OpticalTrackerAction": accept optical photons only.
-     *  - All other matched volumes: accept all particles.
-     *  - Unmatched volumes: accept all particles (pass-through).
+     *  Maps logical-volume regexes to existing DDSim filter names via the
+     *  \c Properties JSON property:
+     *  - \c "opticalphoton" (or \c "opticalphotons"): accept only G4OpticalPhoton.
+     *  - All other values or absent keys: accept all particles.
      *
      * \param string Properties
-     *   JSON object \c {"volume_regex": {"Action": "ddg4_action_name", ...}, ...}
-     *   in the same format as OpticalTrackerCombinedAction.
+     *   JSON object \c {"volume_regex": "filter_name", ...}  where the value is
+     *   a standard DDSim filter name.  Volumes absent from the object are not
+     *   filtered.
+     *
+     *  Example:
+     *  \code
+     *    Properties = "{\"mcp_vol\": \"opticalphoton\"}"
+     *  \endcode
      *
      * @}
      */
@@ -61,11 +66,15 @@ namespace dd4hep {
         FilterMode                mode { FilterMode::AcceptAll };
         std::optional<std::regex> compiled_regex;
 
-        static VolumeEntry fromJson(const std::string& volume, const nlohmann::json& cfg) {
+        /// Construct from a volume-name key and a DDSim filter-name string value.
+        static VolumeEntry fromJson(const std::string& volume, const nlohmann::json& val) {
           VolumeEntry entry;
           entry.pattern = volume;
-          if (cfg.at("Action").get<std::string>() == "Geant4OpticalTrackerAction")
-            entry.mode = FilterMode::AcceptOpticalOnly;
+          if (val.is_string()) {
+            const std::string fname = val.get<std::string>();
+            if (fname == "opticalphoton" || fname == "opticalphotons")
+              entry.mode = FilterMode::AcceptOpticalOnly;
+          }
           if (!entry.pattern.empty()) {
             try {
               entry.compiled_regex.emplace(
@@ -98,8 +107,8 @@ namespace dd4hep {
         if (!m_properties_json.empty()) {
           try {
             auto j = nlohmann::json::parse(m_properties_json);
-            for (const auto& [vol, cfg] : j.items())
-              m_entries.push_back(VolumeEntry::fromJson(vol, cfg));
+            for (const auto& [vol, val] : j.items())
+              m_entries.push_back(VolumeEntry::fromJson(vol, val));
           } catch (const nlohmann::json::exception& e) {
             printout(ERROR, "OpticalTrackerCombinedFilter",
                      "Failed to parse Properties JSON: %s", e.what());

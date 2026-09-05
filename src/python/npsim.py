@@ -90,20 +90,13 @@ if __name__ == "__main__":
   RUNNER.filter.mapDetFilter['DRICH'] = 'opticalphotons'
   RUNNER.filter.mapDetFilter['PFRICH'] = 'opticalphotons'
   # Use combined meta-action and meta-filter for DIRC.
-  # Properties is a JSON object mapping logical-volume regexes to DDG4 SD
-  # action names and optional per-volume parameters.
-  _dirc_va = json.dumps({
-    'mcp_vol': {
-      'Action': 'Geant4OpticalTrackerAction',
-    },
-    'bar_vol': {
-      'Action': 'Geant4TrackerWeightedAction',
-      'CollectSingleDeposits': False,
-    },
-  })
+  # The filter Properties maps volume regexes to DDSim filter names.
+  # The action Properties maps volume regexes to DDG4 SD action names + params.
   RUNNER.filter.mapDetFilter['DIRC'] = (
     'OpticalTrackerCombinedFilter',
-    {'Properties': _dirc_va}
+    {'Properties': json.dumps({
+      'mcp_vol': 'opticalphoton',
+    })}
   )
 
   # Use the optical tracker for the dRICH and pfRICH
@@ -111,7 +104,10 @@ if __name__ == "__main__":
   RUNNER.action.mapActions['PFRICH'] = 'Geant4OpticalTrackerAction'
   RUNNER.action.mapActions['DIRC'] = (
     'OpticalTrackerCombinedAction',
-    {'Properties': _dirc_va}
+    {'Properties': json.dumps({
+      'mcp_vol': {'Action': 'Geant4OpticalTrackerAction'},
+      'bar_vol': {'Action': 'Geant4TrackerWeightedAction', 'CollectSingleDeposits': False},
+    })}
   )
 
   # Use the optical photon efficiency stacking action for hpDIRC
