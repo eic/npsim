@@ -90,12 +90,16 @@ if __name__ == "__main__":
   RUNNER.filter.mapDetFilter['DRICH'] = 'opticalphotons'
   RUNNER.filter.mapDetFilter['PFRICH'] = 'opticalphotons'
   # Use combined meta-action and meta-filter for DIRC.
-  # The filter Properties maps volume regexes to DDSim filter names.
+  # The filter Properties maps volume regexes to DDG4 filter plugin specs
+  # (same format as RUNNER.filter.filters entries).
   # The action Properties maps volume regexes to DDG4 SD action names + params.
   RUNNER.filter.mapDetFilter['DIRC'] = (
     'OpticalTrackerCombinedFilter',
     {'Properties': json.dumps({
-      'mcp_vol': 'opticalphoton',
+      'mcp_vol': {
+        'name': 'ParticleSelectFilter/OpticalPhotonSelector',
+        'particle': 'opticalphoton',
+      },
     })}
   )
 

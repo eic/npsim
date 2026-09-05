@@ -12,15 +12,18 @@
 #define NPDET_OPTICALTRACKERCOMBINEDFILTER_H
 
 /// Framework include files
+#include <DD4hep/Plugins.h>
+#include <DDG4/Geant4Action.h>
 #include <DDG4/Geant4SensDetAction.h>
+#include <DDG4/Geant4FastSimSpot.h>
 
-#include <G4OpticalPhoton.hh>
 #include <G4Step.hh>
 #include <G4VPhysicalVolume.hh>
 #include <G4LogicalVolume.hh>
 
 #include <nlohmann/json.hpp>
 
+#include <memory>
 #include <optional>
 #include <regex>
 #include <string>
@@ -40,19 +43,23 @@ namespace dd4hep {
      *
      * \brief Particle filter companion to OpticalTrackerCombinedAction.
      *
-     *  Maps logical-volume regexes to existing DDSim filter names via the
-     *  \c Properties JSON property:
-     *  - \c "opticalphoton" (or \c "opticalphotons"): accept only G4OpticalPhoton.
-     *  - All other values or absent keys: accept all particles.
+     *  Maps logical-volume regexes to existing DDG4/DDSim filter plugins via
+     *  the \c Properties JSON property.  Each entry specifies the filter
+     *  type/name using DDG4's \c TypeName convention and any additional
+     *  filter-specific properties.  Volumes absent from the object are not
+     *  filtered (accept all).
      *
      * \param string Properties
-     *   JSON object \c {"volume_regex": "filter_name", ...}  where the value is
-     *   a standard DDSim filter name.  Volumes absent from the object are not
-     *   filtered.
+     *   JSON object \c {"volume_regex": {"name": "Type/Instance", "key": "val", ...}, ...}
      *
-     *  Example:
+     *  Example — apply the standard optical-photon filter to \c mcp_vol only:
      *  \code
-     *    Properties = "{\"mcp_vol\": \"opticalphoton\"}"
+     *    Properties = json.dumps({
+     *      "mcp_vol": {
+     *        "name": "ParticleSelectFilter/OpticalPhotonSelector",
+     *        "particle": "opticalphoton"
+     *      }
+     *    })
      *  \endcode
      *
      * @}
@@ -60,33 +67,9 @@ namespace dd4hep {
     class OpticalTrackerCombinedFilter : public Geant4Filter {
 
       struct VolumeEntry {
-        enum class FilterMode { AcceptOpticalOnly, AcceptAll };
-
         std::string               pattern;
-        FilterMode                mode { FilterMode::AcceptAll };
+        Geant4Filter*             filter { nullptr };
         std::optional<std::regex> compiled_regex;
-
-        /// Construct from a volume-name key and a DDSim filter-name string value.
-        static VolumeEntry fromJson(const std::string& volume, const nlohmann::json& val) {
-          VolumeEntry entry;
-          entry.pattern = volume;
-          if (val.is_string()) {
-            const std::string fname = val.get<std::string>();
-            if (fname == "opticalphoton" || fname == "opticalphotons")
-              entry.mode = FilterMode::AcceptOpticalOnly;
-          }
-          if (!entry.pattern.empty()) {
-            try {
-              entry.compiled_regex.emplace(
-                  entry.pattern,
-                  std::regex_constants::ECMAScript | std::regex_constants::optimize);
-            } catch (const std::regex_error& e) {
-              printout(ERROR, "OpticalTrackerCombinedFilter",
-                       "Invalid regex '%s': %s", entry.pattern.c_str(), e.what());
-            }
-          }
-          return entry;
-        }
 
         bool matches(const std::string& lv_name) const {
           return compiled_regex && std::regex_search(lv_name, *compiled_regex);
@@ -99,7 +82,10 @@ namespace dd4hep {
         declareProperty("Properties", m_properties_json);
       }
 
-      virtual ~OpticalTrackerCombinedFilter() = default;
+      virtual ~OpticalTrackerCombinedFilter() {
+        for (auto& entry : m_entries)
+          if (entry.filter) entry.filter->release();
+      }
 
       void ensureEntries() const {
         if (m_entries_parsed) return;
@@ -107,10 +93,54 @@ namespace dd4hep {
         if (!m_properties_json.empty()) {
           try {
             auto j = nlohmann::json::parse(m_properties_json);
-            for (const auto& [vol, val] : j.items())
-              m_entries.push_back(VolumeEntry::fromJson(vol, val));
+            for (const auto& [vol, cfg] : j.items()) {
+              VolumeEntry entry;
+              entry.pattern = vol;
+              if (!entry.pattern.empty()) {
+                try {
+                  entry.compiled_regex.emplace(
+                      entry.pattern,
+                      std::regex_constants::ECMAScript | std::regex_constants::optimize);
+                } catch (const std::regex_error& e) {
+                  printout(ERROR, name().c_str(),
+                           "Invalid regex '%s': %s", entry.pattern.c_str(), e.what());
+                }
+              }
+              if (cfg.contains("name")) {
+                const auto tn = TypeName::split(cfg["name"].get<std::string>());
+                auto* act = PluginService::Create<Geant4Action*>(
+                    tn.first, const_cast<Geant4Context*>(context()), tn.second);
+                if (!act) {
+                  printout(ERROR, name().c_str(),
+                           "Failed to create filter '%s' for volume '%s'",
+                           tn.first.c_str(), vol.c_str());
+                } else {
+                  entry.filter = dynamic_cast<Geant4Filter*>(act);
+                  if (!entry.filter) {
+                    printout(ERROR, name().c_str(),
+                             "Plugin '%s' is not a Geant4Filter", tn.first.c_str());
+                    act->release();
+                  } else {
+                    // Set all extra JSON keys as string properties on the filter
+                    for (const auto& [key, val] : cfg.items()) {
+                      if (key == "name") continue;
+                      if (entry.filter->hasProperty(key)) {
+                        entry.filter->property(key).str(val.is_string()
+                            ? val.get<std::string>()
+                            : val.dump());
+                      } else {
+                        printout(WARNING, name().c_str(),
+                                 "Filter '%s' has no property '%s'",
+                                 tn.first.c_str(), key.c_str());
+                      }
+                    }
+                  }
+                }
+              }
+              m_entries.push_back(std::move(entry));
+            }
           } catch (const nlohmann::json::exception& e) {
-            printout(ERROR, "OpticalTrackerCombinedFilter",
+            printout(ERROR, name().c_str(),
                      "Failed to parse Properties JSON: %s", e.what());
           }
         }
@@ -125,15 +155,24 @@ namespace dd4hep {
 
         for (const auto& entry : m_entries) {
           if (!entry.matches(lv_name)) continue;
-          if (entry.mode == VolumeEntry::FilterMode::AcceptOpticalOnly)
-            return step->GetTrack()->GetDefinition() ==
-                   G4OpticalPhoton::OpticalPhotonDefinition();
-          return true;
+          // No filter was created (missing "name" key): accept all
+          if (!entry.filter) return true;
+          return (*entry.filter)(step);
         }
-        return true;
+        return true; // unmatched volume
       }
 
-      virtual bool operator()(const Geant4FastSimSpot* /*spot*/) const override {
+      virtual bool operator()(const Geant4FastSimSpot* spot) const override {
+        ensureEntries();
+        const G4VPhysicalVolume* pv = spot ? spot->volume() : nullptr;
+        if (!pv) return true;
+        const std::string lv_name = pv->GetLogicalVolume()->GetName();
+
+        for (const auto& entry : m_entries) {
+          if (!entry.matches(lv_name)) continue;
+          if (!entry.filter) return true;
+          return (*entry.filter)(spot);
+        }
         return true;
       }
 
