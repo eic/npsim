@@ -40,13 +40,13 @@ namespace dd4hep {
      *
      * \brief Particle filter companion to OpticalTrackerCombinedAction.
      *
-     *  Uses the same \c VolumeActions JSON property as OpticalTrackerCombinedAction
+     *  Uses the same \c Properties JSON property as OpticalTrackerCombinedAction
      *  to determine how to filter each step:
      *  - Volumes with \c "Action": "Geant4OpticalTrackerAction": accept optical photons only.
      *  - All other matched volumes: accept all particles.
      *  - Unmatched volumes: accept all particles (pass-through).
      *
-     * \param string VolumeActions
+     * \param string Properties
      *   JSON object \c {"volume_regex": {"Action": "ddg4_action_name", ...}, ...}
      *   in the same format as OpticalTrackerCombinedAction.
      *
@@ -87,7 +87,7 @@ namespace dd4hep {
     public:
       OpticalTrackerCombinedFilter(Geant4Context* c, const std::string& n)
           : Geant4Filter(c, n) {
-        declareProperty("VolumeActions", m_volume_actions_json);
+        declareProperty("Properties", m_properties_json);
       }
 
       virtual ~OpticalTrackerCombinedFilter() = default;
@@ -95,14 +95,14 @@ namespace dd4hep {
       void ensureEntries() const {
         if (m_entries_parsed) return;
         m_entries.clear();
-        if (!m_volume_actions_json.empty()) {
+        if (!m_properties_json.empty()) {
           try {
-            auto j = nlohmann::json::parse(m_volume_actions_json);
+            auto j = nlohmann::json::parse(m_properties_json);
             for (const auto& [vol, cfg] : j.items())
               m_entries.push_back(VolumeEntry::fromJson(vol, cfg));
           } catch (const nlohmann::json::exception& e) {
             printout(ERROR, "OpticalTrackerCombinedFilter",
-                     "Failed to parse VolumeActions JSON: %s", e.what());
+                     "Failed to parse Properties JSON: %s", e.what());
           }
         }
         m_entries_parsed = true;
@@ -129,7 +129,7 @@ namespace dd4hep {
       }
 
     private:
-      std::string                      m_volume_actions_json;
+      std::string                      m_properties_json;
       mutable std::vector<VolumeEntry> m_entries;
       mutable bool                     m_entries_parsed { false };
     };

@@ -42,7 +42,7 @@ namespace dd4hep {
      *        depending on the logical volume name, driven by a list of
      *        volume-regex → DDG4-action-name mappings.
      *
-     *  Supported action names (per entry in \c VolumeActions):
+     *  Supported action names (per entry in \c Properties):
      *  - \c Geant4OpticalTrackerAction  — one hit per step; optical photons are
      *    absorbed (\c fStopAndKill).
      *  - \c Geant4TrackerWeightedAction — deposits from the same G4Track within
@@ -51,7 +51,7 @@ namespace dd4hep {
      *  Typical use-case: a ring-imaging Cherenkov detector where MCP pixels and
      *  radiator bars share one sensitive detector but require different strategies.
      *
-     * \param string VolumeActions
+     * \param string Properties
      *   JSON array of objects, each with required key \c "volume" (regex) and
      *   \c "Action" (DDG4 action name), plus optional per-entry parameters:
      *   - \c "CollectSingleDeposits": bool  (default false, TrackerWeighted only)
@@ -59,7 +59,7 @@ namespace dd4hep {
      *
      *  Example (two-entry DIRC configuration, produced by json.dumps() in Python):
      *  \code
-     *    VolumeActions = "[
+     *    Properties = "[
      *      {\"volume\": \"mcp_vol\", \"Action\": \"Geant4OpticalTrackerAction\"},
      *      {\"volume\": \"bar_vol\", \"Action\": \"Geant4TrackerWeightedAction\",
      *       \"CollectSingleDeposits\": false}
@@ -100,7 +100,7 @@ namespace dd4hep {
               name == "Geant4TrackerCombineAction")
             return ActionType::TrackerWeighted;
           printout(WARNING, "OpticalTrackerCombinedAction",
-                   "Unknown action name '%s' in VolumeActions entry", name.c_str());
+                   "Unknown action name '%s' in Properties entry", name.c_str());
           return ActionType::Unknown;
         }
 
@@ -132,7 +132,7 @@ namespace dd4hep {
       };
 
       // ---- DDG4 property: JSON array string ----
-      std::string m_volume_actions_json;
+      std::string m_properties_json;
 
       // ---- Parsed routing table (populated in initialize) ----
       std::vector<VolumeEntry> m_entries;
@@ -164,14 +164,14 @@ namespace dd4hep {
 
       void parseEntries() {
         m_entries.clear();
-        if (m_volume_actions_json.empty()) return;
+        if (m_properties_json.empty()) return;
         try {
-          auto j = nlohmann::json::parse(m_volume_actions_json);
+          auto j = nlohmann::json::parse(m_properties_json);
           for (const auto& [vol, cfg] : j.items())
             m_entries.push_back(VolumeEntry::fromJson(vol, cfg));
         } catch (const nlohmann::json::exception& e) {
           printout(ERROR, "OpticalTrackerCombinedAction",
-                   "Failed to parse VolumeActions JSON: %s", e.what());
+                   "Failed to parse Properties JSON: %s", e.what());
         }
       }
 
@@ -452,7 +452,7 @@ namespace dd4hep {
 
     template <>
     void Geant4SensitiveAction<OpticalTrackerCombined>::initialize() {
-      declareProperty("VolumeActions", m_userData.m_volume_actions_json);
+      declareProperty("Properties", m_userData.m_properties_json);
       m_userData.e_cut     = m_sensitive.energyCutoff();
       m_userData.sensitive = this;
       m_userData.parseEntries();
