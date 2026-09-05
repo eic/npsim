@@ -8,8 +8,8 @@
 // For the list of contributors see $DD4hepINSTALL/doc/CREDITS.
 //
 //==========================================================================
-#ifndef NPDET_OPTICALTRACKERCOMBINEDACTION_H
-#define NPDET_OPTICALTRACKERCOMBINEDACTION_H
+#ifndef NPDET_VOLUMEROUTERACTION_H
+#define NPDET_VOLUMEROUTERACTION_H
 
 /// Framework include files
 #include <DD4hep/Plugins.h>
@@ -39,7 +39,7 @@ namespace dd4hep {
      * \addtogroup Geant4SDActionPlugin
      *
      * @{
-     * \package OpticalTrackerCombinedAction
+     * \package VolumeRouterAction
      *
      * \brief Sensitive detector action that routes steps to per-volume DDG4 SD
      *        action plugins, instantiated at run-time via PluginService::Create.
@@ -67,7 +67,7 @@ namespace dd4hep {
      *
      * @}
      */
-    class OpticalTrackerCombinedAction : public Geant4Sensitive {
+    class VolumeRouterAction : public Geant4Sensitive {
 
       struct VolumeEntry {
         std::string               pattern;
@@ -80,13 +80,13 @@ namespace dd4hep {
       };
 
     public:
-      OpticalTrackerCombinedAction(Geant4Context* ctxt, const std::string& n,
+      VolumeRouterAction(Geant4Context* ctxt, const std::string& n,
                                    DetElement det, Detector& dsc)
           : Geant4Sensitive(ctxt, n, det, dsc) {
         declareProperty("Properties", m_properties_json);
       }
 
-      virtual ~OpticalTrackerCombinedAction() {
+      virtual ~VolumeRouterAction() {
         for (auto& entry : m_entries)
           if (entry.action) entry.action->release();
       }
@@ -202,4 +202,4 @@ namespace dd4hep {
   } // namespace sim
 } // namespace dd4hep
 
-#endif // NPDET_OPTICALTRACKERCOMBINEDACTION_H
+#endif // NPDET_VOLUMEROUTERACTION_H
