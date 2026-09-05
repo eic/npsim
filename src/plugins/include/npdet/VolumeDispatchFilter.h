@@ -70,9 +70,11 @@ namespace dd4hep {
 
       struct VolumeEntry {
         std::string               pattern;
-        Geant4Filter*             filter    { nullptr };
-        bool                      configured{ false };   ///< true when a plugin spec was present
+        Geant4Filter*             filter     { nullptr };
+        bool                      configured { false };   ///< true when a plugin spec was present
         std::optional<std::regex> compiled_regex;
+        mutable std::size_t       steps_accepted { 0 };
+        mutable std::size_t       steps_rejected { 0 };
 
         bool matches(const std::string& lv_name) const {
           return compiled_regex && std::regex_search(lv_name, *compiled_regex);
@@ -86,6 +88,17 @@ namespace dd4hep {
       }
 
       virtual ~VolumeDispatchFilter() {
+        // Summary line so users can confirm the filter was operational
+        printout(INFO, name().c_str(),
+                 "+++ VolumeDispatchFilter summary: %zu volumes configured",
+                 m_entries.size());
+        for (const auto& entry : m_entries) {
+          const char* status = entry.filter ? "OK" : (entry.configured ? "FAILED" : "no filter");
+          printout(INFO, name().c_str(),
+                   "    volume regex '%-30s': %s, accepted %zu / rejected %zu steps",
+                   entry.pattern.c_str(), status,
+                   entry.steps_accepted, entry.steps_rejected);
+        }
         for (auto& entry : m_entries)
           if (entry.filter) entry.filter->release();
       }
@@ -162,16 +175,18 @@ namespace dd4hep {
 
         for (const auto& entry : m_entries) {
           if (!entry.matches(lv_name)) continue;
+          bool result;
           if (!entry.filter) {
-            // Fail closed: a configured entry whose plugin failed to create
-            // should not silently accept all particles.
             if (entry.configured)
               printout(ERROR, name().c_str(),
                        "Filter for volume '%s' was not created; rejecting step",
                        entry.pattern.c_str());
-            return !entry.configured; // unconfigured → accept all; misconfigured → reject
+            result = !entry.configured; // unconfigured → accept all; misconfigured → reject
+          } else {
+            result = (*entry.filter)(step);
           }
-          return (*entry.filter)(step);
+          result ? ++entry.steps_accepted : ++entry.steps_rejected;
+          return result;
         }
         return true; // unmatched volume
       }
@@ -184,14 +199,18 @@ namespace dd4hep {
 
         for (const auto& entry : m_entries) {
           if (!entry.matches(lv_name)) continue;
+          bool result;
           if (!entry.filter) {
             if (entry.configured)
               printout(ERROR, name().c_str(),
                        "Filter for volume '%s' was not created; rejecting spot",
                        entry.pattern.c_str());
-            return !entry.configured;
+            result = !entry.configured;
+          } else {
+            result = (*entry.filter)(spot);
           }
-          return (*entry.filter)(spot);
+          result ? ++entry.steps_accepted : ++entry.steps_rejected;
+          return result;
         }
         return true;
       }

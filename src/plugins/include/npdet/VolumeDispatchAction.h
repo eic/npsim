@@ -73,6 +73,8 @@ namespace dd4hep {
         std::string               pattern;
         Geant4Sensitive*          action { nullptr };
         std::optional<std::regex> compiled_regex;
+        mutable std::size_t       steps_dispatched { 0 };
+        mutable std::size_t       steps_unmatched  { 0 };
 
         bool matches(const std::string& lv_name) const {
           return compiled_regex && std::regex_search(lv_name, *compiled_regex);
@@ -87,6 +89,20 @@ namespace dd4hep {
       }
 
       virtual ~VolumeDispatchAction() {
+        // Summary line so users can confirm the action was operational
+        printout(INFO, name().c_str(),
+                 "+++ VolumeDispatchAction summary: %zu volumes configured",
+                 m_entries.size());
+        for (const auto& entry : m_entries) {
+          const char* status = entry.action ? "OK" : "FAILED (no action created)";
+          printout(INFO, name().c_str(),
+                   "    volume regex '%-30s': %s, %zu steps dispatched",
+                   entry.pattern.c_str(), status, entry.steps_dispatched);
+        }
+        if (m_steps_unmatched > 0)
+          printout(INFO, name().c_str(),
+                   "    %zu steps matched no volume entry and were dropped",
+                   m_steps_unmatched);
         for (auto& entry : m_entries)
           if (entry.action) entry.action->release();
       }
@@ -180,9 +196,11 @@ namespace dd4hep {
 
         for (auto& entry : m_entries) {
           if (!entry.matches(lv_name)) continue;
+          ++entry.steps_dispatched;
           if (!entry.action) return false;
           return entry.action->process(step, history);
         }
+        ++m_steps_unmatched;
         return false; // unmatched volume
       }
 
@@ -194,9 +212,11 @@ namespace dd4hep {
 
         for (auto& entry : m_entries) {
           if (!entry.matches(lv_name)) continue;
+          ++entry.steps_dispatched;
           if (!entry.action) return false;
           return entry.action->processFastSim(spot, history);
         }
+        ++m_steps_unmatched;
         return false;
       }
 
@@ -204,6 +224,7 @@ namespace dd4hep {
       std::string              m_properties_json;
       std::vector<VolumeEntry> m_entries;
       bool                     m_entries_initialised { false };
+      std::size_t              m_steps_unmatched     { 0 };
     };
 
   } // namespace sim
