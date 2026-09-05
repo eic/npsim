@@ -90,15 +90,17 @@ if __name__ == "__main__":
   RUNNER.filter.mapDetFilter['DRICH'] = 'opticalphotons'
   RUNNER.filter.mapDetFilter['PFRICH'] = 'opticalphotons'
   # Use combined meta-action and meta-filter for DIRC.
+  # Register VolumeDispatchFilter as a named filter, then reference it by name.
   # Properties maps volume regexes to (TypeName, {params}) tuples.
-  RUNNER.filter.mapDetFilter['DIRC'] = (
-    'VolumeDispatchFilter',
-    {'Properties': json.dumps({
+  RUNNER.filter.filters['dirc_dispatch'] = dict(
+    name='VolumeDispatchFilter/DIRCVolumeDispatch',
+    parameter={"Properties": json.dumps({
       'mcp_vol': ('ParticleSelectFilter/OpticalPhotonSelector', {
         'particle': 'opticalphoton',
       }),
-    })}
+    })},
   )
+  RUNNER.filter.mapDetFilter['DIRC'] = 'dirc_dispatch'
 
   # Use the optical tracker for the dRICH and pfRICH
   RUNNER.action.mapActions['DRICH'] = 'Geant4OpticalTrackerAction'
