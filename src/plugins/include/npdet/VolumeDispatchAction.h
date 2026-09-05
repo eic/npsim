@@ -75,7 +75,6 @@ namespace dd4hep {
         Geant4Sensitive*          action { nullptr };
         std::optional<std::regex> compiled_regex;
         mutable std::size_t       steps_dispatched { 0 };
-        mutable std::size_t       steps_unmatched  { 0 };
 
         bool matches(const std::string& lv_name) const {
           return compiled_regex && std::regex_search(lv_name, *compiled_regex);
@@ -112,13 +111,20 @@ namespace dd4hep {
       virtual void defineCollections() override {
         if (m_entries_initialised) return;
 
-        // Register the single shared hit collection once on this parent action.
-        // Sub-actions are NOT allowed to call defineCollections() themselves —
-        // doing so would append additional entries to m_collections and give each
-        // sub-action a different collection ID, causing hits to land in unregistered
-        // secondary collections.  With m_collectionID left at its default (0), all
-        // sub-actions call collection(0) and write to this shared collection.
-        defineCollection<Geant4Tracker::Hit>(m_readout.name());
+        // The shared hit collection is registered by the first successfully-created
+        // sub-action via its own defineCollections() call.  This ensures that the
+        // collection's factory function and owner pointer in m_collections are set
+        // by the actual Geant4SensitiveAction<T> subclass (which knows the concrete
+        // hit type), rather than by this dispatcher class.
+        //
+        // Sub-actions are called defineCollections() at most ONCE (the first one that
+        // succeeds).  Subsequent sub-actions are NOT allowed to call it — doing so
+        // would append additional entries to m_collections, giving each sub-action a
+        // different m_collectionID and causing hits to land in separate (potentially
+        // unwritten) secondary collections.  Because m_collectionID defaults to 0 and
+        // TrackerWeightedAction hardcodes collection(0), all sub-actions write to the
+        // single shared collection at index 0.
+        bool collection_defined = false;
 
         if (!m_properties_json.empty()) {
           try {
@@ -161,11 +167,17 @@ namespace dd4hep {
                       }
                     }
                   }
-                  // Share the parent's Geant4ActionSD so sub-actions can call
-                  // collection(0) and mark(track) via sequence().  Do NOT call
-                  // act->defineCollections(): that would register additional
-                  // collections and break the shared-collection contract.
                   act->setDetector(&detector());
+                  // The first sub-action registers the shared collection (index 0) and
+                  // has its m_collectionID set to 0 explicitly via defineCollections().
+                  // Subsequent sub-actions use m_collectionID=0 by default.
+                  if (!collection_defined) {
+                    act->defineCollections();
+                    collection_defined = true;
+                    printout(INFO, name().c_str(),
+                             "+++ Registered shared hit collection via sub-action '%s'",
+                             tn.first.c_str());
+                  }
                   entry.action = act;
                 }
               } else {
@@ -181,6 +193,12 @@ namespace dd4hep {
             printout(ERROR, name().c_str(),
                      "Failed to parse Properties JSON: %s", e.what());
           }
+        }
+        if (!collection_defined) {
+          // Fallback: register the collection directly if no sub-action was created
+          printout(WARNING, name().c_str(),
+                   "+++ No sub-action created; registering collection directly");
+          defineCollection<Geant4Tracker::Hit>(m_readout.name());
         }
         m_entries_initialised = true;
       }
