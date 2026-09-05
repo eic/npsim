@@ -92,10 +92,15 @@ if __name__ == "__main__":
   # Use combined meta-action and meta-filter for DIRC.
   # Register VolumeDispatchFilter as a named filter, then reference it by name.
   # Properties maps volume regexes to (TypeName, {params}) tuples.
+  # mcp_vol: accept only optical photons (select filter)
+  # bar_vol: reject optical photons so only charged particles produce hits
   RUNNER.filter.filters['dirc_dispatch'] = dict(
     name='VolumeDispatchFilter/DIRCVolumeDispatch',
     parameter={"Properties": json.dumps({
       'mcp_vol': ('ParticleSelectFilter/OpticalPhotonSelector', {
+        'particle': 'opticalphoton',
+      }),
+      'bar_vol': ('ParticleRejectFilter/ChargedParticleBarFilter', {
         'particle': 'opticalphoton',
       }),
     })},
