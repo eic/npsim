@@ -21,7 +21,9 @@
 
 #include <optional>
 #include <regex>
+#include <sstream>
 #include <string>
+#include <vector>
 
 /// Namespace for the AIDA detector description toolkit
 namespace dd4hep {
@@ -37,47 +39,94 @@ namespace dd4hep {
      *
      * \brief Particle filter companion to OpticalTrackerCombinedAction.
      *
-     *  Routes filtering based on which logical volume the step occurs in:
-     *  - Volumes matching \c OpticalVolume (regex): accept optical photons only.
-     *  - Volumes matching \c TrackerVolume (regex): accept all particles.
-     *  - All other volumes: accept all particles (pass-through).
+     *  Uses the same \c VolumeActions property as OpticalTrackerCombinedAction
+     *  to determine how to filter each step:
+     *  - Volumes mapped to \c Geant4OpticalTrackerAction: accept optical photons only.
+     *  - All other matched volumes: accept all particles.
+     *  - Unmatched volumes: accept all particles (pass-through).
      *
-     * \param string OpticalVolume  Regex matching logical volume names for optical detection (default "mcp_vol")
-     * \param string TrackerVolume  Regex matching logical volume names for charged-particle tracking (default "bar_vol")
+     * \param vector<string> VolumeActions
+     *   Same format as OpticalTrackerCombinedAction:
+     *   \c "volume_regex:ActionName[:key=value]*"
      *
      * @}
      */
     class OpticalTrackerCombinedFilter : public Geant4Filter {
+
+      /// One routing entry parsed from a VolumeActions string.
+      struct VolumeEntry {
+        enum class FilterMode { AcceptOpticalOnly, AcceptAll };
+
+        std::string              pattern;
+        FilterMode               mode { FilterMode::AcceptAll };
+        std::optional<std::regex> compiled_regex;
+
+        static VolumeEntry parse(const std::string& spec) {
+          VolumeEntry entry;
+          std::istringstream ss(spec);
+          std::string token;
+          int field = 0;
+          while (std::getline(ss, token, ':')) {
+            if (field == 0) entry.pattern = token;
+            else if (field == 1) {
+              if (token == "Geant4OpticalTrackerAction")
+                entry.mode = FilterMode::AcceptOpticalOnly;
+              // else: AcceptAll for TrackerWeighted and anything else
+              break;
+            }
+            ++field;
+          }
+          if (!entry.pattern.empty()) {
+            try {
+              entry.compiled_regex.emplace(
+                  entry.pattern,
+                  std::regex_constants::ECMAScript | std::regex_constants::optimize);
+            } catch (const std::regex_error& e) {
+              printout(ERROR, "OpticalTrackerCombinedFilter",
+                       "Invalid regex '%s': %s", entry.pattern.c_str(), e.what());
+            }
+          }
+          return entry;
+        }
+
+        bool matches(const std::string& lv_name) const {
+          return compiled_regex && std::regex_search(lv_name, *compiled_regex);
+        }
+      };
+
     public:
       OpticalTrackerCombinedFilter(Geant4Context* c, const std::string& n)
           : Geant4Filter(c, n) {
-        declareProperty("OpticalVolume", m_optical_volume);
-        declareProperty("TrackerVolume", m_tracker_volume);
+        declareProperty("VolumeActions", m_volume_actions_raw);
       }
 
       virtual ~OpticalTrackerCombinedFilter() = default;
 
+      /// Parse VolumeActions on first use (properties are set after construction).
+      void ensureEntries() const {
+        if (!m_entries_parsed) {
+          m_entries.clear();
+          for (const auto& spec : m_volume_actions_raw)
+            m_entries.push_back(VolumeEntry::parse(spec));
+          m_entries_parsed = true;
+        }
+      }
+
       /// Filter action. Return true if the step should be processed.
       virtual bool operator()(const G4Step* step) const override {
+        ensureEntries();
         const G4VPhysicalVolume* pv = step->GetPreStepPoint()->GetPhysicalVolume();
         if (!pv) return true;
         const std::string lv_name = pv->GetLogicalVolume()->GetName();
 
-        // Optical-detector volumes: only accept optical photons
-        update_regex_cache(m_optical_volume, m_cached_optical_volume, m_optical_regex);
-        if (m_optical_regex && std::regex_search(lv_name, *m_optical_regex)) {
-          return step->GetTrack()->GetDefinition() ==
-                 G4OpticalPhoton::OpticalPhotonDefinition();
+        for (const auto& entry : m_entries) {
+          if (!entry.matches(lv_name)) continue;
+          if (entry.mode == VolumeEntry::FilterMode::AcceptOpticalOnly)
+            return step->GetTrack()->GetDefinition() ==
+                   G4OpticalPhoton::OpticalPhotonDefinition();
+          return true; // AcceptAll
         }
-
-        // Tracker volumes: accept everything
-        update_regex_cache(m_tracker_volume, m_cached_tracker_volume, m_tracker_regex);
-        if (m_tracker_regex && std::regex_search(lv_name, *m_tracker_regex)) {
-          return true;
-        }
-
-        // Default: accept all
-        return true;
+        return true; // unmatched volume
       }
 
       /// GFLASH/FastSim interface (not used; accept all)
@@ -86,34 +135,9 @@ namespace dd4hep {
       }
 
     private:
-      static void update_regex_cache(const std::string&        expression,
-                                     std::string&               cached,
-                                     std::optional<std::regex>& compiled) {
-        if (expression.empty()) {
-          cached = expression;
-          compiled.reset();
-        } else if (expression != cached) {
-          try {
-            compiled.emplace(expression,
-                             std::regex_constants::ECMAScript |
-                             std::regex_constants::optimize);
-            cached = expression;
-          } catch (const std::regex_error& e) {
-            cached = expression;
-            compiled.reset();
-            printout(ERROR, "OpticalTrackerCombinedFilter",
-                     "Invalid regex '%s': %s", expression.c_str(), e.what());
-          }
-        }
-      }
-
-      std::string m_optical_volume { "mcp_vol" };
-      std::string m_tracker_volume { "bar_vol" };
-
-      mutable std::string               m_cached_optical_volume;
-      mutable std::string               m_cached_tracker_volume;
-      mutable std::optional<std::regex> m_optical_regex;
-      mutable std::optional<std::regex> m_tracker_regex;
+      std::vector<std::string>          m_volume_actions_raw;
+      mutable std::vector<VolumeEntry>  m_entries;
+      mutable bool                      m_entries_parsed { false };
     };
 
   } // namespace sim

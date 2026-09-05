@@ -88,17 +88,35 @@ if __name__ == "__main__":
   # This could probably be a substring
   RUNNER.filter.mapDetFilter['DRICH'] = 'opticalphotons'
   RUNNER.filter.mapDetFilter['PFRICH'] = 'opticalphotons'
-  # Use combined meta-action and meta-filter for DIRC:
-  # OpticalTrackerCombinedFilter allows optical photons through for mcp_vol and
-  # all particles through for bar_vol.
-  # OpticalTrackerCombinedAction handles optical photon absorption in mcp_vol and
-  # charged-particle tracking in bar_vol within a single sensitive detector.
+  # Use combined meta-action and meta-filter for DIRC.
+  # Each entry maps a logical-volume regex to a DDG4 SD action name plus
+  # optional per-volume parameters.  The helper below encodes this into the
+  # VolumeActions string list expected by OpticalTrackerCombinedAction/Filter.
+  def _encode_volume_actions(vol_cfg):
+    """Encode {vol_regex: {'Action': ddg4_name, **params}} as VolumeActions strings."""
+    entries = []
+    for vol, cfg in vol_cfg.items():
+      parts = [vol, cfg['Action']]
+      for k, v in cfg.items():
+        if k != 'Action':
+          parts.append('{}={}'.format(k, str(v).lower()))
+      entries.append(':'.join(parts))
+    return entries
+
+  _dirc_volume_actions = {
+    'mcp_vol': {
+      'Action': 'Geant4OpticalTrackerAction',
+    },
+    'bar_vol': {
+      'Action': 'Geant4TrackerWeightedAction',
+      'CollectSingleDeposits': False,
+    },
+  }
+  _dirc_va = _encode_volume_actions(_dirc_volume_actions)
+
   RUNNER.filter.mapDetFilter['DIRC'] = (
     'OpticalTrackerCombinedFilter',
-    {
-      'OpticalVolume': 'mcp_vol',
-      'TrackerVolume': 'bar_vol',
-    }
+    {'VolumeActions': _dirc_va}
   )
 
   # Use the optical tracker for the dRICH and pfRICH
@@ -106,10 +124,7 @@ if __name__ == "__main__":
   RUNNER.action.mapActions['PFRICH'] = 'Geant4OpticalTrackerAction'
   RUNNER.action.mapActions['DIRC'] = (
     'OpticalTrackerCombinedAction',
-    {
-      'OpticalVolume': 'mcp_vol',
-      'TrackerVolume': 'bar_vol',
-    }
+    {'VolumeActions': _dirc_va}
   )
 
   # Use the optical photon efficiency stacking action for hpDIRC
