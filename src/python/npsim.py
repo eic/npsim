@@ -109,8 +109,8 @@ if __name__ == "__main__":
   RUNNER.action.mapActions['DIRC'] = (
     'OpticalTrackerCombinedAction',
     {'Properties': json.dumps({
-      'mcp_vol': {'Action': 'Geant4OpticalTrackerAction'},
-      'bar_vol': {'Action': 'Geant4TrackerWeightedAction', 'CollectSingleDeposits': False},
+      'mcp_vol': {'name': 'Geant4OpticalTrackerAction'},
+      'bar_vol': {'name': 'Geant4TrackerWeightedAction', 'CollectSingleDeposits': 'false'},
     })}
   )
 
