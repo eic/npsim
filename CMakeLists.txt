@@ -216,6 +216,9 @@ endif()
 # libfmt
 find_package(fmt REQUIRED)
 
+# nlohmann-json (header-only, for DDG4 plugin JSON property parsing)
+find_package(nlohmann_json REQUIRED)
+
 #-----------------------------------------
 # add the library sub directories
 add_subdirectory(src/plugins)

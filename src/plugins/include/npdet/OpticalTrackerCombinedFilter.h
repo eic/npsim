@@ -19,9 +19,10 @@
 #include <G4VPhysicalVolume.hh>
 #include <G4LogicalVolume.hh>
 
+#include <nlohmann/json.hpp>
+
 #include <optional>
 #include <regex>
-#include <sstream>
 #include <string>
 #include <vector>
 
@@ -39,43 +40,31 @@ namespace dd4hep {
      *
      * \brief Particle filter companion to OpticalTrackerCombinedAction.
      *
-     *  Uses the same \c VolumeActions property as OpticalTrackerCombinedAction
+     *  Uses the same \c VolumeActions JSON property as OpticalTrackerCombinedAction
      *  to determine how to filter each step:
-     *  - Volumes mapped to \c Geant4OpticalTrackerAction: accept optical photons only.
+     *  - Volumes with \c "Action": "Geant4OpticalTrackerAction": accept optical photons only.
      *  - All other matched volumes: accept all particles.
      *  - Unmatched volumes: accept all particles (pass-through).
      *
-     * \param vector<string> VolumeActions
-     *   Same format as OpticalTrackerCombinedAction:
-     *   \c "volume_regex:ActionName[:key=value]*"
+     * \param string VolumeActions
+     *   JSON array in the same format as OpticalTrackerCombinedAction.
      *
      * @}
      */
     class OpticalTrackerCombinedFilter : public Geant4Filter {
 
-      /// One routing entry parsed from a VolumeActions string.
       struct VolumeEntry {
         enum class FilterMode { AcceptOpticalOnly, AcceptAll };
 
-        std::string              pattern;
-        FilterMode               mode { FilterMode::AcceptAll };
+        std::string               pattern;
+        FilterMode                mode { FilterMode::AcceptAll };
         std::optional<std::regex> compiled_regex;
 
-        static VolumeEntry parse(const std::string& spec) {
+        static VolumeEntry fromJson(const nlohmann::json& j) {
           VolumeEntry entry;
-          std::istringstream ss(spec);
-          std::string token;
-          int field = 0;
-          while (std::getline(ss, token, ':')) {
-            if (field == 0) entry.pattern = token;
-            else if (field == 1) {
-              if (token == "Geant4OpticalTrackerAction")
-                entry.mode = FilterMode::AcceptOpticalOnly;
-              // else: AcceptAll for TrackerWeighted and anything else
-              break;
-            }
-            ++field;
-          }
+          entry.pattern = j.at("volume").get<std::string>();
+          if (j.at("Action").get<std::string>() == "Geant4OpticalTrackerAction")
+            entry.mode = FilterMode::AcceptOpticalOnly;
           if (!entry.pattern.empty()) {
             try {
               entry.compiled_regex.emplace(
@@ -97,22 +86,27 @@ namespace dd4hep {
     public:
       OpticalTrackerCombinedFilter(Geant4Context* c, const std::string& n)
           : Geant4Filter(c, n) {
-        declareProperty("VolumeActions", m_volume_actions_raw);
+        declareProperty("VolumeActions", m_volume_actions_json);
       }
 
       virtual ~OpticalTrackerCombinedFilter() = default;
 
-      /// Parse VolumeActions on first use (properties are set after construction).
       void ensureEntries() const {
-        if (!m_entries_parsed) {
-          m_entries.clear();
-          for (const auto& spec : m_volume_actions_raw)
-            m_entries.push_back(VolumeEntry::parse(spec));
-          m_entries_parsed = true;
+        if (m_entries_parsed) return;
+        m_entries.clear();
+        if (!m_volume_actions_json.empty()) {
+          try {
+            auto j = nlohmann::json::parse(m_volume_actions_json);
+            for (const auto& item : j)
+              m_entries.push_back(VolumeEntry::fromJson(item));
+          } catch (const nlohmann::json::exception& e) {
+            printout(ERROR, "OpticalTrackerCombinedFilter",
+                     "Failed to parse VolumeActions JSON: %s", e.what());
+          }
         }
+        m_entries_parsed = true;
       }
 
-      /// Filter action. Return true if the step should be processed.
       virtual bool operator()(const G4Step* step) const override {
         ensureEntries();
         const G4VPhysicalVolume* pv = step->GetPreStepPoint()->GetPhysicalVolume();
@@ -124,20 +118,19 @@ namespace dd4hep {
           if (entry.mode == VolumeEntry::FilterMode::AcceptOpticalOnly)
             return step->GetTrack()->GetDefinition() ==
                    G4OpticalPhoton::OpticalPhotonDefinition();
-          return true; // AcceptAll
+          return true;
         }
-        return true; // unmatched volume
+        return true;
       }
 
-      /// GFLASH/FastSim interface (not used; accept all)
       virtual bool operator()(const Geant4FastSimSpot* /*spot*/) const override {
         return true;
       }
 
     private:
-      std::vector<std::string>          m_volume_actions_raw;
-      mutable std::vector<VolumeEntry>  m_entries;
-      mutable bool                      m_entries_parsed { false };
+      std::string                      m_volume_actions_json;
+      mutable std::vector<VolumeEntry> m_entries;
+      mutable bool                     m_entries_parsed { false };
     };
 
   } // namespace sim

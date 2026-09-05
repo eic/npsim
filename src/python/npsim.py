@@ -8,6 +8,7 @@ Based on M. Frank and F. Gaede runSim.py
 Modified with standard EIC EPIC requirements.
 """
 from __future__ import absolute_import, unicode_literals
+import json
 import logging
 import sys
 
@@ -90,19 +91,8 @@ if __name__ == "__main__":
   RUNNER.filter.mapDetFilter['PFRICH'] = 'opticalphotons'
   # Use combined meta-action and meta-filter for DIRC.
   # Each entry maps a logical-volume regex to a DDG4 SD action name plus
-  # optional per-volume parameters.  The helper below encodes this into the
-  # VolumeActions string list expected by OpticalTrackerCombinedAction/Filter.
-  def _encode_volume_actions(vol_cfg):
-    """Encode {vol_regex: {'Action': ddg4_name, **params}} as VolumeActions strings."""
-    entries = []
-    for vol, cfg in vol_cfg.items():
-      parts = [vol, cfg['Action']]
-      for k, v in cfg.items():
-        if k != 'Action':
-          parts.append('{}={}'.format(k, str(v).lower()))
-      entries.append(':'.join(parts))
-    return entries
-
+  # optional per-volume parameters.  json.dumps() serialises the dict into
+  # the JSON string consumed by OpticalTrackerCombinedAction/Filter.
   _dirc_volume_actions = {
     'mcp_vol': {
       'Action': 'Geant4OpticalTrackerAction',
@@ -112,7 +102,9 @@ if __name__ == "__main__":
       'CollectSingleDeposits': False,
     },
   }
-  _dirc_va = _encode_volume_actions(_dirc_volume_actions)
+  _dirc_va = json.dumps(
+    [dict(volume=vol, **cfg) for vol, cfg in _dirc_volume_actions.items()]
+  )
 
   RUNNER.filter.mapDetFilter['DIRC'] = (
     'OpticalTrackerCombinedFilter',
