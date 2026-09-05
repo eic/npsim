@@ -50,18 +50,18 @@ namespace dd4hep {
      *  same readout.
      *
      * \param string Properties
-     *   JSON object \c {"volume_regex": {"name": "Type/Instance", "key": "val", ...}, ...}
+     *   JSON object \c {"volume_regex": ["TypeName/Instance", {"key": "val", ...}], ...}
      *
-     *   \c "name" follows the DDG4 TypeName convention (\c Type/Instance split on
-     *   the first \c /); all other keys are set as string properties on the
-     *   created action object.
+     *   Each value is a JSON array whose first element is the DDG4 TypeName
+     *   (type/instance split on the first \c /) and whose optional second
+     *   element is a parameter dict.
      *
      *  Example:
      *  \code
      *    Properties = json.dumps({
-     *      "mcp_vol": {"name": "Geant4OpticalTrackerAction"},
-     *      "bar_vol": {"name": "Geant4TrackerWeightedAction",
-     *                  "CollectSingleDeposits": "false"},
+     *      "mcp_vol": ("Geant4OpticalTrackerAction", {}),
+     *      "bar_vol": ("Geant4TrackerWeightedAction",
+     *                  {"CollectSingleDeposits": "false"}),
      *    })
      *  \endcode
      *
@@ -97,7 +97,7 @@ namespace dd4hep {
         if (!m_properties_json.empty()) {
           try {
             auto j = nlohmann::json::parse(m_properties_json);
-            for (const auto& [vol, cfg] : j.items()) {
+            for (const auto& [vol, val] : j.items()) {
               VolumeEntry entry;
               entry.pattern = vol;
               if (!entry.pattern.empty()) {
@@ -110,8 +110,10 @@ namespace dd4hep {
                            "Invalid regex '%s': %s", entry.pattern.c_str(), e.what());
                 }
               }
-              if (cfg.contains("name")) {
-                const auto tn = TypeName::split(cfg["name"].get<std::string>());
+              // Value is a JSON array: ["TypeName/Instance", {"key": "val", ...}]
+              // The second element (params dict) is optional.
+              if (val.is_array() && !val.empty()) {
+                const auto tn = TypeName::split(val[0].get<std::string>());
                 Geant4Sensitive* act = PluginService::Create<Geant4Sensitive*>(
                     tn.first, context(), tn.second, &m_detector, &m_detDesc);
                 if (!act) {
@@ -119,17 +121,18 @@ namespace dd4hep {
                            "Failed to create SD action '%s' for volume '%s'",
                            tn.first.c_str(), vol.c_str());
                 } else {
-                  // Set extra JSON keys as string properties
-                  for (const auto& [key, val] : cfg.items()) {
-                    if (key == "name") continue;
-                    if (act->hasProperty(key)) {
-                      act->property(key).str(val.is_string()
-                          ? val.get<std::string>()
-                          : val.dump());
-                    } else {
-                      printout(WARNING, name().c_str(),
-                               "Action '%s' has no property '%s'",
-                               tn.first.c_str(), key.c_str());
+                  // Apply optional params dict (second array element)
+                  if (val.size() > 1 && val[1].is_object()) {
+                    for (const auto& [key, pval] : val[1].items()) {
+                      if (act->hasProperty(key)) {
+                        act->property(key).str(pval.is_string()
+                            ? pval.get<std::string>()
+                            : pval.dump());
+                      } else {
+                        printout(WARNING, name().c_str(),
+                                 "Action '%s' has no property '%s'",
+                                 tn.first.c_str(), key.c_str());
+                      }
                     }
                   }
                   // Share the same Geant4ActionSD so collections are registered together
