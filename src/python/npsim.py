@@ -92,7 +92,7 @@ if __name__ == "__main__":
   # Use combined meta-action and meta-filter for DIRC.
   # Properties maps volume regexes to (TypeName, {params}) tuples.
   RUNNER.filter.mapDetFilter['DIRC'] = (
-    'VolumeRouterFilter',
+    'VolumeDispatchFilter',
     {'Properties': json.dumps({
       'mcp_vol': ('ParticleSelectFilter/OpticalPhotonSelector', {
         'particle': 'opticalphoton',
@@ -104,7 +104,7 @@ if __name__ == "__main__":
   RUNNER.action.mapActions['DRICH'] = 'Geant4OpticalTrackerAction'
   RUNNER.action.mapActions['PFRICH'] = 'Geant4OpticalTrackerAction'
   RUNNER.action.mapActions['DIRC'] = (
-    'VolumeRouterAction',
+    'VolumeDispatchAction',
     {'Properties': json.dumps({
       'mcp_vol': ('Geant4OpticalTrackerAction', {}),
       'bar_vol': ('Geant4TrackerWeightedAction', {'CollectSingleDeposits': 'false'}),

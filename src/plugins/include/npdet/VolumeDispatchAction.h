@@ -8,8 +8,8 @@
 // For the list of contributors see $DD4hepINSTALL/doc/CREDITS.
 //
 //==========================================================================
-#ifndef NPDET_VOLUMEROUTERACTION_H
-#define NPDET_VOLUMEROUTERACTION_H
+#ifndef NPDET_VOLUMEDISPATCHACTION_H
+#define NPDET_VOLUMEDISPATCHACTION_H
 
 /// Framework include files
 #include <DD4hep/Plugins.h>
@@ -39,7 +39,7 @@ namespace dd4hep {
      * \addtogroup Geant4SDActionPlugin
      *
      * @{
-     * \package VolumeRouterAction
+     * \package VolumeDispatchAction
      *
      * \brief Sensitive detector action that routes steps to per-volume DDG4 SD
      *        action plugins, instantiated at run-time via PluginService::Create.
@@ -67,7 +67,7 @@ namespace dd4hep {
      *
      * @}
      */
-    class VolumeRouterAction : public Geant4Sensitive {
+    class VolumeDispatchAction : public Geant4Sensitive {
 
       struct VolumeEntry {
         std::string               pattern;
@@ -80,13 +80,13 @@ namespace dd4hep {
       };
 
     public:
-      VolumeRouterAction(Geant4Context* ctxt, const std::string& n,
+      VolumeDispatchAction(Geant4Context* ctxt, const std::string& n,
                                    DetElement det, Detector& dsc)
           : Geant4Sensitive(ctxt, n, det, dsc) {
         declareProperty("Properties", m_properties_json);
       }
 
-      virtual ~VolumeRouterAction() {
+      virtual ~VolumeDispatchAction() {
         for (auto& entry : m_entries)
           if (entry.action) entry.action->release();
       }
@@ -202,4 +202,4 @@ namespace dd4hep {
   } // namespace sim
 } // namespace dd4hep
 
-#endif // NPDET_VOLUMEROUTERACTION_H
+#endif // NPDET_VOLUMEDISPATCHACTION_H

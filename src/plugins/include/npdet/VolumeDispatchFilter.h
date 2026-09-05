@@ -8,8 +8,8 @@
 // For the list of contributors see $DD4hepINSTALL/doc/CREDITS.
 //
 //==========================================================================
-#ifndef NPDET_VOLUMEROUTERFILTER_H
-#define NPDET_VOLUMEROUTERFILTER_H
+#ifndef NPDET_VOLUMEDISPATCHFILTER_H
+#define NPDET_VOLUMEDISPATCHFILTER_H
 
 /// Framework include files
 #include <DD4hep/Plugins.h>
@@ -39,9 +39,9 @@ namespace dd4hep {
      * \addtogroup Geant4SDActionPlugin
      *
      * @{
-     * \package VolumeRouterFilter
+     * \package VolumeDispatchFilter
      *
-     * \brief Particle filter companion to VolumeRouterAction.
+     * \brief Particle filter companion to VolumeDispatchAction.
      *
      *  Maps logical-volume regexes to existing DDG4/DDSim filter plugins via
      *  the \c Properties JSON property.  Each entry specifies the filter
@@ -66,7 +66,7 @@ namespace dd4hep {
      *
      * @}
      */
-    class VolumeRouterFilter : public Geant4Filter {
+    class VolumeDispatchFilter : public Geant4Filter {
 
       struct VolumeEntry {
         std::string               pattern;
@@ -79,12 +79,12 @@ namespace dd4hep {
       };
 
     public:
-      VolumeRouterFilter(Geant4Context* c, const std::string& n)
+      VolumeDispatchFilter(Geant4Context* c, const std::string& n)
           : Geant4Filter(c, n) {
         declareProperty("Properties", m_properties_json);
       }
 
-      virtual ~VolumeRouterFilter() {
+      virtual ~VolumeDispatchFilter() {
         for (auto& entry : m_entries)
           if (entry.filter) entry.filter->release();
       }
@@ -190,4 +190,4 @@ namespace dd4hep {
   } // namespace sim
 } // namespace dd4hep
 
-#endif // NPDET_VOLUMEROUTERFILTER_H
+#endif // NPDET_VOLUMEDISPATCHFILTER_H
