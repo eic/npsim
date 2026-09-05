@@ -47,7 +47,8 @@ namespace dd4hep {
      *  - Unmatched volumes: accept all particles (pass-through).
      *
      * \param string VolumeActions
-     *   JSON array in the same format as OpticalTrackerCombinedAction.
+     *   JSON object \c {"volume_regex": {"Action": "ddg4_action_name", ...}, ...}
+     *   in the same format as OpticalTrackerCombinedAction.
      *
      * @}
      */
@@ -60,10 +61,10 @@ namespace dd4hep {
         FilterMode                mode { FilterMode::AcceptAll };
         std::optional<std::regex> compiled_regex;
 
-        static VolumeEntry fromJson(const nlohmann::json& j) {
+        static VolumeEntry fromJson(const std::string& volume, const nlohmann::json& cfg) {
           VolumeEntry entry;
-          entry.pattern = j.at("volume").get<std::string>();
-          if (j.at("Action").get<std::string>() == "Geant4OpticalTrackerAction")
+          entry.pattern = volume;
+          if (cfg.at("Action").get<std::string>() == "Geant4OpticalTrackerAction")
             entry.mode = FilterMode::AcceptOpticalOnly;
           if (!entry.pattern.empty()) {
             try {
@@ -97,8 +98,8 @@ namespace dd4hep {
         if (!m_volume_actions_json.empty()) {
           try {
             auto j = nlohmann::json::parse(m_volume_actions_json);
-            for (const auto& item : j)
-              m_entries.push_back(VolumeEntry::fromJson(item));
+            for (const auto& [vol, cfg] : j.items())
+              m_entries.push_back(VolumeEntry::fromJson(vol, cfg));
           } catch (const nlohmann::json::exception& e) {
             printout(ERROR, "OpticalTrackerCombinedFilter",
                      "Failed to parse VolumeActions JSON: %s", e.what());

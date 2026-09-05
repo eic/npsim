@@ -90,10 +90,9 @@ if __name__ == "__main__":
   RUNNER.filter.mapDetFilter['DRICH'] = 'opticalphotons'
   RUNNER.filter.mapDetFilter['PFRICH'] = 'opticalphotons'
   # Use combined meta-action and meta-filter for DIRC.
-  # Each entry maps a logical-volume regex to a DDG4 SD action name plus
-  # optional per-volume parameters.  json.dumps() serialises the dict into
-  # the JSON string consumed by OpticalTrackerCombinedAction/Filter.
-  _dirc_volume_actions = {
+  # VolumeActions is a JSON object mapping logical-volume regexes to DDG4 SD
+  # action names and optional per-volume parameters.
+  _dirc_va = json.dumps({
     'mcp_vol': {
       'Action': 'Geant4OpticalTrackerAction',
     },
@@ -101,11 +100,7 @@ if __name__ == "__main__":
       'Action': 'Geant4TrackerWeightedAction',
       'CollectSingleDeposits': False,
     },
-  }
-  _dirc_va = json.dumps(
-    [dict(volume=vol, **cfg) for vol, cfg in _dirc_volume_actions.items()]
-  )
-
+  })
   RUNNER.filter.mapDetFilter['DIRC'] = (
     'OpticalTrackerCombinedFilter',
     {'VolumeActions': _dirc_va}

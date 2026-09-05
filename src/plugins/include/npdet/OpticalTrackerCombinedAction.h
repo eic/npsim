@@ -104,15 +104,15 @@ namespace dd4hep {
           return ActionType::Unknown;
         }
 
-        /// Construct from a parsed nlohmann::json object
-        static VolumeEntry fromJson(const nlohmann::json& j) {
+        /// Construct from a volume-name key and its JSON config object
+        static VolumeEntry fromJson(const std::string& volume, const nlohmann::json& cfg) {
           VolumeEntry entry;
-          entry.pattern    = j.at("volume").get<std::string>();
-          entry.action_type = parseActionType(j.at("Action").get<std::string>());
-          if (j.contains("CollectSingleDeposits"))
-            entry.collect_single_deposits = j["CollectSingleDeposits"].get<bool>();
-          if (j.contains("HitPositionCombination"))
-            entry.hit_position_type = j["HitPositionCombination"].get<int>();
+          entry.pattern     = volume;
+          entry.action_type = parseActionType(cfg.at("Action").get<std::string>());
+          if (cfg.contains("CollectSingleDeposits"))
+            entry.collect_single_deposits = cfg["CollectSingleDeposits"].get<bool>();
+          if (cfg.contains("HitPositionCombination"))
+            entry.hit_position_type = cfg["HitPositionCombination"].get<int>();
           if (!entry.pattern.empty()) {
             try {
               entry.compiled_regex.emplace(
@@ -167,8 +167,8 @@ namespace dd4hep {
         if (m_volume_actions_json.empty()) return;
         try {
           auto j = nlohmann::json::parse(m_volume_actions_json);
-          for (const auto& item : j)
-            m_entries.push_back(VolumeEntry::fromJson(item));
+          for (const auto& [vol, cfg] : j.items())
+            m_entries.push_back(VolumeEntry::fromJson(vol, cfg));
         } catch (const nlohmann::json::exception& e) {
           printout(ERROR, "OpticalTrackerCombinedAction",
                    "Failed to parse VolumeActions JSON: %s", e.what());
