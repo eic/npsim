@@ -36,4 +36,14 @@ struct settings {
 void print_daughter_nodes(TGeoNode* node, int print_depth) ;
 void run_list_mode(const settings& s);
 
+inline std::string ensure_step_extension(std::string output_path) {
+  static const std::string extension = ".stp";
+  if (output_path.size() >= extension.size() &&
+      output_path.compare(output_path.size() - extension.size(), extension.size(), extension) == 0) {
+    return output_path;
+  }
+  output_path += extension;
+  return output_path;
+}
+
 #endif

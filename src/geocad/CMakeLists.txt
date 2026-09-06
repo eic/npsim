@@ -67,3 +67,7 @@ install(TARGETS GeoCad
   RUNTIME DESTINATION bin
   INCLUDES DESTINATION include
   )
+
+if(BUILD_TESTING)
+  add_subdirectory(tests)
+endif()
