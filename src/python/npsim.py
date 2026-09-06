@@ -8,6 +8,7 @@ Based on M. Frank and F. Gaede runSim.py
 Modified with standard EIC EPIC requirements.
 """
 from __future__ import absolute_import, unicode_literals
+import json
 import logging
 import sys
 
@@ -88,12 +89,34 @@ if __name__ == "__main__":
   # This could probably be a substring
   RUNNER.filter.mapDetFilter['DRICH'] = 'opticalphotons'
   RUNNER.filter.mapDetFilter['PFRICH'] = 'opticalphotons'
-  RUNNER.filter.mapDetFilter['DIRC'] = 'opticalphotons'
+  # Use combined meta-action and meta-filter for DIRC.
+  # Register VolumeDispatchFilter as a named filter, then reference it by name.
+  # Properties maps volume regexes to (TypeName, {params}) tuples.
+  # mcp_vol: accept only optical photons (select filter)
+  # bar_vol: accept only steps with energy deposit > 0 (rejects neutral/optical transit)
+  RUNNER.filter.filters['dirc_dispatch'] = dict(
+    name='VolumeDispatchFilter/DIRCVolumeDispatch',
+    parameter={"Properties": json.dumps({
+      'mcp_vol': ('ParticleSelectFilter/OpticalPhotonSelector', {
+        'particle': 'opticalphoton',
+      }),
+      'bar_vol': ('EnergyDepositMinimumCut/BarVolEDepCut', {
+        'Cut': '0.0',
+      }),
+    })},
+  )
+  RUNNER.filter.mapDetFilter['DIRC'] = 'dirc_dispatch'
 
-  # Use the optical tracker for the dRICH, pfRICH and hpDIRC
+  # Use the optical tracker for the dRICH and pfRICH
   RUNNER.action.mapActions['DRICH'] = 'Geant4OpticalTrackerAction'
   RUNNER.action.mapActions['PFRICH'] = 'Geant4OpticalTrackerAction'
-  RUNNER.action.mapActions['DIRC'] = 'Geant4OpticalTrackerAction'
+  RUNNER.action.mapActions['DIRC'] = (
+    'VolumeDispatchAction',
+    {'Properties': json.dumps({
+      'mcp_vol': ('Geant4OpticalTrackerAction', {}),
+      'bar_vol': ('Geant4TrackerWeightedAction', {'CollectSingleDeposits': 'false'}),
+    })}
+  )
 
   # Use the optical photon efficiency stacking action for hpDIRC
   RUNNER.action.stack = [
