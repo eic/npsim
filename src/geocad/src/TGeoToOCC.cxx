@@ -557,7 +557,6 @@ TopoDS_Shape TGeoToOCC::OCC_Cuttub(Double_t rmin, Double_t rmax, Double_t dz,
    ShapeFix_ShapeTolerance FTol;
    Double_t tolerance=1;
 
-   gp_Trsf TT;
    gp_Trsf TR;
    if (rmin < Precision::Confusion()) rmin=rmin+0.000001;
    if (rmax < Precision::Confusion()) rmax=rmax+0.000001;
@@ -647,7 +646,6 @@ TopoDS_Shape TGeoToOCC::OCC_Xtru(TGeoXtru * TG_Xtru)
    Double_t* x = new Double_t[vert];
    Double_t* y = new Double_t[vert];
    Double_t* z = new Double_t[nz];
-   gp_Trsf TR;
    TopoDS_Wire w;
    BRepOffsetAPI_ThruSections sect(true,true);
    for (Int_t i=0;i<nz;i++) {
