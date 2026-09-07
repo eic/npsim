@@ -59,12 +59,16 @@ void run_part_mode(const settings& s) {
 
   TGeoToStep* mygeom = new TGeoToStep(&(detector.manager()));
   if (s.part_name_levels.size() > 1) {
-    mygeom->CreatePartialGeometry(s.part_name_levels, s.outfile.c_str(), s.tgeo_length_unit_in_mm);
+    mygeom->CreatePartialGeometry(s.part_name_levels, s.outfile.c_str(), s.tgeo_length_unit_in_mm,
+                                  s.export_visual_attributes, s.export_materials);
   } else if (s.part_name_levels.size() == 1) {
     for (const auto& [n, l] : s.part_name_levels) {
-      mygeom->CreatePartialGeometry(n.c_str(), l, s.outfile.c_str(), s.tgeo_length_unit_in_mm);
+      mygeom->CreatePartialGeometry(n.c_str(), l, s.outfile.c_str(), s.tgeo_length_unit_in_mm,
+                                    s.export_visual_attributes, s.export_materials);
     }
   } else {
-    mygeom->CreateGeometry(s.outfile.c_str(), s.global_level, s.tgeo_length_unit_in_mm);
+    mygeom->CreateGeometry(
+        s.outfile.c_str(), s.global_level, s.tgeo_length_unit_in_mm,
+        s.export_visual_attributes, s.export_materials);
   }
 }

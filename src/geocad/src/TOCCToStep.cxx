@@ -30,18 +30,27 @@ the OCCWriteStep(const char * fname ) method.
 #include "TGeoToOCC.h"
 
 #include "TGeoVolume.h"
+#include "TGeoMedium.h"
+#include "TGeoMaterial.h"
 #include "TClass.h"
+#include "TColor.h"
 #include "TGeoManager.h"
 #include "TError.h"
+#include "TROOT.h"
 
 #include <Interface_Static.hxx>
 #include <BRepBuilderAPI_Transform.hxx>
 #include <TDataStd_Name.hxx>
 #include <XCAFDoc_DocumentTool.hxx>
+#include <XCAFDoc_ColorTool.hxx>
+#include <XCAFDoc_MaterialTool.hxx>
+#include <Quantity_ColorRGBA.hxx>
+#include <TCollection_HAsciiString.hxx>
 #include <Standard.hxx>
 #include <stdlib.h>
 #include <XCAFApp_Application.hxx>
 
+#include <algorithm>
 #include <map>
 #include <set>
 #include <stack>
@@ -140,20 +149,68 @@ std::set<TGeoVolume*> TOCCToStep::CollectRelevantVolumes(
 TDF_Label TOCCToStep::OCCShapeCreation(TGeoManager *m, double tgeo_length_unit_in_mm,
                                         const std::set<TGeoVolume*>& volume_filter)
 {
+   auto shapeTool = XCAFDoc_DocumentTool::ShapeTool(fDoc->Main());
+   Handle(XCAFDoc_ColorTool) colorTool;
+   Handle(XCAFDoc_MaterialTool) materialTool;
+   if (fExportVisAttributes) colorTool = XCAFDoc_DocumentTool::ColorTool(fDoc->Main());
+   if (fExportMaterials) materialTool = XCAFDoc_DocumentTool::MaterialTool(fDoc->Main());
+   std::unordered_map<const TGeoMaterial*, TDF_Label> materialLabels;
+   auto applyVolumeMetadata = [&](TGeoVolume* volume, const TDF_Label& label) {
+      if (!volume || label.IsNull()) return;
+
+      if (!colorTool.IsNull()) {
+         int rootColorIndex = volume->GetFillColor() >= 0 ? volume->GetFillColor() : volume->GetLineColor();
+         if (rootColorIndex >= 0 && gROOT) {
+            if (auto* rootColor = gROOT->GetColor(rootColorIndex)) {
+               Float_t red = 0.F;
+               Float_t green = 0.F;
+               Float_t blue = 0.F;
+               rootColor->GetRGB(red, green, blue);
+               const float alpha = static_cast<float>(1.0 - std::clamp(volume->GetTransparency() / 100.0, 0.0, 1.0));
+               colorTool->SetColor(label, Quantity_ColorRGBA(red, green, blue, alpha), XCAFDoc_ColorGen);
+            }
+         }
+      }
+
+      if (!materialTool.IsNull()) {
+         const auto* medium = volume->GetMedium();
+         if (!medium) return;
+         const auto* material = medium->GetMaterial();
+         if (!material) return;
+
+         TDF_Label materialLabel;
+         const auto it = materialLabels.find(material);
+         if (it != materialLabels.end()) {
+            materialLabel = it->second;
+         } else {
+            auto matName = Handle(TCollection_HAsciiString)(new TCollection_HAsciiString(material->GetName()));
+            auto matDesc = Handle(TCollection_HAsciiString)(new TCollection_HAsciiString(medium->GetName()));
+            auto densName = Handle(TCollection_HAsciiString)(new TCollection_HAsciiString("g/cm3"));
+            auto densType = Handle(TCollection_HAsciiString)(new TCollection_HAsciiString("mass_density"));
+            materialLabel = materialTool->AddMaterial(matName, matDesc, material->GetDensity(), densName, densType);
+            materialLabels[material] = materialLabel;
+         }
+         if (!materialLabel.IsNull()) {
+            materialTool->SetMaterial(label, materialLabel);
+         }
+      }
+   };
+
    XCAFDoc_DocumentTool::SetLengthUnit(fDoc, tgeo_length_unit_in_mm, UnitsMethods_LengthUnit_Millimeter);
 
    TGeoVolume* Top = m->GetTopVolume();
 
    // Create label for the top volume
-   fLabel = XCAFDoc_DocumentTool::ShapeTool(fDoc->Main())->NewShape();
+   fLabel = shapeTool->NewShape();
    if (Top->GetShape()->IsA() == TGeoCompositeShape::Class()) {
       fShape = fRootShape.OCC_CompositeShape((TGeoCompositeShape*)Top->GetShape(), TGeoHMatrix());
    } else {
       fShape = fRootShape.OCC_SimpleShape(Top->GetShape());
    }
-   XCAFDoc_DocumentTool::ShapeTool(fDoc->Main())->SetShape(fLabel, fShape);
+   shapeTool->SetShape(fLabel, fShape);
    TDataStd_Name::Set(fLabel, Top->GetName());
    fTree[Top] = fLabel;
+   applyVolumeMetadata(Top, fLabel);
 
    // Build a volume->mother map in a single O(N) pass.
    // This replaces the O(V*N) pattern of launching a fresh TGeoIterator for
@@ -251,18 +308,20 @@ TDF_Label TOCCToStep::OCCShapeCreation(TGeoManager *m, double tgeo_length_unit_i
             motherShape = fRootShape.OCC_SimpleShape(motherVol->GetShape());
          }
          motherLabel = TDF_TagSource::NewChild(GetLabelOfVolume(Top));
-         XCAFDoc_DocumentTool::ShapeTool(fDoc->Main())->SetShape(motherLabel, motherShape);
+         shapeTool->SetShape(motherLabel, motherShape);
          TDataStd_Name::Set(motherLabel, motherVol->GetName());
          fTree[motherVol] = motherLabel;
          fLabel           = TDF_TagSource::NewChild(motherLabel);
+         applyVolumeMetadata(motherVol, motherLabel);
       }
 
-      XCAFDoc_DocumentTool::ShapeTool(fDoc->Main())->SetShape(fLabel, fShape);
+      shapeTool->SetShape(fLabel, fShape);
       TDataStd_Name::Set(fLabel, currentVolume->GetName());
       fTree[currentVolume] = fLabel;
+      applyVolumeMetadata(currentVolume, fLabel);
    }
 
-   XCAFDoc_DocumentTool::ShapeTool(fDoc->Main())->UpdateAssemblies();
+   shapeTool->UpdateAssemblies();
    return fLabel;
 }
 
@@ -490,4 +549,3 @@ void TOCCToStep::PrintAssembly()
    XCAFDoc_DocumentTool::ShapeTool(fDoc->Main())->Dump(std::cout);
 #endif
 }
-

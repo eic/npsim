@@ -6,3 +6,6 @@ A collection of classes convection ROOT geometry to CAD systems:
 
   - OpenCascade
   - STEP.
+
+`TOCCToStep` uses OpenCascade XCAF metadata so exported STEP can carry shape names,
+volume display color/transparency, and material metadata (material name + density).
