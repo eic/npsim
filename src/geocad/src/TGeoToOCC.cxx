@@ -312,7 +312,7 @@ TopoDS_Shape TGeoToOCC::OCC_CompositeShape(TGeoCompositeShape *comp, const TGeoH
    }
    TGeoHMatrix  rightGlobMatx=m*(*rightMtx);
    if(rightSName == "TGeoCompositeShape" ) {
-      rightOCCShape=OCC_CompositeShape((TGeoCompositeShape*)rightShape, leftGlobMatx);
+      rightOCCShape=OCC_CompositeShape((TGeoCompositeShape*)rightShape, rightGlobMatx);
    } else {
       t=rightGlobMatx.GetTranslation();
       r=rightGlobMatx.GetRotationMatrix();
@@ -1110,4 +1110,3 @@ TopoDS_Shape TGeoToOCC::Reverse(TopoDS_Shape Shape)
    delete(setPrecision);
    return Shape;
 }
-
