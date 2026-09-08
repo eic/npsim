@@ -32,15 +32,25 @@ public:
    TGeoToStep(TGeoManager *geom);
    virtual ~TGeoToStep();
 
+   // Backward-compatible API preserved for external callers.
    void CreateGeometry(const char* fname = "geometry.stp", int max_level = -1,
-                       double tgeo_length_unit_in_mm = 1., bool export_vis_attributes = true,
-                       bool export_materials = true);
-   void CreatePartialGeometry(const char* part_name, int max_level = -1, const char* fname = "geometry.stp",
-                              double tgeo_length_unit_in_mm = 1., bool export_vis_attributes = true,
-                              bool export_materials = true);
-   void CreatePartialGeometry(std::map<std::string,int> part_name_levels, const char* fname = "geometry.stp",
-                              double tgeo_length_unit_in_mm = 1., bool export_vis_attributes = true,
-                              bool export_materials = true);
+                       double tgeo_length_unit_in_mm = 1.);
+   void CreatePartialGeometry(const char* part_name, int max_level = -1,
+                              const char* fname = "geometry.stp",
+                              double tgeo_length_unit_in_mm = 1.);
+   void CreatePartialGeometry(std::map<std::string,int> part_name_levels,
+                              const char* fname = "geometry.stp",
+                              double tgeo_length_unit_in_mm = 1.);
+
+   // Extended API for metadata control.
+   void CreateGeometry(const char* fname, int max_level, double tgeo_length_unit_in_mm,
+                       bool export_vis_attributes, bool export_materials);
+   void CreatePartialGeometry(const char* part_name, int max_level, const char* fname,
+                              double tgeo_length_unit_in_mm, bool export_vis_attributes,
+                              bool export_materials);
+   void CreatePartialGeometry(std::map<std::string,int> part_name_levels, const char* fname,
+                              double tgeo_length_unit_in_mm, bool export_vis_attributes,
+                              bool export_materials);
 
    ClassDef(TGeoToStep,1)
 };

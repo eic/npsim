@@ -68,6 +68,23 @@ TGeoToStep::~TGeoToStep()
    if (fGeometry) delete fGeometry;
 }
 
+void TGeoToStep::CreateGeometry(const char* fname, int max_level, double tgeo_length_unit_in_mm)
+{
+   CreateGeometry(fname, max_level, tgeo_length_unit_in_mm, true, true);
+}
+
+void TGeoToStep::CreatePartialGeometry(const char* part_name, int max_level, const char* fname,
+                                       double tgeo_length_unit_in_mm)
+{
+   CreatePartialGeometry(part_name, max_level, fname, tgeo_length_unit_in_mm, true, true);
+}
+
+void TGeoToStep::CreatePartialGeometry(std::map<std::string,int> part_name_levels, const char* fname,
+                                       double tgeo_length_unit_in_mm)
+{
+   CreatePartialGeometry(part_name_levels, fname, tgeo_length_unit_in_mm, true, true);
+}
+
 void TGeoToStep::CreateGeometry(const char* fname, int max_level, double tgeo_length_unit_in_mm,
                                 bool export_vis_attributes, bool export_materials)
 {
@@ -124,4 +141,3 @@ void TGeoToStep::CreatePartialGeometry(std::map<std::string,int> part_name_level
   //fCreate->PrintAssembly();
   delete(fCreate);
 }
-
