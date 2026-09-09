@@ -42,6 +42,8 @@ private:
    TDF_Label                fLabel;  //label of the OCC shape element
    TGeoToOCC                  fRootShape;
    TopoDS_Shape             fShape;  //OCC shape (translated root shape)
+   bool                     fExportVisAttributes { true };
+   bool                     fExportMaterials     { true };
 
    void            OCCDocCreation();
    TopoDS_Shape    AssemblyShape(TGeoVolume *vol, TGeoHMatrix m);
@@ -53,6 +55,8 @@ private:
 
 public:
    TOCCToStep();
+   void      SetExportVisualAttributes(bool enabled) { fExportVisAttributes = enabled; }
+   void      SetExportMaterials(bool enabled)        { fExportMaterials = enabled; }
    void      PrintAssembly();
    std::set<TGeoVolume*> CollectRelevantVolumes(TGeoManager* m, const std::map<std::string,int>& part_name_levels);
    std::set<TGeoVolume*> CollectRelevantVolumes(TGeoManager* m, const char* part_name, int max_level);

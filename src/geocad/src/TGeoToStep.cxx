@@ -70,8 +70,28 @@ TGeoToStep::~TGeoToStep()
 
 void TGeoToStep::CreateGeometry(const char* fname, int max_level, double tgeo_length_unit_in_mm)
 {
+   CreateGeometry(fname, max_level, tgeo_length_unit_in_mm, true, true);
+}
+
+void TGeoToStep::CreatePartialGeometry(const char* part_name, int max_level, const char* fname,
+                                       double tgeo_length_unit_in_mm)
+{
+   CreatePartialGeometry(part_name, max_level, fname, tgeo_length_unit_in_mm, true, true);
+}
+
+void TGeoToStep::CreatePartialGeometry(std::map<std::string,int> part_name_levels, const char* fname,
+                                       double tgeo_length_unit_in_mm)
+{
+   CreatePartialGeometry(part_name_levels, fname, tgeo_length_unit_in_mm, true, true);
+}
+
+void TGeoToStep::CreateGeometry(const char* fname, int max_level, double tgeo_length_unit_in_mm,
+                                bool export_vis_attributes, bool export_materials)
+{
    //ROOT CAD CONVERSION
    fCreate = new TOCCToStep();
+   fCreate->SetExportVisualAttributes(export_vis_attributes);
+   fCreate->SetExportMaterials(export_materials);
    fCreate->OCCShapeCreation(fGeometry, tgeo_length_unit_in_mm);
    fCreate->OCCTreeCreation(fGeometry, max_level);
    fCreate->OCCWriteStep(fname);
@@ -79,10 +99,14 @@ void TGeoToStep::CreateGeometry(const char* fname, int max_level, double tgeo_le
    delete(fCreate);
 }
 
-void TGeoToStep::CreatePartialGeometry(const char* part_name, int max_level, const char* fname, double tgeo_length_unit_in_mm)
+void TGeoToStep::CreatePartialGeometry(const char* part_name, int max_level, const char* fname,
+                                       double tgeo_length_unit_in_mm, bool export_vis_attributes,
+                                       bool export_materials)
 {
    //ROOT CAD CONVERSION
    fCreate = new TOCCToStep();
+   fCreate->SetExportVisualAttributes(export_vis_attributes);
+   fCreate->SetExportMaterials(export_materials);
    auto vol_filter = fCreate->CollectRelevantVolumes(fGeometry, part_name, max_level);
    fCreate->OCCShapeCreation(fGeometry, tgeo_length_unit_in_mm, vol_filter);
    if( !(fCreate->OCCPartialTreeCreation(fGeometry, part_name, max_level)) ) {
@@ -98,10 +122,14 @@ void TGeoToStep::CreatePartialGeometry(const char* part_name, int max_level, con
 }
 
 
-void TGeoToStep::CreatePartialGeometry(std::map<std::string,int> part_name_levels, const char* fname, double tgeo_length_unit_in_mm)
+void TGeoToStep::CreatePartialGeometry(std::map<std::string,int> part_name_levels, const char* fname,
+                                       double tgeo_length_unit_in_mm, bool export_vis_attributes,
+                                       bool export_materials)
 {
   //ROOT CAD CONVERSION
   fCreate = new TOCCToStep();
+  fCreate->SetExportVisualAttributes(export_vis_attributes);
+  fCreate->SetExportMaterials(export_materials);
   auto vol_filter = fCreate->CollectRelevantVolumes(fGeometry, part_name_levels);
   fCreate->OCCShapeCreation(fGeometry, tgeo_length_unit_in_mm, vol_filter);
   if( !(fCreate->OCCPartialTreeCreation(fGeometry, part_name_levels)) ) {
@@ -113,5 +141,3 @@ void TGeoToStep::CreatePartialGeometry(std::map<std::string,int> part_name_level
   //fCreate->PrintAssembly();
   delete(fCreate);
 }
-
-

@@ -26,6 +26,8 @@ struct settings {
   bool            list_all          = false;
   int             color             = 1;
   double          alpha             = 1;
+  bool            export_visual_attributes = true;
+  bool            export_materials         = true;
   // TGeoManager has two sets of units: kRootUnits (cm) and kG4Units (mm)
   double          tgeo_length_unit_in_mm  = (TGeoManager::GetDefaultUnits() == TGeoManager::kRootUnits)? 10.:1.;
   std::map<std::string, int>    part_name_levels;

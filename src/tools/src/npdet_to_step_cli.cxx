@@ -28,7 +28,7 @@ void print_man_page(T cli, const char* argv0) {
                  .surround_repeat("", "...");
 
   auto mp = make_man_page(cli, argv0, fmt);
-  mp.prepend_section("DESCRIPTION", "Geometry tool for converting compact files to STEP (cad) files.");
+  mp.prepend_section("DESCRIPTION", "Geometry tool for converting compact files to STEP (cad) files with optional visual/material metadata.");
   mp.append_section("EXAMPLES", " $ npdet_to_step list compact.xml");
   std::cout << mp << "\n";
 }
@@ -64,6 +64,8 @@ settings cmdline_settings(int argc, char* argv[]) {
     option("-h", "--help").set(s.selected, mode::help) % "show help",
     option("-g", "--global_level") & integer("level", s.global_level),
     option("-o", "--output") & value("out", s.outfile),
+    option("--no-vis").call([&] { s.export_visual_attributes = false; }) % "disable volume color/transparency export",
+    option("--no-materials").call([&] { s.export_materials = false; }) % "disable material name/density export",
     value("file", s.infile).if_missing(
       [] { std::cout << "You need to provide an input xml filename as the last argument!\n"; }) %
       "input xml file",
