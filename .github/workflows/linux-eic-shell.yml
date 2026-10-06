@@ -187,7 +187,7 @@ jobs:
             export DETECTOR_CACHE=/opt/detector/epic-${{ env.detector_version }}/share/epic
             export PATH=$PWD/install/bin${PATH:+:$PATH}
             export LD_LIBRARY_PATH=$PWD/install/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}
-            url=root://dtn-eic.jlab.org//volatile/eic/EPIC/EVGEN/DIS/NC/${{ matrix.beam }}/minQ2=${{ matrix.minq2 }}/pythia8NCDIS_${{ matrix.beam }}_minQ2=${{ matrix.minq2 }}_beamEffects_xAngle=-0.025_hiDiv_1.hepmc3.tree.root
+            url=root://dtn2304.jlab.org:8443//jlab-osdf-ro/eic/EPIC/volatile/EVGEN/DIS/NC/${{ matrix.beam }}/minQ2=${{ matrix.minq2 }}/pythia8NCDIS_${{ matrix.beam }}_minQ2=${{ matrix.minq2 }}_beamEffects_xAngle=-0.025_hiDiv_1.hepmc3.tree.root
             npsim --compactFile ${DETECTOR_PATH}/${{ matrix.detector_config }}.xml \
               -N 100 \
               --inputFiles ${url} \
