@@ -206,6 +206,7 @@ function(dd4hep_generate_rootmap library)
   )
 endfunction()
 
+set(DD4HEP_SET_RPATH TRUE)
 dd4hep_configure_output()
 dd4hep_set_compiler_flags()
 
