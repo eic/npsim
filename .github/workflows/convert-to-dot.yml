@@ -57,7 +57,7 @@ jobs:
       - name: Uncompress install artifact
         run: tar -xaf install.tar.zst
       - uses: cvmfs-contrib/github-action-cvmfs@10197e000cc0add8e54ac4fb73d3ed44e2de72b4  # v5
-      - uses: eic/run-cvmfs-osg-eic-shell@10a8540a01bf46c03a2b267cb122d96a1cb5c09a  # main
+      - uses: eic/run-cvmfs-osg-eic-shell@e3977323ebfa7e0725f6b910fd2877db05c3bbb6  # main
         env:
           LSAN_OPTIONS: ${{ inputs.lsan_options }}
           ASAN_OPTIONS: ${{ inputs.asan_options }}
