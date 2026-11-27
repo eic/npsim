@@ -49,14 +49,14 @@ jobs:
       matrix:
         detector_config: ${{fromJson(inputs.detector_configs)}}
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/download-artifact@v8
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333  # v8.0.2
         with:
           name: ${{ inputs.install_artifact_name }}
           path: .
       - name: Uncompress install artifact
         run: tar -xaf install.tar.zst
-      - uses: cvmfs-contrib/github-action-cvmfs@10197e000cc0add8e54ac4fb73d3ed44e2de72b4  # v5
+      - uses: cvmfs-contrib/github-action-cvmfs@d705955b32075b4b0178f3a0160b6fe527483cf8  # v5.7
       - uses: eic/run-cvmfs-osg-eic-shell@e3977323ebfa7e0725f6b910fd2877db05c3bbb6  # main
         env:
           LSAN_OPTIONS: ${{ inputs.lsan_options }}
@@ -81,7 +81,7 @@ jobs:
         run: sudo apt-get install -y graphviz
       - name: Convert DOT to SVG
         run: dot -Tsvg ${{matrix.detector_config}}.dot -o ${{matrix.detector_config}}.svg
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
         with:
           name: ${{matrix.detector_config}}.dot
           path: |

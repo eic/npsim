@@ -59,10 +59,10 @@ jobs:
         CXX: [g++, clang++]
         CMAKE_BUILD_TYPE: [Release]
     steps:
-      - uses: actions/checkout@v7
-      - uses: cvmfs-contrib/github-action-cvmfs@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - uses: cvmfs-contrib/github-action-cvmfs@d705955b32075b4b0178f3a0160b6fe527483cf8  # v5.7
       - name: Build and install
-        uses: eic/run-cvmfs-osg-eic-shell@main
+        uses: eic/run-cvmfs-osg-eic-shell@e3977323ebfa7e0725f6b910fd2877db05c3bbb6  # main
         with:
           organization: "${{ env.organization }}"
           platform-release: "${{ env.platform }}:${{ env.release }}"
@@ -78,7 +78,7 @@ jobs:
             cmake --build build -j $(getconf _NPROCESSORS_ONLN) --target install
       - name: Compress install directory
         run: tar -caf install.tar.zst install/
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
         with:
           name: install-${{ matrix.CXX }}-eic-shell-${{ matrix.CMAKE_BUILD_TYPE }}-${{ env.platform }}-${{ env.release }}
           path: install.tar.zst
@@ -93,16 +93,16 @@ jobs:
         particle: [pi, e]
         detector_config: [epic_craterlake]
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/download-artifact@v8
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333  # v8.0.2
         with:
           name: install-g++-eic-shell-Release-${{ env.platform }}-${{ env.release }}
           path: .
       - name: Uncompress install artifact
         run: tar -xaf install.tar.zst
-      - uses: cvmfs-contrib/github-action-cvmfs@v5
+      - uses: cvmfs-contrib/github-action-cvmfs@d705955b32075b4b0178f3a0160b6fe527483cf8  # v5.7
       - name: Produce simulation files
-        uses: eic/run-cvmfs-osg-eic-shell@main
+        uses: eic/run-cvmfs-osg-eic-shell@e3977323ebfa7e0725f6b910fd2877db05c3bbb6  # main
         with:
           organization: "${{ env.organization }}"
           platform-release: "${{ env.platform }}:${{ env.release }}"
@@ -121,13 +121,13 @@ jobs:
               -N 100 \
               --outputFile sim_${{ matrix.particle }}_1GeV_20GeV_${{ matrix.detector_config }}.edm4hep.root \
               -v WARNING
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
         with:
           name: sim_${{ matrix.particle }}_1GeV_20GeV_${{ matrix.detector_config }}.edm4hep.root
           path: sim_${{ matrix.particle }}_1GeV_20GeV_${{ matrix.detector_config }}.edm4hep.root
           if-no-files-found: error
       - name: Download previous artifact
-        uses: dawidd6/action-download-artifact@v28
+        uses: dawidd6/action-download-artifact@a92c7ae74cf1df8810783758581e485ac3aaa309  # v28
         with:
           branch: ${{ github.event.pull_request.base.ref || github.ref_name }}
           path: ref/
@@ -136,7 +136,7 @@ jobs:
           workflow_conclusion: "completed"
           if_no_artifact_found: warn
       - name: Compare to previous artifacts
-        uses: eic/run-cvmfs-osg-eic-shell@main
+        uses: eic/run-cvmfs-osg-eic-shell@e3977323ebfa7e0725f6b910fd2877db05c3bbb6  # main
         with:
           organization: "${{ env.organization }}"
           platform-release: "${{ env.platform }}:${{ env.release }}"
@@ -148,7 +148,7 @@ jobs:
             capybara bara ref/sim_${{ matrix.particle }}_1GeV_20GeV_${{ matrix.detector_config }}.edm4hep.root* sim_${{ matrix.particle }}_1GeV_20GeV_${{ matrix.detector_config }}.edm4hep.root
             mv capybara-reports sim_${{ matrix.particle }}_1GeV_20GeV_${{ matrix.detector_config }}
             touch .sim_${{ matrix.particle }}_1GeV_20GeV_${{ matrix.detector_config }}
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
         with:
           name: sim_${{ matrix.particle }}_1GeV_20GeV_${{ matrix.detector_config }}.capy
           path: |
@@ -169,16 +169,16 @@ jobs:
           - beam: 5x41
             minq2: 1000
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/download-artifact@v8
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333  # v8.0.2
         with:
           name: install-g++-eic-shell-Release-${{ env.platform }}-${{ env.release }}
           path: .
       - name: Uncompress install artifact
         run: tar -xaf install.tar.zst
-      - uses: cvmfs-contrib/github-action-cvmfs@v5
+      - uses: cvmfs-contrib/github-action-cvmfs@d705955b32075b4b0178f3a0160b6fe527483cf8  # v5.7
       - name: Produce simulation files
-        uses: eic/run-cvmfs-osg-eic-shell@main
+        uses: eic/run-cvmfs-osg-eic-shell@e3977323ebfa7e0725f6b910fd2877db05c3bbb6  # main
         with:
           organization: "${{ env.organization }}"
           platform-release: "${{ env.platform }}:${{ env.release }}"
@@ -196,13 +196,13 @@ jobs:
               --outputFile sim_dis_${{ matrix.beam }}_minQ2=${{ matrix.minq2 }}_${{ matrix.detector_config }}.edm4hep.root \
               -v WARNING
       - name: Upload ROOT output
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
         with:
           name: sim_dis_${{ matrix.beam }}_minQ2=${{ matrix.minq2 }}_${{ matrix.detector_config }}.edm4hep.root
           path: sim_dis_${{ matrix.beam }}_minQ2=${{ matrix.minq2 }}_${{ matrix.detector_config }}.edm4hep.root
           if-no-files-found: error
       - name: Download previous artifact
-        uses: dawidd6/action-download-artifact@v28
+        uses: dawidd6/action-download-artifact@a92c7ae74cf1df8810783758581e485ac3aaa309  # v28
         with:
           branch: ${{ github.event.pull_request.base.ref || github.ref_name }}
           path: ref/
@@ -211,7 +211,7 @@ jobs:
           workflow_conclusion: "completed"
           if_no_artifact_found: warn
       - name: Compare to previous artifacts
-        uses: eic/run-cvmfs-osg-eic-shell@main
+        uses: eic/run-cvmfs-osg-eic-shell@e3977323ebfa7e0725f6b910fd2877db05c3bbb6  # main
         with:
           organization: "${{ env.organization }}"
           platform-release: "${{ env.platform }}:${{ env.release }}"
@@ -223,7 +223,7 @@ jobs:
             capybara bara ref/sim_dis_${{ matrix.beam }}_minQ2=${{ matrix.minq2 }}_${{ matrix.detector_config }}.edm4hep.root* sim_dis_${{ matrix.beam }}_minQ2=${{ matrix.minq2 }}_${{ matrix.detector_config }}.edm4hep.root
             mv capybara-reports sim_dis_${{ matrix.beam }}_minQ2=${{ matrix.minq2 }}_${{ matrix.detector_config }}
             touch .sim_dis_${{ matrix.beam }}_minQ2=${{ matrix.minq2 }}_${{ matrix.detector_config }}
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
         with:
           name: sim_dis_${{ matrix.beam }}_minQ2=${{ matrix.minq2 }}_${{ matrix.detector_config }}.capy
           path: |
@@ -265,14 +265,14 @@ jobs:
       - npsim-gun
       - npsim-dis
     steps:
-      - uses: actions/upload-artifact/merge@v7
+      - uses: actions/upload-artifact/merge@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
         with:
           name: capybara-report
           pattern: '*.capy'
           delete-merged: true
 
   list-open-prs:
-    uses: eic/actions/.github/workflows/list-open-prs.yml@main
+    uses: eic/actions/.github/workflows/list-open-prs.yml@2ab7caf5441f066e5fb32cdc510a3dfb1c8a4779  # main
 
   get-docs-from-open-prs:
     runs-on: ubuntu-latest
@@ -286,7 +286,7 @@ jobs:
     steps:
       - name: Download capybara artifact (other PRs)
         id: download_capybara
-        uses: dawidd6/action-download-artifact@v28
+        uses: dawidd6/action-download-artifact@a92c7ae74cf1df8810783758581e485ac3aaa309  # v28
         if: github.event.pull_request.number != matrix.pr
         with:
           commit: ${{ matrix.head_sha }}
@@ -296,12 +296,12 @@ jobs:
           workflow_conclusion: "completed"
           if_no_artifact_found: ignore
       - name: Download capybara artifact (this PR)
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333  # v8.0.2
         if: github.event.pull_request.number == matrix.pr
         with:
           name: capybara-report
           path: publishing_docs/pr/${{ matrix.pr }}/capybara/
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
         with:
           name: github-pages-staging-pr-${{ matrix.pr }}
           path: publishing_docs/
@@ -314,7 +314,7 @@ jobs:
     steps:
       - name: Download capybara artifact (in PR)
         id: download_capybara
-        uses: dawidd6/action-download-artifact@v28
+        uses: dawidd6/action-download-artifact@a92c7ae74cf1df8810783758581e485ac3aaa309  # v28
         if: github.ref_name != 'main'
         with:
           branch: main
@@ -324,7 +324,7 @@ jobs:
           workflow_conclusion: "completed"
           if_no_artifact_found: ignore
       - name: Download capybara artifact (on main)
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333  # v8.0.2
         if: github.ref_name == 'main'
         with:
           name: capybara-report
@@ -341,7 +341,7 @@ jobs:
           cat publishing_docs/capybara/index.md >> $GITHUB_STEP_SUMMARY
       - name: Ensure publishing_docs is non-empty
         run: mkdir -p publishing_docs && touch publishing_docs/.keep
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
         with:
           name: github-pages-staging-main
           path: publishing_docs/
@@ -359,7 +359,7 @@ jobs:
       !failure()
     steps:
       - name: Download artifacts for page
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333  # v8.0.2
         with:
           pattern: github-pages-staging-*
           path: artifacts/
@@ -373,7 +373,7 @@ jobs:
           echo "### PRs" >> _site/pr/index.md
           find _site/pr -mindepth 1 -maxdepth 1 -type d -printf "- [%f](%f/index.md)\n" | sort >> _site/pr/index.md
       - name: Upload GitHub Pages artifact
-        uses: actions/upload-pages-artifact@v5
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9  # v5.0.0
         with:
           path: _site/
           retention-days: 7
@@ -391,7 +391,7 @@ jobs:
           cat capybara_${{ github.event.pull_request.number }}.md >> $GITHUB_STEP_SUMMARY
       - name: Upload capybara summary
         if: ${{ github.event_name == 'pull_request' }}
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
         with:
           name: capybara_${{ github.event.pull_request.number }}.md
           path: capybara_${{ github.event.pull_request.number }}.md
@@ -415,23 +415,23 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         continue-on-error: false
-        uses: actions/deploy-pages@v5
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346  # v5.0.1
       - name: Find capybara comment
         if: ${{ github.event_name == 'pull_request' }}
         id: find_comment
-        uses: peter-evans/find-comment@v4
+        uses: peter-evans/find-comment@b30e6a3c0ed37e7c023ccd3f1db5c6c0b0c23aad  # v4.0.0
         with:
           issue-number: ${{ github.event.pull_request.number }}
           comment-author: 'github-actions[bot]'
           body-includes: Capybara summary
       - name: Fetch capybara summary
         if: ${{ github.event_name == 'pull_request' }}
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333  # v8.0.2
         with:
           name: capybara_${{ github.event.pull_request.number }}.md
       - name: Create or update capybara comment
         if: ${{ github.event_name == 'pull_request' }}
-        uses: peter-evans/create-or-update-comment@v5
+        uses: peter-evans/create-or-update-comment@e8674b075228eee787fea43ef493e45ece1004c9  # v5.0.0
         with:
           comment-id: ${{ steps.find_comment.outputs.comment-id }}
           issue-number: ${{ github.event.pull_request.number }}
