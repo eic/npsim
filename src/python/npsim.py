@@ -44,23 +44,24 @@ if __name__ == "__main__":
     ph.VerboseLevel = 0
     ph.enableUI()
     seq.adopt(ph)
-    # Disable optical processes that have no material property tables defined in
-    # the EIC epic detector description. These processes always return DBL_MAX
-    # (infinite mean free path) and waste GPIL time on every optical photon step.
-    #   OpMieHG:  no material defines MIEHG* properties
-    #   OpWLS:    no material defines WLSABSLENGTH
-    #   OpWLS2:   no material defines WLS2ABSLENGTH
-    # OpRayleigh is kept because aerogel in dRICH/pfRICH defines RAYLEIGH tables.
-    # NOTE: DDG4's Geant4OpticalPhotonPhysics::constructProcesses() must honor
-    # G4OpticalParameters activation flags for these commands to take effect.
-    # See eic/DD4hep PR #1 (optical-honor-process-activation).
-    RUNNER.ui.commandsConfigure += [
-      "/process/optical/processActivation OpMieHG false",
-      "/process/optical/processActivation OpWLS false",
-      "/process/optical/processActivation OpWLS2 false",
-    ]
     return None
   RUNNER.physics.setupUserPhysics(setupCerenkov)
+
+  # Inactivate optical processes for which no ePIC material defines properties.
+  # They never act (mean free path is DBL_MAX), but are still evaluated in the
+  # step-length loop of every optical photon step; inactive processes are skipped.
+  #   OpMieHG:  no material defines MIEHG* properties
+  #   OpWLS:    no material defines WLSABSLENGTH
+  #   OpWLS2:   no material defines WLS2ABSLENGTH
+  # OpRayleigh is kept because aerogel in dRICH/pfRICH defines RAYLEIGH tables.
+  # These commands must run after the processes are constructed (Initialize
+  # phase), and must be set here, before RUNNER.run() hands the UI command lists
+  # to DDG4. They are prepended so user commands can re-activate the processes.
+  RUNNER.ui.commandsInitialize = [
+    "/process/inactivate OpMieHG",
+    "/process/inactivate OpWLS",
+    "/process/inactivate OpWLS2",
+  ] + RUNNER.ui.commandsInitialize
 
   # Use the EIC tracking-volume particle handler.
   from DDSim.Helper.ParticleHandler import ParticleHandler as _PH
