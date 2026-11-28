@@ -39,6 +39,10 @@ if __name__ == "__main__":
         "Geant4HepEmTrackingPhysics plugin is not available. Build DD4hep with "
         "DD4HEP_USE_G4HEPEM=ON and ensure DDG4HepEm is on LD_LIBRARY_PATH."
       ) from e
+    # Restrict HepEm e-/e+/gamma tracking to the ScFi layers: the HepEm tracking
+    # manager does not invoke Cherenkov for e-/e+, so applying it everywhere
+    # removes optical photons in the RICHes and DIRC.
+    hepem.HepEmRegions = ['EcalBarrelScFiLayerRegion']
     hepem.WoodcockRegions = ['EcalBarrelScFiLayerRegion']
     hepem.enableUI()
     seq.adopt(hepem)
