@@ -28,6 +28,26 @@ if __name__ == "__main__":
   # https://github.com/AIDASoft/DD4hep/pull/1376
   RUNNER.parseOptions()
 
+  # Ensure that G4HepEm vectorized EM physics is always loaded
+  def setupHepEm(kernel):
+    from DDG4 import PhysicsList
+    seq = kernel.physicsList()
+    try:
+      hepem = PhysicsList(kernel, 'Geant4HepEmTrackingPhysics/HepEmPhysics')
+    except Exception as e:
+      raise RuntimeError(
+        "Geant4HepEmTrackingPhysics plugin is not available. Build DD4hep with "
+        "DD4HEP_USE_G4HEPEM=ON and ensure DDG4HepEm is on LD_LIBRARY_PATH."
+      ) from e
+    # Restrict HepEm e-/e+/gamma tracking to the ScFi layers: the HepEm tracking
+    # manager does not invoke Cherenkov for e-/e+, so applying it everywhere
+    # removes optical photons in the RICHes and DIRC.
+    hepem.HepEmRegions = ['EcalBarrelScFiLayerRegion']
+    hepem.WoodcockRegions = ['EcalBarrelScFiLayerRegion']
+    hepem.enableUI()
+    seq.adopt(hepem)
+  RUNNER.physics.setupUserPhysics(setupHepEm)
+
   # Ensure that Cerenkov and optical physics are always loaded
   def setupCerenkov(kernel):
     from DDG4 import PhysicsList
